@@ -1,8 +1,39 @@
+version: "3.8"
+
 services:
+  # Servicio de base de datos PostgreSQL | CONFUGURACION DE LA BASE DE DATOS
+  db:
+    image: postgres:15-alpine
+    container_name: mare_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    ports: #si da error debemos cambiar aqui el puerto de postgres a otro que no este en uso
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Servicio de la aplicación Django
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    container_name: Proyecto_Mare 
+    command: python manage.py runserver 0.0.0.0:8000 
     volumes:
-      - .:/app
+      - .:/app #docker agarra la info de aqui y la pone en el contenedor
     ports:
       - "8000:8000"
+    env_file:
+      - .env #carga las variables de entorno del archivo .env
+    depends_on:
+      db:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+
+# Volúmenes para persistencia de datos
+volumes:
+  postgres_data:
