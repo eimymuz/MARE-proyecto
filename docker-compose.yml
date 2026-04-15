@@ -1,4 +1,3 @@
-version: "3.8"
 
 services:
   # Servicio de base de datos PostgreSQL | CONFUGURACION DE LA BASE DE DATOS
