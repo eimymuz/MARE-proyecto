@@ -43,7 +43,7 @@ El sistema se basa en una arquitectura cliente-servidor, donde los usuarios inte
 
 ## 📁 Estructura del proyecto
 
-plaintext
+```plaintext
 MARE_PROYECTO/
 ├── apps/
 │   ├── asignaciones/
@@ -67,7 +67,7 @@ MARE_PROYECTO/
 ├── manage.py
 ├── requirements.txt
 └── README.md
-
+```
 
 ---
 
