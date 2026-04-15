@@ -1,0 +1,181 @@
+<!-- Página en blanco — la empresa pone su contenido aquí -->
+<main></main>
+
+<!-- BOTÓN FLOTANTE -->
+<div class="fab">
+  <button class="fab-btn" onclick="abrirPopup()" title="Solicitar espacio">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 17l2-8h14l2 8M12 3v6M8 9h8"/>
+      <path d="M2 20s3-2 10-2 10 2 10 2"/>
+    </svg>
+  </button>
+  <span class="fab-label">Reservar</span>
+</div>
+
+<!-- POPUP -->
+<div class="popup-overlay" id="popup-overlay">
+  <div class="popup">
+
+    <div class="popup-header">
+      <div>
+        <h2>Solicitud de ingreso a marina</h2>
+        <p>Complete el formulario y le contactaremos a la brevedad</p>
+      </div>
+      <button class="popup-close" onclick="cerrarPopup()">✕</button>
+    </div>
+
+    <div class="popup-body" id="popup-body">
+      <div id="form-error" class="errors-box" style="display:none"></div>
+
+      <form id="form-solicitud">
+        {% csrf_token %}
+
+        <div class="section-label">Solicitante</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre completo <span class="required">*</span></label>
+            <input type="text" name="fullname" placeholder="Juan García" required>
+          </div>
+          <div class="form-group">
+            <label>Teléfono <span class="required">*</span></label>
+            <input type="tel" name="telefono" placeholder="+52 312 000 0000" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico <span class="required">*</span></label>
+          <input type="email" name="email" placeholder="correo@ejemplo.com" required>
+          <p class="hint">Recibirá la confirmación en este correo</p>
+        </div>
+
+        <div class="section-label">Embarcación</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre <span class="required">*</span></label>
+            <input type="text" name="nombre_bote" placeholder="Marea Alta" required>
+          </div>
+          <div class="form-group">
+            <label>Tipo <span class="required">*</span></label>
+            <select name="tipo_barco" required>
+              <option value="">Seleccione</option>
+              {% for tipo in tipos_barco %}
+                <option value="{{ tipo.pk }}">{{ tipo.tipo_barco }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>Eslora (m) <span class="required">*</span></label>
+            <input type="number" name="eslora" step="0.01" min="0.01" placeholder="12.50" required>
+            <p class="hint">Length</p>
+          </div>
+          <div class="form-group">
+            <label>Manga (m) <span class="required">*</span></label>
+            <input type="number" name="manga" step="0.01" min="0.01" placeholder="4.20" required>
+            <p class="hint">Beam</p>
+          </div>
+          <div class="form-group">
+            <label>Calado (m) <span class="required">*</span></label>
+            <input type="number" name="calado" step="0.01" min="0.01" placeholder="1.80" required>
+            <p class="hint">Draft</p>
+          </div>
+        </div>
+
+        <div class="section-label">Estancia</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Llegada / Arrival <span class="required">*</span></label>
+            <input type="date" name="fecha_llegada" required>
+          </div>
+          <div class="form-group">
+            <label>Salida / Departure <span class="required">*</span></label>
+            <input type="date" name="fecha_salida" required>
+          </div>
+        </div>
+
+        <div class="checkbox-row">
+          <input type="checkbox" name="primera_entrada_mexico" id="primera_entrada">
+          <div class="checkbox-text">
+            Primera entrada a México / First entry to Mexico
+            <small>Marque si es la primera vez que su embarcación ingresa a aguas mexicanas</small>
+          </div>
+        </div>
+
+        <div class="section-label">Información adicional</div>
+        <div class="form-group">
+          <label>Solicitudes especiales / Special requests</label>
+          <textarea name="comentario" placeholder="Requerimientos especiales, servicios adicionales..."></textarea>
+        </div>
+      </form>
+    </div>
+
+    <div class="popup-footer" id="popup-footer">
+      <button class="btn-submit" id="btn-submit" onclick="enviarSolicitud()">
+        Enviar solicitud
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const CSRF = "{{ csrf_token }}";
+
+function abrirPopup(){
+  document.getElementById('popup-overlay').classList.add('active');
+  document.body.style.overflow='hidden';
+}
+function cerrarPopup(){
+  document.getElementById('popup-overlay').classList.remove('active');
+  document.body.style.overflow='';
+}
+document.getElementById('popup-overlay').addEventListener('click',ev=>{
+  if(ev.target===document.getElementById('popup-overlay')) cerrarPopup();
+});
+
+// validar fechas
+document.querySelector('[name=fecha_salida]').addEventListener('change',function(){
+  const llegada=document.querySelector('[name=fecha_llegada]').value;
+  if(llegada&&this.value&&this.value<=llegada){
+    this.setCustomValidity('La fecha de salida debe ser posterior a la llegada.');
+  } else { this.setCustomValidity(''); }
+});
+
+async function enviarSolicitud(){
+  const form=document.getElementById('form-solicitud');
+  const errEl=document.getElementById('form-error');
+  errEl.style.display='none';
+  if(!form.checkValidity()){ form.reportValidity(); return; }
+  const btn=document.getElementById('btn-submit');
+  btn.disabled=true; btn.textContent='Enviando...';
+  const data=new FormData(form);
+  data.append('csrfmiddlewaretoken',CSRF);
+  try{
+    const res=await fetch('/solicitar/',{method:'POST',body:data});
+    const json=await res.json();
+    if(json.ok){
+      document.getElementById('popup-body').innerHTML=`
+        <div class="success-box">
+          <div class="success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <h3>¡Solicitud enviada!</h3>
+          <p>Hemos recibido su solicitud.<br>Le contactaremos al correo <strong>${json.email}</strong></p>
+          <div class="success-num">#${json.solicitud_id}</div>
+          <p style="font-size:11px;color:var(--text-light)">Guarde este número de referencia</p>
+        </div>`;
+      document.getElementById('popup-footer').innerHTML=`
+        <button class="btn-submit" onclick="cerrarPopup()" style="background:var(--success)">Cerrar</button>`;
+    } else {
+      errEl.textContent=json.error; errEl.style.display='block';
+      btn.disabled=false; btn.textContent='Enviar solicitud';
+    }
+  } catch(err){
+    errEl.textContent='Error de conexión. Intente de nuevo.';
+    errEl.style.display='block';
+    btn.disabled=false; btn.textContent='Enviar solicitud';
+  }
+}
+</script>
+</body>
+</html>
