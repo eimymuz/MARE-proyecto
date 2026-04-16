@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Inicio — MARE{% endblock %}
+
+{% block content %}
+
+<!-- ── MÉTRICAS ── -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.25rem">
+
+  <div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1rem;box-shadow:var(--shadow)">
+    <div style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">Ocupados hoy</div>
+    <div style="font-size:28px;font-weight:600;color:var(--emp-purple)">{{ ocupados }}</div>
+    <div style="font-size:11px;color:var(--text-light);margin-top:.2rem">espacios con embarcación</div>
+  </div>
+
+  <div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1rem;box-shadow:var(--shadow)">
+    <div style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">Libres</div>
+    <div style="font-size:28px;font-weight:600;color:var(--success)">{{ libres }}</div>
+    <div style="font-size:11px;color:var(--text-light);margin-top:.2rem">espacios disponibles</div>
+  </div>
+
+  <div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1rem;box-shadow:var(--shadow)">
+    <div style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">Pendientes</div>
+    <div style="font-size:28px;font-weight:600;color:var(--warning)">{{ pendientes }}</div>
+    <div style="font-size:11px;color:var(--text-light);margin-top:.2rem">solicitudes sin asignar</div>
+  </div>
+
+  <div style="background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1rem;box-shadow:var(--shadow)">
+    <div style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem">Total espacios</div>
+    <div style="font-size:28px;font-weight:600;color:var(--mare-mid)">{{ total_espacios }}</div>
+    <div style="font-size:11px;color:var(--text-light);margin-top:.2rem">en toda la marina</div>
+  </div>
+
+</div>
+
+
+<!-- ── MAPA GENERAL ── -->
+<div class="card" style="padding:.75rem">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
+    <div>
+      <span style="font-size:14px;font-weight:600;color:var(--text)">Vista general de la marina</span>
+      <span style="font-size:11px;color:var(--text-light);margin-left:.5rem">{{ fecha_hoy }}</span>
+    </div>
+    <div style="display:flex;gap:.75rem;font-size:11px;color:var(--text-mid);align-items:center">
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#f87171;border-radius:2px"></span>Ocupado</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#d1d5db;border-radius:2px"></span>Libre</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#c8a87a;border-radius:2px"></span>Pasillo</span>
+      <a href="{% url 'mapa' %}" class="btn btn-default btn-sm">Ver mapa completo →</a>
+    </div>
+  </div>
+  <script>window.MAPA_CTX={};</script>
+  {% include 'mapa/mapa_component.html' with mapa_readonly=True %}
+</div>
+
+{% endblock %}
