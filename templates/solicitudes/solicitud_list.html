@@ -62,7 +62,8 @@
                   class="btn btn-info btn-sm">Contactar</button>
                 <a href="https://mail.google.com/mail/u/0/#search/{{ sol.embarcacion.cliente.email }}"
                   target="_blank" class="btn btn-default btn-sm">Revisar</a>
-                <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Asignar</a>
+                  <!--Poner url de mapa-->
+                <a href="{#}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Asignar</a>
                 <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'RECHAZADA' %}" style="display:inline">
                   {% csrf_token %}
                   <button class="btn btn-danger btn-sm">Rechazar</button>
@@ -70,7 +71,8 @@
 
 
             {% elif sol.estado == 'APROBADA' %}
-              <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Reasignar</a>
+            <!--Poner url de mapa-->
+              <a href="{#}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Reasignar</a>
             {% endif %}
             <a href="{% url 'solicitud_detail' sol.pk %}" class="btn btn-default btn-sm">Ver</a>
           </div>

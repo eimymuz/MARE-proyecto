@@ -47,7 +47,8 @@
               onclick="abrirPopup({{ sol.pk }})">
               Ver más
             </button>
-            <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}"
+            <!--Poner mapa-->
+            <a href="{#}?solicitud_id={{ sol.pk }}"
                class="btn btn-accent btn-sm">Reasignar</a>
           </div>
         </td>
@@ -180,7 +181,7 @@ async function abrirPopup(pk){
     }
 
     // botones
-    document.getElementById('popup-btn-reasignar').href = `/mapa/?solicitud_id=${pk}`;
+    //document.getElementById('popup-btn-reasignar').href = `/mapa/?solicitud_id=${pk}`;
     document.getElementById('popup-btn-editar').href    = `/solicitudes/${pk}/editar/`;
     document.getElementById('popup-btn-contactar').href = '#';
     document.getElementById('popup-btn-contactar').onclick = (e) => {

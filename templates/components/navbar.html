@@ -2,7 +2,8 @@
   <div class="header-inner">
 
     <!-- Logo colaborativo -->
-    <a href="{% url 'inicio' %}" class="logo">
+     <!--Poner direccion del inicio-->
+     <a href="{% url 'inicio' %}" class="logo">
       <div class="logo-empresa">
         <img src="https://drive.google.com/thumbnail?id=1jvK1frI44vZ-WkTlk3MzQFbQ7YsC-7VI&sz=w1000" alt="Logo" style="height:40px">
       </div>
@@ -33,8 +34,8 @@
         </svg>
         Asignadas
       </a>
-
-      <a href="{% url 'mapa' %}"
+      <!--Poner mapa-->
+      <a href="#"
          class="nav-link {% if request.resolver_match.url_name == 'mapa' %}active{% endif %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>

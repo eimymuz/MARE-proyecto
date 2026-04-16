@@ -44,11 +44,11 @@
       <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#f87171;border-radius:2px"></span>Ocupado</span>
       <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#d1d5db;border-radius:2px"></span>Libre</span>
       <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:10px;height:10px;background:#c8a87a;border-radius:2px"></span>Pasillo</span>
-      <a href="{% url 'mapa' %}" class="btn btn-default btn-sm">Ver mapa completo →</a>
+      <!--Poner mapa-->
+      <a href="{#}" class="btn btn-default btn-sm">Ver mapa completo →</a>
     </div>
   </div>
-  <script>window.MAPA_CTX={};</script>
-  {% include 'mapa/mapa_component.html' with mapa_readonly=True %}
+
 </div>
 
 {% endblock %}

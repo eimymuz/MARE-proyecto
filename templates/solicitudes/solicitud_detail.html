@@ -16,13 +16,16 @@
       <a href="{% url 'solicitud_list' %}" class="btn btn-default btn-sm">← Volver</a>
 
     {% elif solicitud.estado == 'EN_ESPERA' %}
-      <a href="{% url 'mapa' %}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Asignar en mapa</a>
+      <!--Poner url de mapa-->
+      <a href="{#}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Asignar en mapa</a>
       <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'RECHAZADA' %}">
         {% csrf_token %}<button class="btn btn-danger btn-sm">Rechazar</button>
       </form>
       <a href="{% url 'solicitud_en_espera_list' %}" class="btn btn-default btn-sm">← Volver</a>
 
     {% elif solicitud.estado == 'APROBADA' %}
+      <!--Poner url de mapa-->
+       <a href="{#}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Reasignar en mapa</a>  
       <a href="{% url 'mapa' %}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Reasignar</a>
       <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'RECHAZADA' %}">
         {% csrf_token %}<button class="btn btn-danger btn-sm">Rechazar</button>
