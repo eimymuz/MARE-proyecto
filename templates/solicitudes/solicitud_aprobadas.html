@@ -43,13 +43,10 @@
         </td>
         <td>
           <div style="display:flex;gap:.3rem">
-            <button class="btn btn-default btn-sm"
-              onclick="abrirPopup({{ sol.pk }})">
+            <button class="btn btn-default btn-sm" onclick="abrirPopup({{ sol.pk }})">
               Ver más
             </button>
-            <!--Poner mapa-->
-            <a href="{#}?solicitud_id={{ sol.pk }}"
-               class="btn btn-accent btn-sm">Reasignar</a>
+            <a href="#" class="btn btn-accent btn-sm">Reasignar</a>
           </div>
         </td>
       </tr>
@@ -76,11 +73,10 @@
 </div>
 {% endif %}
 
-<!-- ── POPUP ── -->
+<!-- POPUP -->
 <div id="popup-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:flex-start;justify-content:center;padding-top:60px;overflow-y:auto">
   <div style="background:var(--surface);border-radius:var(--radius-lg);width:620px;max-width:95%;box-shadow:var(--shadow-md);margin-bottom:60px">
 
-    <!-- Header popup -->
     <div style="display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border)">
       <div>
         <div id="popup-titulo" style="font-size:16px;font-weight:600;color:var(--text)"></div>
@@ -89,10 +85,7 @@
       <button onclick="cerrarPopup()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-light);padding:.25rem">✕</button>
     </div>
 
-    <!-- Body popup -->
     <div style="padding:1.25rem 1.5rem">
-
-      <!-- Info embarcación -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
         <div>
           <div style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem">Embarcación</div>
@@ -104,21 +97,18 @@
         </div>
       </div>
 
-      <!-- Historial de asignaciones -->
       <div style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem">
         Historial de ubicaciones
       </div>
       <div id="popup-historial" style="margin-bottom:1rem"></div>
-
     </div>
 
-    <!-- Footer popup — botones -->
     <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.5rem;flex-wrap:wrap">
-      <a id="popup-btn-contactar"  href="#" class="btn btn-info btn-sm">Contactar</a>
-      <a id="popup-btn-revisar"    href="#" class="btn btn-default btn-sm" target="_blank">Revisar</a>
-      <a id="popup-btn-reasignar"  href="#" class="btn btn-accent btn-sm">Reasignar</a>
-      <a id="popup-btn-editar"     href="#" class="btn btn-default btn-sm">Editar</a>
-      <a id="popup-btn-rechazar"  href="#" class="btn btn-danger btn-sm">Rechazar</a>
+      <a id="popup-btn-contactar" href="#" class="btn btn-info btn-sm">Contactar</a>
+      <a id="popup-btn-revisar" href="#" class="btn btn-default btn-sm" target="_blank">Revisar</a>
+      <a id="popup-btn-reasignar" href="#" class="btn btn-accent btn-sm">Reasignar</a>
+      <a id="popup-btn-editar" href="#" class="btn btn-default btn-sm">Editar</a>
+      <button id="popup-btn-rechazar" type="button" class="btn btn-danger btn-sm">Rechazar</button>
       <button onclick="cerrarPopup()" class="btn btn-default btn-sm" style="margin-left:auto">Cerrar</button>
     </div>
 
@@ -132,18 +122,17 @@ async function abrirPopup(pk){
   const overlay = document.getElementById('popup-overlay');
   overlay.style.display = 'flex';
 
-  // loading state
-  document.getElementById('popup-titulo').textContent    = 'Cargando...';
+  document.getElementById('popup-titulo').textContent = 'Cargando...';
   document.getElementById('popup-subtitulo').textContent = '';
-  document.getElementById('popup-emb-info').innerHTML    = '';
-  document.getElementById('popup-estadia-info').innerHTML= '';
-  document.getElementById('popup-historial').innerHTML   = '<span style="color:var(--text-light);font-size:12px">Cargando...</span>';
+  document.getElementById('popup-emb-info').innerHTML = '';
+  document.getElementById('popup-estadia-info').innerHTML = '';
+  document.getElementById('popup-historial').innerHTML = '<span style="color:var(--text-light);font-size:12px">Cargando...</span>';
 
   try{
-    const res  = await fetch(`/solicitudes/${pk}/json/`);
+    const res = await fetch(`/solicitudes/${pk}/json/`);
     const data = await res.json();
 
-    document.getElementById('popup-titulo').textContent    = data.embarcacion;
+    document.getElementById('popup-titulo').textContent = data.embarcacion;
     document.getElementById('popup-subtitulo').textContent = `${data.cliente} · ${data.tipo}`;
 
     document.getElementById('popup-emb-info').innerHTML = `
@@ -152,45 +141,85 @@ async function abrirPopup(pk){
       <div><span style="color:var(--text-mid)">Calado:</span> ${data.calado} m</div>
       <div><span style="color:var(--text-mid)">Estado:</span>
         <span class="badge badge-success" style="font-size:11px">${data.estado}</span>
-      </div>`;
+      </div>
+    `;
 
     document.getElementById('popup-estadia-info').innerHTML = `
       <div><span style="color:var(--text-mid)">Llegada:</span> ${data.fecha_llegada}</div>
       <div><span style="color:var(--text-mid)">Salida:</span> ${data.fecha_salida}</div>
-      ${data.comentario ? `<div><span style="color:var(--text-mid)">Nota:</span> ${data.comentario}</div>` : ''}`;
+      ${data.comentario ? `<div><span style="color:var(--text-mid)">Nota:</span> ${data.comentario}</div>` : ''}
+    `;
 
-    // historial de ubicaciones
     if(data.asignaciones.length === 0){
       document.getElementById('popup-historial').innerHTML =
         '<span style="color:var(--text-light);font-size:12px">Sin asignaciones registradas.</span>';
     } else {
       let html = '<div class="table-wrap"><table><thead><tr><th>Muelle</th><th>Espacios</th><th>Inicio</th><th>Fin</th><th>Admin</th></tr></thead><tbody>';
-      data.asignaciones.forEach((a,i) => {
+
+      data.asignaciones.forEach((a, i) => {
         const espacios = a.espacios.map(e => e.numero).join(', ') || '—';
-        const actual   = i === 0 ? `<span class="badge badge-success" style="font-size:10px;margin-left:4px">actual</span>` : '';
-        html += `<tr>
-          <td>${a.muelle}${actual}</td>
-          <td>${espacios}</td>
-          <td>${a.fecha_inicio}</td>
-          <td>${a.fecha_fin}</td>
-          <td style="font-size:12px;color:var(--text-light)">${a.administrador}</td>
-        </tr>`;
+        const actual = i === 0
+          ? `<span class="badge badge-success" style="font-size:10px;margin-left:4px">actual</span>`
+          : '';
+
+        html += `
+          <tr>
+            <td>${a.muelle}${actual}</td>
+            <td>${espacios}</td>
+            <td>${a.fecha_inicio}</td>
+            <td>${a.fecha_fin}</td>
+            <td style="font-size:12px;color:var(--text-light)">${a.administrador}</td>
+          </tr>
+        `;
       });
+
       html += '</tbody></table></div>';
       document.getElementById('popup-historial').innerHTML = html;
     }
 
-    // botones
-    //document.getElementById('popup-btn-reasignar').href = `/mapa/?solicitud_id=${pk}`;
-    document.getElementById('popup-btn-editar').href    = `/solicitudes/${pk}/editar/`;
+    document.getElementById('popup-btn-editar').href = `/solicitudes/${pk}/editar/`;
+    document.getElementById('popup-btn-reasignar').href = `/mapa/?solicitud_id=${pk}`;
+
     document.getElementById('popup-btn-contactar').href = '#';
     document.getElementById('popup-btn-contactar').onclick = (e) => {
       e.preventDefault();
-      window.open(`https://mail.google.com/mail/?view=cm&to=${data.email_cliente}&su=Solicitud de ingreso — ${data.embarcacion}&body=Estimado ${data.cliente},%0A%0AEn relación a su solicitud de ingreso a la marina...`);
+      window.open(
+        `https://mail.google.com/mail/?view=cm&to=${data.email_cliente}&su=Solicitud de ingreso — ${data.embarcacion}&body=Estimado ${data.cliente},%0A%0AEn relación a su solicitud de ingreso a la marina...`,
+        '_blank'
+      );
     };
-    document.getElementById('popup-btn-revisar').href   = 
+
+    document.getElementById('popup-btn-revisar').href =
       `https://mail.google.com/mail/u/0/#search/${data.email_cliente}`;
 
+    document.getElementById('popup-btn-rechazar').onclick = async () => {
+      const confirmar = confirm(`¿Deseas rechazar la solicitud de ${data.embarcacion}?`);
+      if (!confirmar) return;
+
+      try {
+        const resp = await fetch(`/solicitudes/${pk}/estado/RECHAZADA/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': CSRF,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (resp.redirected) {
+          window.location.href = resp.url;
+          return;
+        }
+
+        if (resp.ok) {
+          cerrarPopup();
+          window.location.reload();
+        } else {
+          alert('No se pudo rechazar la solicitud.');
+        }
+      } catch (error) {
+        alert('Error al rechazar la solicitud.');
+      }
+    };
 
   } catch(err){
     document.getElementById('popup-historial').innerHTML =
@@ -202,9 +231,10 @@ function cerrarPopup(){
   document.getElementById('popup-overlay').style.display = 'none';
 }
 
-// cerrar con clic fuera
-document.getElementById('popup-overlay').addEventListener('click', ev => {
-  if(ev.target === document.getElementById('popup-overlay')) cerrarPopup();
+document.getElementById('popup-overlay').addEventListener('click', function(ev){
+  if(ev.target === this){
+    cerrarPopup();
+  }
 });
 </script>
 {% endblock %}
