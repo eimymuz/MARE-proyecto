@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} — MARE{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div style="display:flex;align-items:center;gap:1rem">
+    <h2>{{ titulo }}</h2>
+    <!-- Tabs de estado -->
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Embarcación</th>
+        <th>Cliente</th>
+        <th>Tipo</th>
+        <th>Llegada</th>
+        <th>Salida</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sol in solicitudes %}
+      <tr>
+        <td style="color:var(--text-light)">#{{ sol.id }}</td>
+        <td><a href="{% url 'solicitud_detail' sol.pk %}" style="color:var(--navy);font-weight:500">{{ sol.embarcacion.nombre_bote }}</a></td>
+        <td>{{ sol.embarcacion.cliente.fullname }}</td>
+        <td>{{ sol.embarcacion.tipo_barco.tipo_barco }}</td>
+        <td>{{ sol.fecha_llegada|date:"d/m/Y" }}</td>
+        <td>{{ sol.fecha_salida|date:"d/m/Y" }}</td>
+        <td>
+          {% if sol.estado == 'PENDIENTE' %}
+            <span class="badge badge-warning">Pendiente</span>
+          {% elif sol.estado == 'EN_ESPERA' %}
+            <span class="badge badge-info">En espera</span>
+          {% elif sol.estado == 'APROBADA' %}
+            <span class="badge badge-success">Aprobada</span>
+          {% elif sol.estado == 'COMPLETADA' %}
+            <span class="badge badge-neutral">Completada</span>
+          {% elif sol.estado == 'RECHAZADA' %}
+            <span class="badge badge-danger">Rechazada</span>
+          {% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+            {% if sol.estado == 'PENDIENTE' %}
+              <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'EN_ESPERA' %}" style="display:inline">
+                {% csrf_token %}
+                <button class="btn btn-success btn-sm">En espera</button>
+              </form>
+              <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'RECHAZADA' %}" style="display:inline">
+                {% csrf_token %}
+                <button class="btn btn-danger btn-sm">Rechazar</button>
+              </form>
+              
+              {% elif sol.estado == 'EN_ESPERA' %}
+                <button onclick="window.open('https://mail.google.com/mail/?view=cm&to={{ sol.embarcacion.cliente.email }}&su=Solicitud — {{ sol.embarcacion.nombre_bote }}&body=Estimado {{ sol.embarcacion.cliente.fullname }}')" 
+                  class="btn btn-info btn-sm">Contactar</button>
+                <a href="https://mail.google.com/mail/u/0/#search/{{ sol.embarcacion.cliente.email }}"
+                  target="_blank" class="btn btn-default btn-sm">Revisar</a>
+                <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Asignar</a>
+                <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'RECHAZADA' %}" style="display:inline">
+                  {% csrf_token %}
+                  <button class="btn btn-danger btn-sm">Rechazar</button>
+                </form>
+
+
+            {% elif sol.estado == 'APROBADA' %}
+              <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Reasignar</a>
+            {% endif %}
+            <a href="{% url 'solicitud_detail' sol.pk %}" class="btn btn-default btn-sm">Ver</a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8" style="text-align:center;color:var(--text-light);padding:2rem">
+          No hay solicitudes en este estado.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+  {% endif %}
+  <span class="current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
