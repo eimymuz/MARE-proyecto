@@ -93,4 +93,4 @@ Actualmente se trabaja en la implementación del sistema web con la visualizaci�
 
 
 ## 📄 Licencia 
-Proyecto académico para la materia de Ingeniería en Software.
+Proyecto académico para la materia de Ingeniería en SoftwareG
