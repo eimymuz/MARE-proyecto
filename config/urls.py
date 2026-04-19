@@ -18,6 +18,7 @@ urlpatterns = [
     path('asignaciones/',  include('apps.asignaciones.urls')),
     path('clientes/',      include('apps.clientes.urls')),
     path('embarcaciones/', include('apps.embarcaciones.urls')),
+    path('reportes/', include('apps.reportes.urls')),
     
     
 

@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>Reportes</h2>
+</div>
+
+<div class="card">
+  <form method="get" style="display:flex; gap:12px; align-items:end; flex-wrap:wrap;">
+    <div class="form-group" style="min-width:260px; margin-bottom:0;">
+      <label for="estado">Filtrar por estado</label>
+      <select name="estado" id="estado">
+        <option value="todos" {% if estado == 'todos' %}selected{% endif %}>Aprobadas y Rechazadas</option>
+        <option value="aceptado" {% if estado == 'aceptado' %}selected{% endif %}>Aprobadas</option>
+        <option value="rechazado" {% if estado == 'rechazado' %}selected{% endif %}>Rechazadas</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+    <a href="{% url 'reporte_solicitudes' %}" class="btn btn-secondary">Limpiar</a>
+    <a href="{% url 'reporte_solicitudes_pdf' %}?estado={{ estado }}" class="btn btn-accent">Descargar PDF</a>
+  </form>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Embarcación</th>
+          <th>Cliente</th>
+          <th>Fecha de resolución</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in solicitudes %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ s.embarcacion.nombre_bote }}</td>
+          <td>{{ s.embarcacion.cliente.fullname }}</td>
+          <td>
+            {% if s.fecha_resolucion %}
+              {{ s.fecha_resolucion|date:"d/m/Y H:i" }}
+            {% else %}
+              No disponible
+            {% endif %}
+          </td>
+          <td>
+            {% if s.estado == 'APROBADA' %}
+              <span class="badge badge-success">Aprobada</span>
+            {% elif s.estado == 'RECHAZADA' %}
+              <span class="badge badge-danger">Rechazada</span>
+            {% else %}
+              <span class="badge badge-neutral">{{ s.estado }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <button
+              type="button"
+              class="btn btn-info btn-sm"
+              onclick="abrirModal('modal-{{ s.id }}')">
+              Ver detalle
+            </button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center;">No hay datos para este filtro.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="text-align:right;">
+  <h3 style="margin:0;">Total: {{ total }}</h3>
+</div>
+
+{% for s in solicitudes %}
+<div id="modal-{{ s.id }}" class="mare-modal-overlay" onclick="cerrarModalFondo(event, 'modal-{{ s.id }}')">
+  <div class="mare-modal">
+    <div class="mare-modal-header">
+      <h3>Detalle de la solicitud #{{ s.id }}</h3>
+      <button type="button" class="mare-close-btn" onclick="cerrarModal('modal-{{ s.id }}')">&times;</button>
+    </div>
+
+    <div class="mare-modal-body">
+      <div class="card" style="margin-bottom:.75rem;">
+        <div class="card-header">
+          <span class="card-title">Información de la embarcación</span>
+        </div>
+        <table style="font-size:13px;">
+          <tr>
+            <td style="color:var(--text-mid);padding:.4rem 0;width:180px;">Nombre</td>
+            <td>{{ s.embarcacion.nombre_bote }}</td>
+          </tr>
+          <tr>
+            <td style="color:var(--text-mid);padding:.4rem 0;">Cliente</td>
+            <td>{{ s.embarcacion.cliente.fullname }}</td>
+          </tr>
+          <tr>
+            <td style="color:var(--text-mid);padding:.4rem 0;">Tipo</td>
+            <td>{{ s.embarcacion.tipo_barco.tipo_barco }}</td>
+          </tr>
+          <tr>
+            <td style="color:var(--text-mid);padding:.4rem 0;">Eslora</td>
+            <td>{{ s.embarcacion.eslora }} m</td>
+          </tr>
+          <tr>
+            <td style="color:var(--text-mid);padding:.4rem 0;">Manga</td>
+            <td>{{ s.embarcacion.manga }} m</td>
+          </tr>
+          <tr>
+            <td style="color:var(--text-mid);padding:.4rem 0;">Calado</td>
+            <td>{{ s.embarcacion.calado }} m</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+          <span class="card-title">Información de la resolución</span>
+        </div>
+
+        <table style="font-size:13px;">
+          <tr>
+            <td style="color:var(--text-mid);padding:.4rem 0;width:180px;">Fecha solicitud</td>
+            <td>{{ s.fecha_solicitud|date:"d/m/Y" }}</td>
+          </tr>
+
+          <tr>
+            <td style="color:var(--text-mid);padding:.4rem 0;">Estado</td>
+            <td>
+              {% if s.estado == 'APROBADA' %}
+                <span class="badge badge-success">Aprobada</span>
+              {% elif s.estado == 'RECHAZADA' %}
+                <span class="badge badge-danger">Rechazada</span>
+              {% else %}
+                <span class="badge badge-neutral">{{ s.estado }}</span>
+              {% endif %}
+            </td>
+          </tr>
+
+          <tr>
+            <td style="color:var(--text-mid);padding:.4rem 0;">
+              Fecha de {% if s.estado == 'APROBADA' %}aprobación{% elif s.estado == 'RECHAZADA' %}rechazo{% else %}resolución{% endif %}
+            </td>
+            <td>
+              {% if s.fecha_resolucion %}
+                {{ s.fecha_resolucion|date:"d/m/Y H:i" }}
+              {% else %}
+                No disponible
+              {% endif %}
+            </td>
+          </tr>
+
+          <tr>
+            <td style="color:var(--text-mid);padding:.4rem 0;">Comentario</td>
+            <td>{{ s.comentario|default:"Sin comentario" }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<style>
+  .mare-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 37, 64, 0.45);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .mare-modal {
+    width: 100%;
+    max-width: 760px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+    border: 1px solid var(--border);
+  }
+
+  .mare-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 2;
+  }
+
+  .mare-modal-header h3 {
+    margin: 0;
+  }
+
+  .mare-modal-body {
+    padding: 18px;
+  }
+
+  .mare-close-btn {
+    border: none;
+    background: transparent;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--text-mid);
+    line-height: 1;
+  }
+
+  .mare-close-btn:hover {
+    color: var(--danger);
+  }
+</style>
+
+<script>
+  function abrirModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
+
+  function cerrarModal(id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  function cerrarModalFondo(event, id) {
+    if (event.target.id === id) {
+      cerrarModal(id);
+    }
+  }
+
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+      document.querySelectorAll('.mare-modal-overlay').forEach(function(modal) {
+        modal.style.display = 'none';
+      });
+    }
+  });
+</script>
+{% endblock %}

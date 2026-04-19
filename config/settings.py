@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'apps.solicitudes',
     'apps.mapa',
     'apps.publico',
+    'apps.reportes',
 ]
 
 MIDDLEWARE = [

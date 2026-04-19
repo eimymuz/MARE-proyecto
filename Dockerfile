@@ -24,6 +24,14 @@ COPY requirements.txt /app/
 RUN pip install --upgrade pip && \
   pip install -r requirements.txt
 
+RUN apt-get update && apt-get install -y \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libharfbuzz0b \
+    libffi-dev \
+    libcairo2 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copia el código del proyecto | copaimos todo el contenido actual al contenedor
 COPY . /app/
 
