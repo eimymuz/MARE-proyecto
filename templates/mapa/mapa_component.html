@@ -1,0 +1,559 @@
+{% load static %}
+
+{% if not mapa_readonly %}
+<!-- ── TOOLBAR ── -->
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.6rem 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+  <span style="font-size:13px;font-weight:600;color:var(--text)">Disponibilidad</span>
+  <div style="width:1px;height:24px;background:var(--border)"></div>
+
+  <div style="display:flex;align-items:center;gap:.4rem">
+    <span style="font-size:12px;color:var(--text-mid)">Fecha:</span>
+    <input type="date" id="mapa-fecha" style="font-size:12px;padding:.3rem .5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+  </div>
+  <div style="width:1px;height:24px;background:var(--border)"></div>
+
+  <div style="display:flex;align-items:center;gap:.4rem">
+    <span style="font-size:12px;color:var(--text-mid)">Solicitud:</span>
+    <select id="mapa-solicitud" style="font-size:12px;padding:.3rem .5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);min-width:180px">
+      <option value="">— Solo disponibilidad —</option>
+    </select>
+  </div>
+  <div style="width:1px;height:24px;background:var(--border)"></div>
+
+  <!-- Filtro por muelle -->
+  <div style="display:flex;align-items:center;gap:.4rem">
+    <span style="font-size:12px;color:var(--text-mid)">Muelle:</span>
+    <select id="mapa-filtro-muelle" style="font-size:12px;padding:.3rem .5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+      <option value="">Todos</option>
+      {% for m in muelles %}<option value="{{ m.pk }}">{{ m.nombre }}</option>{% endfor %}
+    </select>
+  </div>
+  <div style="width:1px;height:24px;background:var(--border)"></div>
+
+  <!-- Filtro por tipo de embarcación -->
+  <div style="display:flex;align-items:center;gap:.4rem">
+    <span style="font-size:12px;color:var(--text-mid)">Tipo:</span>
+    <select id="mapa-filtro-tipo" style="font-size:12px;padding:.3rem .5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+      <option value="">Todos</option>
+      {% for t in tipos_barco %}<option value="{{ t.pk }}">{{ t.tipo_barco }}</option>{% endfor %}
+    </select>
+  </div>
+  <div style="width:1px;height:24px;background:var(--border)"></div>
+
+  <!-- Filtro por tamaño de espacio -->
+  <div style="display:flex;align-items:center;gap:.4rem">
+    <span style="font-size:12px;color:var(--text-mid)">Espacio:</span>
+    <select id="mapa-filtro-tamano" style="font-size:12px;padding:.3rem .5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text)">
+      <option value="">Todos</option>
+      <option value="chico">Chico (≤10m)</option>
+      <option value="mediano">Mediano (10–20m)</option>
+      <option value="grande">Grande (20–35m)</option>
+      <option value="muy_grande">Muy grande (+35m)</option>
+    </select>
+  </div>
+
+  <button class="btn btn-primary btn-sm" id="mapa-btn-buscar">Buscar</button>
+
+  <div style="margin-left:auto;display:flex;gap:.4rem;align-items:center">
+    <button class="btn btn-default btn-sm" onclick="mapaResetView()">⊙ Reset</button>
+    <span id="mapa-zoom-label" style="font-size:11px;color:var(--text-light)">100%</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── LAYOUT ── -->
+{% if not mapa_readonly %}
+<div style="display:grid;grid-template-columns:200px 1fr;gap:.75rem;align-items:start">
+  <!-- Panel izquierdo -->
+  <div style="display:flex;flex-direction:column;gap:.6rem">
+
+    <div class="card" style="padding:.8rem">
+      <div style="font-size:11px;font-weight:600;color:var(--text-mid);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px">Estado</div>
+      <div style="font-size:11px;line-height:2.4">
+        <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:14px;height:14px;background:#4ade80;border-radius:3px;border:1px solid #16a34a"></span><span style="color:var(--text-mid)">Ideal</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:14px;height:14px;background:#fb923c;border-radius:3px;border:1px solid #ea580c"></span><span style="color:var(--text-mid)">Posible</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:14px;height:14px;background:#f87171;border-radius:3px;border:1px solid #dc2626"></span><span style="color:var(--text-mid)">Ocupado</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:14px;height:14px;background:#9ca3af;border-radius:3px;border:1px solid #6b7280"></span><span style="color:var(--text-mid)">No cabe</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:14px;height:14px;background:#d1d5db;border-radius:3px;border:1px solid #9ca3af"></span><span style="color:var(--text-mid)">Libre</span></div>
+        <div style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:14px;height:14px;background:#c8a87a;border-radius:3px;border:1px solid #8B6914"></span><span style="color:var(--text-mid)">Pasillo</span></div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:.8rem">
+      <div style="font-size:11px;font-weight:600;color:var(--text-mid);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px">Espacio</div>
+      <div id="mapa-panel-info" style="font-size:12px;color:var(--text-light)">Haz clic en un espacio</div>
+    </div>
+
+    <div class="card" style="padding:.8rem;display:none" id="mapa-panel-asignar">
+      <div style="font-size:11px;font-weight:600;color:var(--text-mid);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px">Asignar</div>
+      <div id="mapa-panel-asignar-content" style="font-size:12px;color:var(--text-light)">Selecciona un espacio disponible</div>
+    </div>
+
+    <div class="card" style="padding:.8rem">
+      <div style="font-size:11px;font-weight:600;color:var(--text-mid);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px">Resumen</div>
+      <div id="mapa-stats" style="font-size:11px;color:var(--text-mid);line-height:2"></div>
+    </div>
+
+  </div>
+{% endif %}
+
+  <!-- Canvas -->
+  <div class="card" style="padding:.5rem">
+    <div id="mapa-container" style="width:100%;height:{% if mapa_readonly %}420{% else %}680{% endif %}px;overflow:hidden;border-radius:6px;background:#a8cfe0;position:relative;cursor:default">
+      <svg id="mapa-svg" style="position:absolute;top:0;left:0;overflow:visible" width="5500" height="4000">
+        <defs>
+          <pattern id="mapa-grid-s" width="10" height="10" patternUnits="userSpaceOnUse">
+            <path d="M10 0L0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.3"/>
+          </pattern>
+          <pattern id="mapa-grid-l" width="100" height="100" patternUnits="userSpaceOnUse">
+            <rect width="100" height="100" fill="url(#mapa-grid-s)"/>
+            <path d="M100 0L0 0 0 100" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="5500" height="4000" fill="#a8cfe0"/>
+        <rect width="5500" height="4000" fill="url(#mapa-grid-l)" pointer-events="none"/>
+        <g id="mapa-layer-tierra"></g>
+        <g id="mapa-layer-espacios"></g>
+        <g id="mapa-layer-labels"></g>
+      </svg>
+    </div>
+  </div>
+
+{% if not mapa_readonly %}
+</div>
+{% endif %}
+
+<!-- ── POPUP ESPACIO OCUPADO ── -->
+<div id="mapa-popup" style="display:none;position:fixed;z-index:400;width:280px;background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);border:1px solid var(--border);overflow:hidden">
+  <div style="background:var(--mare-dark);padding:.75rem 1rem;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div id="popup-titulo" style="font-size:13px;font-weight:600;color:#fff"></div>
+      <div id="popup-subtitulo" style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:1px"></div>
+    </div>
+    <button onclick="cerrarPopupEspacio()" style="background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:16px;line-height:1">✕</button>
+  </div>
+  <div id="popup-body" style="padding:.85rem 1rem;font-size:12px;line-height:2;color:var(--text)"></div>
+  <div style="padding:.65rem 1rem;border-top:1px solid var(--border);display:flex;gap:.4rem">
+    <a id="popup-btn-detalle"   href="#" class="btn btn-default btn-sm" style="flex:1;justify-content:center">Ver más</a>
+    <a id="popup-btn-reasignar" href="#" class="btn btn-accent btn-sm"  style="flex:1;justify-content:center">Reasignar</a>
+  </div>
+</div>
+
+<script>
+(function(){
+
+const API_DISP    = "{% url 'mapa_disponibilidad' %}";
+const API_ASIGNAR = "{% url 'mapa_asignar' %}";
+const CSRF        = "{{ csrf_token }}";
+const MAPA_CTX    = window.MAPA_CTX || {};
+const READONLY    = {% if mapa_readonly %}true{% else %}false{% endif %};
+
+const container = document.getElementById('mapa-container');
+const svg       = document.getElementById('mapa-svg');
+const layerT    = document.getElementById('mapa-layer-tierra');
+const layerE    = document.getElementById('mapa-layer-espacios');
+const layerL    = document.getElementById('mapa-layer-labels');
+
+let vx=0, vy=0, vscale=1;
+let panning=false, panStart=null, panOrigin=null, spaceDown=false;
+let espaciosData=[], espaciosSeleccionados=new Set(), solicitudActiva=null;
+let filtroMuelle='', filtroTipo='', filtroTamano='';
+
+// ── ZOOM / PAN ────────────────────────────────────────────
+function applyTransform(){
+  svg.style.transform=`translate(${vx}px,${vy}px) scale(${vscale})`;
+  svg.style.transformOrigin='0 0';
+  if(!READONLY) document.getElementById('mapa-zoom-label').textContent=Math.round(vscale*100)+'%';
+}
+window.mapaResetView=function(){ vx=0;vy=0;vscale=1;applyTransform(); };
+
+container.addEventListener('wheel',ev=>{
+  ev.preventDefault();
+  const rect=container.getBoundingClientRect();
+  const mx=ev.clientX-rect.left, my=ev.clientY-rect.top;
+  const delta=ev.deltaY>0?0.9:1.1;
+  const ns=Math.min(4,Math.max(0.05,vscale*delta));
+  vx=mx-(mx-vx)*(ns/vscale); vy=my-(my-vy)*(ns/vscale); vscale=ns;
+  applyTransform();
+},{passive:false});
+
+container.addEventListener('mousedown',ev=>{
+  if(ev.button===1||spaceDown){
+    ev.preventDefault();
+    panning=true; panStart={x:ev.clientX,y:ev.clientY}; panOrigin={x:vx,y:vy};
+    container.style.cursor='grabbing';
+  }
+});
+container.addEventListener('mousemove',ev=>{
+  if(panning){ vx=panOrigin.x+(ev.clientX-panStart.x); vy=panOrigin.y+(ev.clientY-panStart.y); applyTransform(); }
+});
+container.addEventListener('mouseup',  ()=>{ panning=false; container.style.cursor='default'; });
+container.addEventListener('mouseleave',()=>{ panning=false; });
+
+document.addEventListener('keydown',ev=>{
+  if(ev.code==='Space'&&ev.target.tagName!=='INPUT'){ spaceDown=true; container.style.cursor='grab'; ev.preventDefault(); }
+});
+document.addEventListener('keyup',ev=>{
+  if(ev.code==='Space'){ spaceDown=false; panning=false; container.style.cursor='default'; }
+});
+
+// ── FILTROS DE TAMAÑO ─────────────────────────────────────
+// 1px = 10cm → metros = px/10
+// Tamaños basados en el alto (eslora del espacio)
+function cumpleTamano(e){
+  if(!filtroTamano) return true;
+  const largo_m = parseFloat(e.alto) / 10;
+  switch(filtroTamano){
+    case 'chico':     return largo_m <= 10;
+    case 'mediano':   return largo_m > 10 && largo_m <= 20;
+    case 'grande':    return largo_m > 20 && largo_m <= 35;
+    case 'muy_grande':return largo_m > 35;
+    default: return true;
+  }
+}
+
+// ── COLORES ───────────────────────────────────────────────
+const COLORES={
+  ideal:       {fill:'#4ade80',stroke:'#16a34a'},
+  posible:     {fill:'#fb923c',stroke:'#ea580c'},
+  ocupado:     {fill:'#f87171',stroke:'#dc2626'},
+  no_cabe:     {fill:'#9ca3af',stroke:'#6b7280'},
+  libre:       {fill:'#d1d5db',stroke:'#9ca3af'},
+  pasillo:     {fill:'#c8a87a',stroke:'#8B6914'},
+  seleccionado:{fill:'#ffe066',stroke:'#c8a000'},
+  filtrado:    {fill:'rgba(200,200,200,0.25)',stroke:'rgba(150,150,150,0.3)'},
+};
+
+// ── RENDER ────────────────────────────────────────────────
+function render(){
+  layerT.innerHTML=''; layerE.innerHTML=''; layerL.innerHTML='';
+
+  (window._mapaZonas||[]).forEach(z=>{
+    if(!z.puntos) return;
+    const pts=typeof z.puntos==='string'?JSON.parse(z.puntos):z.puntos;
+    if(pts.length<2) return;
+    const el=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    el.setAttribute('points',pts.map(p=>`${p.x},${p.y}`).join(' '));
+    el.setAttribute('fill',z.color||'#7ab648');
+    el.setAttribute('stroke','#4a8020'); el.setAttribute('stroke-width','1');
+    layerT.appendChild(el);
+  });
+
+  espaciosData.forEach(e=>{
+    const sel    = espaciosSeleccionados.has(e.id);
+    // aplicar filtros
+    const pasaFiltroMuelle  = !filtroMuelle  || String(e.muelle_id)===filtroMuelle;
+    const pasaFiltroTamano  = cumpleTamano(e);
+    const filtradoFuera     = !e.es_pasillo && (!pasaFiltroMuelle || !pasaFiltroTamano);
+
+    const estado = sel ? 'seleccionado' : e.es_pasillo ? 'pasillo' : (e.estado||'libre');
+    const col    = filtradoFuera ? COLORES.filtrado : (COLORES[estado]||COLORES.libre);
+
+    const rot=e.rotacion||0, cx=e.pos_x+e.ancho/2, cy=e.pos_y+e.alto/2;
+
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('transform',`rotate(${rot},${cx},${cy})`);
+    g.style.cursor=e.es_pasillo||filtradoFuera?'default':'pointer';
+
+    const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x',e.pos_x); r.setAttribute('y',e.pos_y);
+    r.setAttribute('width',e.ancho); r.setAttribute('height',e.alto);
+    r.setAttribute('rx','2');
+    r.setAttribute('fill', col.fill);
+    r.setAttribute('stroke',      e.resaltado ? '#fff021' : col.stroke);
+    r.setAttribute('stroke-width', e.resaltado ? '3.5' : sel ? '5.5' : '0.8');
+
+    // etiqueta de tamaño solo en modo normal
+    g.appendChild(r);
+    
+    if(!READONLY && !e.es_pasillo && filtroTamano && pasaFiltroTamano){
+      const largo_m=(parseFloat(e.alto)/10).toFixed(0);
+      const ancho_m=(parseFloat(e.ancho)/10).toFixed(0);
+      const tl=document.createElementNS('http://www.w3.org/2000/svg','text');
+      tl.setAttribute('x',cx); tl.setAttribute('y',cy);
+      tl.setAttribute('text-anchor','middle'); tl.setAttribute('dominant-baseline','central');
+      tl.setAttribute('font-size',Math.min(9,parseFloat(e.alto)*0.4));
+      tl.setAttribute('fill','#0a1a2a'); tl.setAttribute('pointer-events','none');
+      tl.textContent=`${largo_m}×${ancho_m}m`;
+      g.appendChild(tl);
+    } else if(!e.es_pasillo && !filtroTamano){
+      const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',cx); t.setAttribute('y',cy);
+      t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','central');
+      t.setAttribute('font-size',Math.min(10,parseFloat(e.alto)*0.55));
+      t.setAttribute('fill','#0a1a2a'); t.setAttribute('pointer-events','none');
+      t.textContent=e.numero||'';
+      g.appendChild(t);
+    }
+
+     layerE.appendChild(g);
+
+    if(!e.es_pasillo && !filtradoFuera){
+      g.addEventListener('click', ev=>clickEspacio(e, ev));
+      g.addEventListener('mouseenter',()=>{ if(!sel) r.setAttribute('opacity','0.8'); });
+      g.addEventListener('mouseleave',()=>{ r.setAttribute('opacity','1'); });
+    }
+  });
+
+  (window._mapaEtiquetas||[]).forEach(et=>{
+    // en modo muelle filtrado, resaltar etiqueta del muelle seleccionado
+    const esActivo = !filtroMuelle || String(et.muelle_id)===filtroMuelle;
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',et.pos_x); t.setAttribute('y',et.pos_y);
+    t.setAttribute('font-size',et.tamanio||14); t.setAttribute('font-weight','600');
+    t.setAttribute('fill', esActivo ? (et.color||'#ffffff') : 'rgba(255,255,255,0.2)');
+    t.setAttribute('font-family','DM Sans, sans-serif');
+    t.setAttribute('paint-order','stroke');
+    t.setAttribute('stroke','rgba(0,0,0,0.4)');
+    t.setAttribute('stroke-width','3'); t.setAttribute('stroke-linejoin','round');
+    t.setAttribute('pointer-events','none');
+    t.textContent=et.texto||'';
+    layerL.appendChild(t);
+  });
+
+  if(!READONLY) renderStats();
+}
+
+function renderStats(){
+  const counts={ideal:0,posible:0,ocupado:0,no_cabe:0,libre:0};
+  espaciosData.filter(e=>!e.es_pasillo).forEach(e=>{ if(counts[e.estado]!==undefined) counts[e.estado]++; });
+  const total=Object.values(counts).reduce((a,b)=>a+b,0);
+  document.getElementById('mapa-stats').innerHTML=`
+    <div>Total: <strong>${total}</strong></div>
+    <div style="color:#16a34a">Ideales: <strong>${counts.ideal}</strong></div>
+    <div style="color:#ea580c">Posibles: <strong>${counts.posible}</strong></div>
+    <div style="color:#dc2626">Ocupados: <strong>${counts.ocupado}</strong></div>
+    <div style="color:#6b7280">No caben: <strong>${counts.no_cabe}</strong></div>
+    <div>Libres: <strong>${counts.libre}</strong></div>`;
+}
+
+// ── CLICK ESPACIO ─────────────────────────────────────────
+function clickEspacio(e, ev){
+  if(!READONLY){
+    const largo_m=(e.alto/10).toFixed(1);
+    const ancho_m=(e.ancho/10).toFixed(1);
+    const estadoTexto={
+      ideal:   '<span style="color:#16a34a;font-weight:600">Ideal</span>',
+      posible: '<span style="color:#ea580c;font-weight:600">Posible</span>',
+      ocupado: '<span style="color:#dc2626;font-weight:600">Ocupado</span>',
+      no_cabe: '<span style="color:#6b7280;font-weight:600">No cabe</span>',
+      libre:   '<span style="color:#5a8fa8;font-weight:600">Libre</span>',
+    }[e.estado]||e.estado;
+    document.getElementById('mapa-panel-info').innerHTML=`
+      <div style="line-height:1.9">
+        <div><strong>Muelle:</strong> ${e.muelle}</div>
+        <div><strong>Espacio:</strong> ${e.numero||'—'}</div>
+        <div><strong>Tamaño:</strong> ${largo_m}m × ${ancho_m}m</div>
+        <div><strong>Estado:</strong> ${estadoTexto}</div>
+      </div>`;
+  }
+
+  if(e.estado==='ocupado'){
+    mostrarPopupOcupado(e, ev);
+    return;
+  }
+
+  if(!READONLY && solicitudActiva && (e.estado==='ideal'||e.estado==='posible'||e.estado==='libre')){
+    espaciosSeleccionados.clear();
+    espaciosSeleccionados.add(e.id);
+    render();
+    mostrarPanelAsignar(e);
+  }
+}
+
+// ── POPUP ESPACIO OCUPADO ─────────────────────────────────
+async function mostrarPopupOcupado(e, ev){
+  ev.stopPropagation();
+  const popup=document.getElementById('mapa-popup');
+  popup.style.display='block';
+  let px=ev.clientX+12, py=ev.clientY+12;
+  if(px+290>window.innerWidth)  px=ev.clientX-292;
+  if(py+220>window.innerHeight) py=ev.clientY-200;
+  popup.style.left=px+'px'; popup.style.top=py+'px';
+
+  document.getElementById('popup-titulo').textContent    = `Espacio ${e.numero||'—'}`;
+  document.getElementById('popup-subtitulo').textContent = e.muelle;
+  document.getElementById('popup-body').innerHTML        = '<span style="color:var(--text-light)">Cargando...</span>';
+
+  try{
+    const fecha = READONLY
+      ? new Date().toISOString().split('T')[0]
+      : document.getElementById('mapa-fecha').value;
+    const res  = await fetch(`${API_DISP}?fecha=${fecha}&espacio_id=${e.id}`);
+    const data = await res.json();
+    const asig = data.asignacion_activa;
+    if(asig){
+      document.getElementById('popup-body').innerHTML=`
+        <div><span style="color:var(--text-mid)">Embarcación:</span> <strong>${asig.embarcacion}</strong></div>
+        <div><span style="color:var(--text-mid)">Cliente:</span> ${asig.cliente}</div>
+        <div><span style="color:var(--text-mid)">Llegada:</span> ${asig.fecha_inicio}</div>
+        <div><span style="color:var(--text-mid)">Salida:</span> ${asig.fecha_fin}</div>`;
+      document.getElementById('popup-btn-detalle').href   = `/solicitudes/${asig.solicitud_id}/`;
+      document.getElementById('popup-btn-reasignar').href = `/mapa/?solicitud_id=${asig.solicitud_id}`;
+    } else {
+      document.getElementById('popup-body').innerHTML='<span style="color:var(--text-light)">Sin información disponible</span>';
+    }
+  } catch(err){
+    document.getElementById('popup-body').innerHTML='<span style="color:var(--danger)">Error al cargar</span>';
+  }
+}
+
+window.cerrarPopupEspacio=function(){
+  document.getElementById('mapa-popup').style.display='none';
+};
+
+document.addEventListener('click',ev=>{
+  const popup=document.getElementById('mapa-popup');
+  if(popup && !popup.contains(ev.target)) popup.style.display='none';
+});
+
+// ── PANEL ASIGNAR ─────────────────────────────────────────
+function mostrarPanelAsignar(e){
+  const panelWrap=document.getElementById('mapa-panel-asignar');
+  const panel    =document.getElementById('mapa-panel-asignar-content');
+  panelWrap.style.display='block';
+  const sol=solicitudActiva;
+  panel.innerHTML=`
+    <div style="line-height:1.9">
+      <div style="margin-bottom:.4rem;color:var(--text)">
+        <strong>${sol.embarcacion}</strong><br>
+        <span style="color:var(--text-light)">Espacio ${e.numero} — ${e.muelle}</span>
+      </div>
+      <label style="font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;color:var(--text-mid)">Fecha inicio</label>
+      <input type="date" id="asig-inicio" value="${sol.fecha_llegada}"
+        style="width:100%;padding:.3rem;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;margin-bottom:.4rem">
+      <label style="font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;color:var(--text-mid)">Fecha fin</label>
+      <input type="date" id="asig-fin" value="${sol.fecha_salida}"
+        style="width:100%;padding:.3rem;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;margin-bottom:.6rem">
+      <button class="btn btn-primary btn-sm" onclick="confirmarAsignacion(${e.id})" style="width:100%">Confirmar asignación</button>
+      <button class="btn btn-default btn-sm" onclick="cancelarAsignacion()" style="width:100%;margin-top:.3rem">Cancelar</button>
+    </div>`;
+}
+
+window.cancelarAsignacion=function(){
+  espaciosSeleccionados.clear();
+  document.getElementById('mapa-panel-asignar').style.display='none';
+  document.getElementById('mapa-panel-asignar-content').innerHTML='Selecciona un espacio disponible';
+  render();
+};
+
+window.confirmarAsignacion=async function(espacioId){
+  const inicio=document.getElementById('asig-inicio').value;
+  const fin   =document.getElementById('asig-fin').value;
+  if(!inicio||!fin){ alert('Completa las fechas.'); return; }
+  const btn=event.target;
+  btn.textContent='Asignando…'; btn.disabled=true;
+  try{
+    const res=await fetch(API_ASIGNAR,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body:JSON.stringify({solicitud_id:solicitudActiva.id,espacio_ids:[espacioId],fecha_inicio:inicio,fecha_fin:fin})
+    });
+    const data=await res.json();
+    if(data.ok){
+      alert('¡Asignación creada correctamente!');
+      cancelarAsignacion();
+      cargarMapa();
+      if(MAPA_CTX.onAsignado) MAPA_CTX.onAsignado(data);
+    } else {
+      alert('Error: '+data.error);
+      btn.textContent='Confirmar asignación'; btn.disabled=false;
+    }
+  } catch(err){
+    alert('Error: '+err.message);
+    btn.textContent='Confirmar asignación'; btn.disabled=false;
+  }
+};
+
+// ── CARGAR MAPA ───────────────────────────────────────────
+async function cargarMapa(){
+  const fecha       = READONLY
+    ? new Date().toISOString().split('T')[0]
+    : document.getElementById('mapa-fecha').value;
+  const solicitudId = READONLY ? '' : document.getElementById('mapa-solicitud').value;
+
+  // leer filtros
+  if(!READONLY){
+    filtroMuelle = document.getElementById('mapa-filtro-muelle').value;
+    filtroTipo   = document.getElementById('mapa-filtro-tipo').value;
+    filtroTamano = document.getElementById('mapa-filtro-tamano').value;
+  }
+
+  let url=`${API_DISP}?fecha=${fecha}`;
+  if(solicitudId) url+=`&solicitud_id=${solicitudId}`;
+  if(filtroTipo)  url+=`&tipo_barco_id=${filtroTipo}`;
+
+  try{
+    const res=await fetch(url);
+    const data=await res.json();
+    espaciosData          = data.espacios;
+    window._mapaZonas     = data.zonas;
+    window._mapaEtiquetas = data.etiquetas;
+
+    if(!READONLY){
+      if(solicitudId){
+        const selEl=document.getElementById('mapa-solicitud');
+        const opt=selEl.options[selEl.selectedIndex];
+        solicitudActiva={
+          id:           parseInt(solicitudId),
+          embarcacion:  opt.dataset.embarcacion||opt.text,
+          fecha_llegada:opt.dataset.llegada||fecha,
+          fecha_salida: opt.dataset.salida||fecha,
+        };
+        document.getElementById('mapa-panel-asignar').style.display='block';
+      } else {
+        solicitudActiva=null;
+        document.getElementById('mapa-panel-asignar').style.display='none';
+      }
+
+      // enfocar muelle seleccionado
+      if(filtroMuelle && data.espacios.length){
+        const esp=data.espacios.filter(e=>String(e.muelle_id)===filtroMuelle);
+        if(esp.length){
+          const minX=Math.min(...esp.map(e=>e.pos_x));
+          const minY=Math.min(...esp.map(e=>e.pos_y));
+          const maxX=Math.max(...esp.map(e=>e.pos_x+e.ancho));
+          const maxY=Math.max(...esp.map(e=>e.pos_y+e.alto));
+          const cw=container.clientWidth, ch=container.clientHeight;
+          const mw=maxX-minX+80, mh=maxY-minY+80;
+          vscale=Math.min(cw/mw, ch/mh, 3);
+          vx=cw/2-((minX+maxX)/2)*vscale;
+          vy=ch/2-((minY+maxY)/2)*vscale;
+          applyTransform();
+        }
+      }
+    }
+
+    render();
+  } catch(err){ console.error(err); }
+}
+
+async function cargarSolicitudes(){
+  if(READONLY) return;
+  if(MAPA_CTX.solicitud_id){
+    const sel=document.getElementById('mapa-solicitud');
+    if(!sel.querySelector(`option[value="${MAPA_CTX.solicitud_id}"]`)){
+      const opt=document.createElement('option');
+      opt.value=MAPA_CTX.solicitud_id;
+      opt.textContent=MAPA_CTX.solicitud_label||'Solicitud #'+MAPA_CTX.solicitud_id;
+      opt.dataset.embarcacion=MAPA_CTX.embarcacion||'';
+      opt.dataset.llegada    =MAPA_CTX.fecha_llegada||'';
+      opt.dataset.salida     =MAPA_CTX.fecha_salida||'';
+      sel.appendChild(opt);
+    }
+    sel.value=MAPA_CTX.solicitud_id;
+    if(MAPA_CTX.fecha_llegada) document.getElementById('mapa-fecha').value=MAPA_CTX.fecha_llegada;
+    await cargarMapa();
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────
+if(!READONLY){
+  document.getElementById('mapa-btn-buscar').addEventListener('click', cargarMapa);
+  document.getElementById('mapa-fecha').value=new Date().toISOString().split('T')[0];
+  cargarSolicitudes();
+}
+cargarMapa();
+
+})();
+</script>
