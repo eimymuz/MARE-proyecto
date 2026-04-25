@@ -60,6 +60,11 @@ class Solicitud(models.Model):
                     raise ValidationError('Aprobada solo puede pasar a Completada o Rechazada.')
 
     def save(self, *args, **kwargs):
+        
+    # mayúsculas en texto libre
+        if self.comentario:
+            self.comentario = self.comentario.upper()
+            
         estado_anterior = None
         es_nuevo        = self.pk is None
 

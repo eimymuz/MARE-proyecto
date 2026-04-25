@@ -12,6 +12,12 @@ class TipoBarco(models.Model):
         verbose_name        = 'Tipo de barco'
         verbose_name_plural = 'Tipos de barco'
         ordering            = ['tipo_barco']
+        
+    def save(self, *args, **kwargs):
+        if self.tipo_barco:
+            self.tipo_barco = self.tipo_barco.upper()
+        super().save(*args, **kwargs)
+
 
     def __str__(self):
         return self.tipo_barco
@@ -39,6 +45,11 @@ class Embarcacion(models.Model):
         verbose_name        = 'Embarcación'
         verbose_name_plural = 'Embarcaciones'
         ordering            = ['nombre_bote']
+
+    def save(self, *args, **kwargs):
+        if self.nombre_bote:
+            self.nombre_bote = self.nombre_bote.upper()
+        super().save(*args, **kwargs)
 
     def clean(self):
         if self.eslora  is not None and self.eslora  <= 0:

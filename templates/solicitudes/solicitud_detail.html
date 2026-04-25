@@ -17,7 +17,7 @@
 
     {% elif solicitud.estado == 'EN_ESPERA' %}
       <!--Poner url de mapa ya-->
-      <a href="{% url 'mapa' %}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Asignar en mapa</a>
+      <a href="{% url 'mapa' %}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Asignar</a>
       <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'RECHAZADA' %}">
         {% csrf_token %}<button class="btn btn-danger btn-sm">Rechazar</button>
       </form>
@@ -25,7 +25,7 @@
 
     {% elif solicitud.estado == 'APROBADA' %}
       <!--Poner url de mapa (ya)-->
-       <a href="{% url 'mapa' %}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Reasignar en mapa</a>  
+       <a href="{% url 'mapa' %}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Reasignar</a>  
       <a href="{% url 'mapa' %}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Reasignar</a>
       <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'RECHAZADA' %}">
         {% csrf_token %}<button class="btn btn-danger btn-sm">Rechazar</button>

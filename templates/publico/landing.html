@@ -305,7 +305,7 @@
 </div>
 
 <script>
-const CSRF = "{{ csrf_token }}";
+const CSRF = "{{ csrf_token }}"; //Token de seguridad
 
 function abrirPopup(){
   document.getElementById('popup-overlay').classList.add('active');
@@ -315,7 +315,7 @@ function cerrarPopup(){
   document.getElementById('popup-overlay').classList.remove('active');
   document.body.style.overflow='';
 }
-document.getElementById('popup-overlay').addEventListener('click',ev=>{
+document.getElementById('popup-overlay').addEventListener('click',ev=>{ //cerrar el formulario si se presionar fuera de el
   if(ev.target===document.getElementById('popup-overlay')) cerrarPopup();
 });
 
