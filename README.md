@@ -58,21 +58,32 @@ MARE_PROYECTO/
 │   ├── mapa/
 │   ├── muelles/
 │   ├── publico/
-│   └── solicitudes/
+│   ├── reportes/
+│   ├── solicitudes/
+│   └── __init__.py
 │
 ├── config/
+│   ├── __init__.py
 │   ├── asgi.py
 │   ├── settings.py
 │   ├── urls.py
 │   └── wsgi.py
 │
 ├── templates/
-├── .env
+│   ├── components/
+│   ├── publico/
+│   ├── reporte/
+│   ├── solicitudes/
+│   ├── base.html
+│   └── inicio.html
+│   
+├── .env.example
+├── .gitignore
 ├── docker-compose.yml
 ├── Dockerfile
 ├── manage.py
-├── requirements.txt
-└── README.md
+├── README.md
+└── requirements.txt
 ```
 
 ## 🧪 Metodología
