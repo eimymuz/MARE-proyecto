@@ -46,7 +46,7 @@
             <button class="btn btn-default btn-sm" onclick="abrirPopup({{ sol.pk }})">
               Ver más
             </button>
-            <a href="#" class="btn btn-accent btn-sm">Reasignar</a>
+            <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}"class="btn btn-accent btn-sm">Reasignar</a>
           </div>
         </td>
       </tr>
