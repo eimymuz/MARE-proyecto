@@ -162,17 +162,49 @@ def solicitud_en_espera_list(request):
 
 @login_required
 def solicitud_aprobadas_list(request):
-    """Solicitudes APROBADAS — embarcaciones en la marina."""
     qs = Solicitud.objects.select_related(
         'embarcacion__cliente',
         'embarcacion__tipo_barco',
-    ).filter(estado='APROBADA').order_by('-fecha_llegada', '-id')
+    ).filter(estado='APROBADA')
 
-    # auto-completar vencidas antes de mostrar
+    # auto-completar vencidas
     _auto_completar(qs)
-
-    # recargar tras posibles cambios
     qs = qs.filter(estado='APROBADA')
+
+    # filtros
+    q         = request.GET.get('q', '').strip()
+    muelle_id = request.GET.get('muelle', '')
+    fecha_salida_desde = request.GET.get('fecha_salida_desde', '')
+    fecha_salida_hasta = request.GET.get('fecha_salida_hasta', '')
+    orden     = request.GET.get('orden', 'salida')
+    tipo_id = request.GET.get('tipo', '')
+    
+    
+    
+    if tipo_id:
+        qs = qs.filter(embarcacion__tipo_barco_id=tipo_id)
+
+    if q:
+        qs = qs.filter(
+            models.Q(embarcacion__nombre_bote__icontains=q) |
+            models.Q(embarcacion__cliente__fullname__icontains=q)
+        )
+
+    if muelle_id:
+        qs = qs.filter(asignaciones__muelle_id=muelle_id, asignaciones__activa=True).distinct()
+
+    if fecha_salida_desde and fecha_salida_hasta:
+        qs = qs.filter(fecha_salida__range=[fecha_salida_desde, fecha_salida_hasta])
+    elif fecha_salida_desde:
+        qs = qs.filter(fecha_salida=fecha_salida_desde)
+    elif fecha_salida_hasta:
+        qs = qs.filter(fecha_salida=fecha_salida_hasta)
+
+    # ordenamiento
+    if orden == 'salida':
+        qs = qs.order_by('fecha_salida', '-id')
+    else:
+        qs = qs.order_by('-fecha_llegada', '-id')
 
     paginator = Paginator(qs, 10)
     try:
@@ -180,13 +212,23 @@ def solicitud_aprobadas_list(request):
     except (PageNotAnInteger, EmptyPage):
         page_obj = paginator.page(1)
 
+    from apps.muelles.models import Muelle
+    from apps.embarcaciones.models import TipoBarco
     return render(request, 'solicitudes/solicitud_aprobadas.html', {
-        'page_obj':      page_obj,
-        'solicitudes':   page_obj.object_list,
-        'titulo':        'Asignadas — en marina',
-        'estado_activo': 'APROBADA',
+        'page_obj':            page_obj,
+        'solicitudes':         page_obj.object_list,
+        'titulo':              'Asignadas — en marina',
+        'estado_activo':       'APROBADA',
+        'muelles':             Muelle.objects.filter(estado=True).order_by('nombre'),
+        'q':                   q,
+        'muelle_id':           muelle_id,
+        'fecha_salida_desde':  fecha_salida_desde,
+        'fecha_salida_hasta':  fecha_salida_hasta,
+        'orden':               orden,
+        'tipos_barco': TipoBarco.objects.order_by('tipo_barco'),
+        'tipo_id':     tipo_id,
+        'hay_filtros': any([q, muelle_id, tipo_id, fecha_salida_desde, fecha_salida_hasta]),
     })
-
 
 @login_required
 def solicitud_detail(request, pk):

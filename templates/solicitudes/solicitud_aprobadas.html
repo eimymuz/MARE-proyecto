@@ -6,6 +6,124 @@
   <h2>Asignadas — en marina</h2>
 </div>
 
+    <form method="get" id="form-filtros">
+
+      <!-- Barra trigger -->
+      <div style="display:flex;align-items:center;justify-content:space-between;
+          background:var(--surface);border:1px solid var(--border);
+          border-radius:var(--radius-lg);padding:.6rem 1rem;cursor:pointer;
+          user-select:none;margin-bottom:4px" onclick="toggleFiltros()">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:13px;font-weight:500;color:var(--text)">⚙ Filtros</span>
+          <div id="chips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="filtros-count" style="display:none;font-size:11px;padding:2px 8px;
+                border-radius:20px;background:var(--info-bg);color:var(--info);font-weight:500"></span>
+          <span id="arrow" style="font-size:11px;color:var(--text-light);
+                transition:transform .2s;display:inline-block">▾</span>
+        </div>
+      </div>
+
+      <!-- Panel -->
+      <div id="panel-filtros" style="display:{% if hay_filtros %}block{% else %}none{% endif %};
+          background:var(--surface);border:1px solid var(--border);
+          border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1rem">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+
+          <!-- Izquierda -->
+          <div style="display:flex;flex-direction:column;gap:.75rem">
+            <div>
+              <label>Buscar</label>
+              <input type="text" name="q" id="inp-q" value="{{ q }}"
+                placeholder="Embarcación o cliente...">
+            </div>
+            <div>
+              <label>Muelle actual</label>
+              <select name="muelle" id="inp-muelle">
+                <option value="">Todos</option>
+                {% for m in muelles %}
+                  <option value="{{ m.pk }}" {% if muelle_id == m.pk|stringformat:'s' %}selected{% endif %}>
+                    {{ m.nombre }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div>
+              <label>Ordenar por</label>
+              <select name="orden" id="inp-orden">
+                <option value="salida" {% if orden == 'salida' or not orden %}selected{% endif %}>
+                  Salida más próxima
+                </option>
+                <option value="reciente" {% if orden == 'reciente' %}selected{% endif %}>
+                  Llegada más reciente
+                </option>
+              </select>
+            </div>
+
+            <div style="display:flex;gap:.4rem;margin-top:auto;padding-top:.5rem;
+                border-top:1px solid var(--border)">
+              <button type="submit" class="btn btn-primary btn-sm"
+                style="flex:1;justify-content:center">Filtrar</button>
+              {% if hay_filtros %}
+                <a href="." class="btn btn-default btn-sm">✕ Resetear</a>
+              {% endif %}
+            </div>
+
+          </div>
+
+          <!-- Derecha: fecha salida -->
+
+          <div>
+            <label style="margin-bottom:.5rem">Fecha de salida</label>
+            <div style="display:flex;align-items:center;border:1px solid var(--border);
+                border-radius:var(--radius);overflow:hidden;background:var(--surface)">
+              <input type="date" id="fecha-desde" name="fecha_salida_desde"
+                value="{{ fecha_salida_desde }}"
+                style="flex:1;border:none;outline:none;padding:7px 10px;font-size:12px;
+                      background:transparent;color:var(--text)">
+              <button type="button" id="btn-periodo" onclick="togglePeriodo()"
+                title="Activar búsqueda por rango"
+                style="padding:7px 10px;border:none;border-left:1px solid var(--border);
+                      cursor:pointer;font-size:12px;background:transparent;
+                      color:{% if fecha_salida_hasta %}var(--info){% else %}var(--text-mid){% endif %}">↔</button>
+
+              <div id="hasta-wrap" style="display:{% if fecha_salida_hasta %}flex{% else %}none{% endif %};
+                  flex:1;border-left:1px solid var(--info)">
+                <input type="date" id="fecha-hasta" name="fecha_salida_hasta"
+                  value="{{ fecha_salida_hasta }}"
+                  style="width:100%;border:none;outline:none;padding:7px 10px;font-size:12px;
+                        background:transparent;color:var(--text);box-sizing:border-box">
+              </div>
+
+            </div>
+
+            <div id="hint-fecha" style="font-size:11px;color:var(--text-light);margin-top:.4rem">
+              ℹ Fecha exacta de salida · activa ↔ para rango
+            </div>
+
+            <br>
+            <div>
+              <label>Tipo de barco</label>
+              <select name="tipo" id="inp-tipo">
+                <option value="">Todos</option>
+                {% for t in tipos_barco %}
+                  <option value="{{ t.pk }}" {% if tipo_id == t.pk|stringformat:'s' %}selected{% endif %}>
+                    {{ t.tipo_barco }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </form>
+
 <div class="table-wrap">
   <table>
     <thead>
@@ -213,6 +331,68 @@ function cerrarPopup(){
 document.getElementById('popup-overlay').addEventListener('click', function(ev){
   if(ev.target === this) cerrarPopup();
 });
+</script>
+
+<script>
+let abierto = {% if hay_filtros %}true{% else %}false{% endif %};
+let periodoActivo = {% if fecha_salida_hasta %}true{% else %}false{% endif %};
+
+document.getElementById('arrow').style.transform = abierto ? 'rotate(180deg)' : 'rotate(0)';
+
+function toggleFiltros(){
+  abierto = !abierto;
+  document.getElementById('panel-filtros').style.display = abierto ? 'block' : 'none';
+  document.getElementById('arrow').style.transform = abierto ? 'rotate(180deg)' : 'rotate(0)';
+}
+
+function togglePeriodo(){
+  periodoActivo = !periodoActivo;
+  const wrap = document.getElementById('hasta-wrap');
+  const btn  = document.getElementById('btn-periodo');
+  wrap.style.display = periodoActivo ? 'flex' : 'none';
+  btn.style.color    = periodoActivo ? 'var(--info)' : 'var(--text-mid)';
+  if(!periodoActivo) document.getElementById('fecha-hasta').value = '';
+  document.getElementById('hint-fecha').textContent = periodoActivo
+    ? 'ℹ Embarcaciones que salen entre esas dos fechas'
+    : 'ℹ Fecha exacta de salida · activa ↔ para rango';
+  actualizarChips();
+}
+
+function fmt(d){ return d ? new Date(d+'T00:00').toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}) : null; }
+
+function actualizarChips(){
+  const chips = [];
+  const q      = document.getElementById('inp-q')?.value.trim();
+  const muelle = document.getElementById('inp-muelle');
+  const orden  = document.getElementById('inp-orden')?.value;
+  const desde  = document.getElementById('fecha-desde').value;
+  const hasta  = document.getElementById('fecha-hasta').value;
+
+  if(q) chips.push(q);
+  if(muelle && muelle.value) chips.push(muelle.options[muelle.selectedIndex].text);
+  if(orden === 'reciente') chips.push('Llegada reciente');
+  if(desde) chips.push(periodoActivo && hasta ? `Salida: ${fmt(desde)}–${fmt(hasta)}` : `Salida: ${fmt(desde)}`);
+
+  const cont  = document.getElementById('chips');
+  const count = document.getElementById('filtros-count');
+  cont.innerHTML = chips.slice(0,3).map(c=>`
+    <span style="font-size:11px;padding:2px 8px;border-radius:20px;
+          background:var(--info-bg);color:var(--info);border:1px solid var(--info)">${c}</span>
+  `).join('');
+  if(chips.length){ count.textContent = chips.length+' activo'+(chips.length>1?'s':''); count.style.display='inline'; }
+  else count.style.display = 'none';
+
+  const tipo = document.getElementById('inp-tipo');
+  if(tipo && tipo.value) chips.push(tipo.options[tipo.selectedIndex].text);
+}
+
+['inp-q','inp-muelle','inp-orden','fecha-desde','fecha-hasta'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('change', actualizarChips);
+  if(el && el.type === 'text') el.addEventListener('input', actualizarChips);
+});
+
+actualizarChips();
 </script>
 
 
