@@ -174,15 +174,29 @@ def solicitud_delete(request, pk):
     })
 
 
+
 @login_required
 @require_POST
 def solicitud_cambiar_estado(request, pk, nuevo_estado):
-    solicitud      = get_object_or_404(Solicitud, pk=pk)
+    solicitud       = get_object_or_404(Solicitud, pk=pk)
     estados_validos = [e[0] for e in Solicitud.ESTADOS]
 
     if nuevo_estado not in estados_validos:
         messages.error(request, 'Estado no válido.')
         return redirect('solicitud_detail', pk=pk)
+
+    # guardar motivo de rechazo si viene
+    if nuevo_estado == 'RECHAZADA':
+        motivo = request.POST.get('motivo_rechazo', '').strip()
+        if not motivo:
+            messages.error(request, 'Debes indicar el motivo de rechazo.')
+            origen = request.POST.get('origen', 'list')
+            if origen == 'en_espera':
+                return redirect('solicitud_en_espera_list')
+            elif origen == 'aprobadas':
+                return redirect('solicitud_aprobadas_list')
+            return redirect('solicitud_list')
+        solicitud.motivo_rechazo = motivo.upper()
 
     solicitud.estado = nuevo_estado
     try:
@@ -193,17 +207,15 @@ def solicitud_cambiar_estado(request, pk, nuevo_estado):
         for error in (exc.messages if hasattr(exc, 'messages') else [str(exc)]):
             messages.error(request, error)
 
+    origen = request.POST.get('origen', 'list')
     destinos = {
         'PENDIENTE':  'solicitud_list',
-        'EN_ESPERA':  'solicitud_list',  # ← se queda en solicitudes
+        'EN_ESPERA':  'solicitud_en_espera_list',
         'APROBADA':   'solicitud_aprobadas_list',
-        'RECHAZADA':  'solicitud_list',
-        'COMPLETADA': 'solicitud_list',
+        'RECHAZADA':  'solicitud_en_espera_list' if origen == 'en_espera' else 'solicitud_aprobadas_list' if origen == 'aprobadas' else 'solicitud_list',
+        'COMPLETADA': 'solicitud_aprobadas_list',
     }
-    nombre = destinos.get(nuevo_estado)
-    if nombre in ['solicitud_list', 'solicitud_en_espera_list', 'solicitud_aprobadas_list']:
-        return redirect(nombre)
-    return redirect('solicitud_detail', pk=pk)
+    return redirect(destinos.get(nuevo_estado, 'solicitud_list'))
 
 
 @login_required

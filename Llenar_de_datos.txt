@@ -1,0 +1,81 @@
+docker compose exec web python manage.py shell -c "
+from apps.clientes.models import Cliente
+from apps.embarcaciones.models import Embarcacion, TipoBarco
+from apps.solicitudes.models import Solicitud
+
+tipos = ['VELERO', 'CATAMARÁN', 'YATE', 'LANCHA', 'MOTONAVE']
+objs_tipo = {}
+for t in tipos:
+    obj, _ = TipoBarco.objects.get_or_create(tipo_barco=t)
+    objs_tipo[t] = obj
+
+datos = [
+    ('JAMES WILSON',      '+12065550101',  'james.wilson@gmail.com',     'OCEAN STAR',     'VELERO',    11.5, 3.8, 1.6, '2026-05-01', '2026-05-10'),
+    ('SOPHIE LAURENT',    '+33612111222',  'sophie.laurent@gmail.fr',    'BELLE MER',      'CATAMARÁN', 14.0, 7.2, 1.1, '2026-05-02', '2026-05-12'),
+    ('MIGUEL TORRES',     '+52312200001',  'miguel.torres@hotmail.com',  'VIENTO SUR',     'YATE',      18.0, 5.5, 2.0, '2026-05-03', '2026-05-20'),
+    ('HANS MUELLER',      '+49151234567',  'hans.mueller@gmail.de',      'NORDSTERN',      'VELERO',    10.5, 3.6, 1.5, '2026-05-04', '2026-05-14'),
+    ('PATRICIA WILLIAMS', '+13105550190',  'p.williams@yahoo.com',       'PACIFIC DREAM',  'YATE',      22.0, 6.4, 2.5, '2026-05-05', '2026-05-25'),
+    ('GIOVANNI ROSSI',    '+39338123456',  'g.rossi@gmail.it',           'SOLE MIO',       'CATAMARÁN', 16.5, 8.2, 1.1, '2026-05-06', '2026-05-22'),
+    ('CARLOS MENDOZA',    '+52322200003',  'carlos.mendoza@hotmail.com', 'MAR AZUL',       'YATE',      19.0, 5.8, 2.1, '2026-05-07', '2026-05-21'),
+    ('MARIE DUPONT',      '+33698765432',  'marie.dupont@outlook.fr',    'ETOILE DU NORD', 'VELERO',    13.0, 4.2, 1.8, '2026-05-08', '2026-05-18'),
+    ('ROBERT JOHNSON',    '+13055550440',  'robert.j@gmail.com',         'SEA BREEZE',     'LANCHA',    8.5,  2.8, 0.9, '2026-05-09', '2026-05-15'),
+    ('AKIRA TANAKA',      '+819012345678', 'akira.tanaka@gmail.jp',      'SAKURA MARU',    'MOTONAVE',  25.0, 7.0, 2.8, '2026-05-10', '2026-05-30'),
+    ('ELENA PETROVA',     '+79161234567',  'elena.petrova@mail.ru',      'ZVEZDA',         'YATE',      20.0, 6.0, 2.3, '2026-05-11', '2026-05-28'),
+    ('LUCAS SILVA',       '+55119876543',  'lucas.silva@gmail.br',       'SEREIA',         'VELERO',    12.0, 4.0, 1.7, '2026-05-12', '2026-05-22'),
+    ('ANNA SCHMIDT',      '+49176987654',  'anna.schmidt@web.de',        'HAMBURG',        'CATAMARÁN', 15.5, 7.8, 1.2, '2026-05-13', '2026-05-23'),
+    ('PEDRO GARCIA',      '+52314300002',  'pedro.garcia@gmail.com',     'COLIMA',         'LANCHA',    7.5,  2.5, 0.8, '2026-05-14', '2026-05-19'),
+    ('WILLIAM BROWN',     '+14155550770',  'w.brown@yahoo.com',          'GOLDEN GATE',    'YATE',      24.0, 7.2, 2.6, '2026-05-15', '2026-06-05'),
+    ('ISABELLE MARTIN',   '+33645222333',  'i.martin@gmail.fr',          'MISTRAL',        'VELERO',    11.0, 3.5, 1.4, '2026-05-16', '2026-05-26'),
+    ('CHEN WEI',          '+86138001380',  'chen.wei@163.com',           'LONG FENG',      'MOTONAVE',  28.0, 8.0, 3.0, '2026-05-17', '2026-06-10'),
+    ('ALEJANDRO RUIZ',    '+52333400005',  'alex.ruiz@hotmail.com',      'JALISCO',        'YATE',      17.0, 5.2, 1.9, '2026-05-18', '2026-05-30'),
+    ('KATE ANDERSON',     '+12125550880',  'kate.a@gmail.com',           'MANHATTAN',      'CATAMARÁN', 13.5, 6.8, 1.0, '2026-05-19', '2026-05-29'),
+    ('MARCO FERRARI',     '+39347654321',  'marco.ferrari@gmail.it',     'VENEZIA',        'VELERO',    9.5,  3.2, 1.3, '2026-05-20', '2026-05-28'),
+    ('DIANA LOPEZ',       '+52312500006',  'diana.lopez@gmail.com',      'PERLA',          'LANCHA',    6.5,  2.2, 0.7, '2026-05-21', '2026-05-25'),
+    ('JOHN SMITH',        '+16195550990',  'john.smith@yahoo.com',       'SAN DIEGO',      'YATE',      21.0, 6.2, 2.4, '2026-05-22', '2026-06-08'),
+    ('NATALIA ROMERO',    '+52311600007',  'natalia.r@hotmail.com',      'NAYARIT',        'VELERO',    10.0, 3.4, 1.5, '2026-05-23', '2026-06-02'),
+    ('THOMAS WEBER',      '+49160111222',  'thomas.w@gmail.de',          'BERLIN',         'MOTONAVE',  30.0, 8.5, 3.2, '2026-05-24', '2026-06-15'),
+    ('LAURA MARTINEZ',    '+52312700008',  'laura.m@gmail.com',          'MANZANILLO',     'CATAMARÁN', 14.5, 7.0, 1.1, '2026-05-25', '2026-06-05'),
+    ('PIERRE DUBOIS',     '+33678333444',  'pierre.d@gmail.fr',          'BORDEAUX',       'VELERO',    12.5, 4.1, 1.6, '2026-05-26', '2026-06-06'),
+    ('FERNANDO CASTRO',   '+52314800009',  'fernando.c@hotmail.com',     'GUERRERO',       'YATE',      16.0, 5.0, 1.8, '2026-05-27', '2026-06-10'),
+    ('SARAH CONNOR',      '+17145551000',  'sarah.c@gmail.com',          'LOS ANGELES',    'LANCHA',    9.0,  3.0, 1.0, '2026-05-28', '2026-06-03'),
+    ('VIKTOR KOZLOV',     '+79269876543',  'viktor.k@mail.ru',           'MOSKVA',         'MOTONAVE',  26.0, 7.5, 2.9, '2026-05-29', '2026-06-20'),
+    ('ROSA GUTIERREZ',    '+52312900010',  'rosa.g@gmail.com',           'MICHOACAN',      'VELERO',    11.8, 3.9, 1.6, '2026-05-30', '2026-06-12'),
+]
+
+for fullname, telefono, email, nombre_bote, tipo, eslora, manga, calado, llegada, salida in datos:
+    cliente, _ = Cliente.objects.get_or_create(email=email, defaults={
+        'fullname': fullname, 'telefono': telefono
+    })
+    emb, _ = Embarcacion.objects.get_or_create(
+        cliente=cliente, nombre_bote=nombre_bote,
+        defaults={'tipo_barco': objs_tipo[tipo], 'eslora': eslora, 'manga': manga, 'calado': calado}
+    )
+    Solicitud.objects.get_or_create(
+        embarcacion=emb,
+        fecha_llegada=llegada,
+        fecha_salida=salida,
+        defaults={'estado': 'PENDIENTE'}
+    )
+
+print(f'Listo — {len(datos)} solicitudes creadas.')
+"
+
+
+
+---------------------------------- vaciar base de datos
+
+
+docker compose exec web python manage.py shell -c "
+from apps.asignaciones.models import Asignacion
+from apps.solicitudes.models import Solicitud, SolicitudHistorial
+from apps.embarcaciones.models import Embarcacion
+from apps.clientes.models import Cliente
+
+Asignacion.objects.all().delete()
+SolicitudHistorial.objects.all().delete()
+Solicitud.objects.all().delete()
+Embarcacion.objects.all().delete()
+Cliente.objects.all().delete()
+
+print('Listo — solicitudes, historial, asignaciones, embarcaciones y clientes eliminados.')
+"

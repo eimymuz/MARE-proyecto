@@ -10,26 +10,33 @@
       <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'EN_ESPERA' %}">
         {% csrf_token %}<button class="btn btn-success btn-sm">Aprobar</button>
       </form>
-      <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'RECHAZADA' %}">
-        {% csrf_token %}<button class="btn btn-danger btn-sm">Rechazar</button>
-      </form>
+      <button class="btn btn-danger btn-sm"
+        onclick="abrirModalRechazo({{ solicitud.pk }}, '{{ solicitud.embarcacion.nombre_bote }}', 'list')">
+        Rechazar
+      </button>
+
       <a href="{% url 'solicitud_list' %}" class="btn btn-default btn-sm">← Volver</a>
 
     {% elif solicitud.estado == 'EN_ESPERA' %}
       <!--Poner url de mapa ya-->
       <a href="{% url 'mapa' %}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Asignar</a>
-      <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'RECHAZADA' %}">
-        {% csrf_token %}<button class="btn btn-danger btn-sm">Rechazar</button>
-      </form>
+
+      <button class="btn btn-danger btn-sm"
+        onclick="abrirModalRechazo({{ solicitud.pk }}, '{{ solicitud.embarcacion.nombre_bote }}', 'en_espera')">
+        Rechazar
+      </button>
+
       <a href="{% url 'solicitud_en_espera_list' %}" class="btn btn-default btn-sm">← Volver</a>
 
     {% elif solicitud.estado == 'APROBADA' %}
       <!--Poner url de mapa (ya)-->
        <a href="{% url 'mapa' %}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Reasignar</a>  
       <a href="{% url 'mapa' %}?solicitud_id={{ solicitud.pk }}" class="btn btn-accent btn-sm">Reasignar</a>
-      <form method="post" action="{% url 'solicitud_cambiar_estado' solicitud.pk 'RECHAZADA' %}">
-        {% csrf_token %}<button class="btn btn-danger btn-sm">Rechazar</button>
-      </form>
+      <button class="btn btn-danger btn-sm"
+        onclick="abrirModalRechazo({{ solicitud.pk }}, '{{ solicitud.embarcacion.nombre_bote }}', 'aprobadas')">
+        Rechazar
+      </button>
+
       <a href="{% url 'solicitud_aprobadas_list' %}" class="btn btn-default btn-sm">← Volver</a>
 
     {% elif solicitud.estado == 'RECHAZADA' or solicitud.estado == 'COMPLETADA' %}
@@ -135,4 +142,6 @@
     </table>
   </div>
 </div>
+{% csrf_token %}
+{% include "components/modal_rechazo.html" %}
 {% endblock %}

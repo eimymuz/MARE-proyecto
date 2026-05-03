@@ -52,10 +52,10 @@
                 {% csrf_token %}
                 <button class="btn btn-success btn-sm">En espera</button>
               </form>
-              <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'RECHAZADA' %}" style="display:inline">
-                {% csrf_token %}
-                <button class="btn btn-danger btn-sm">Rechazar</button>
-              </form>
+              <button class="btn btn-danger btn-sm"
+                onclick="abrirModalRechazo({{ sol.pk }}, '{{ sol.embarcacion.nombre_bote }}', 'list')">
+                Rechazar
+              </button>
               
               {% elif sol.estado == 'EN_ESPERA' %}
                 <button onclick="window.open('https://mail.google.com/mail/?view=cm&to={{ sol.embarcacion.cliente.email }}&su=Solicitud — {{ sol.embarcacion.nombre_bote }}&body=Estimado {{ sol.embarcacion.cliente.fullname }}')" 
@@ -64,10 +64,10 @@
                   target="_blank" class="btn btn-default btn-sm">Revisar</a>
                   <!--Poner url de mapa-->
                 <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Asignar</a>
-                <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'RECHAZADA' %}" style="display:inline">
-                  {% csrf_token %}
-                  <button class="btn btn-danger btn-sm">Rechazar</button>
-                </form>
+                <button class="btn btn-danger btn-sm"
+                  onclick="abrirModalRechazo({{ sol.pk }}, '{{ sol.embarcacion.nombre_bote }}', 'en_espera')">
+                  Rechazar
+                </button>
 
 
             {% elif sol.estado == 'APROBADA' %}
@@ -100,4 +100,7 @@
   {% endif %}
 </div>
 {% endif %}
+
+{% csrf_token %}
+{% include "components/modal_rechazo.html" %}
 {% endblock %}

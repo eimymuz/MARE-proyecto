@@ -22,10 +22,9 @@ class Solicitud(models.Model):
     fecha_salida = models.DateField()
     comentario = models.CharField(max_length=200, blank=True, null=True)
     estado = models.CharField(max_length=20, choices=ESTADOS, default="PENDIENTE")
-    primera_entrada_mexico = models.BooleanField(
-    default=False,
-    verbose_name='Primera entrada a México'
-    )
+    primera_entrada_mexico = models.BooleanField( default=False, verbose_name='Primera entrada a México')
+    motivo_rechazo = models.CharField( max_length=500, blank=True, null=True, verbose_name='Motivo de rechazo')
+    
     
     class Meta:
         db_table            = 'solicitud'

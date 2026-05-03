@@ -18,7 +18,7 @@ class SolicitudAdmin(admin.ModelAdmin):
     list_display        = (
         'id', 'get_embarcacion', 'get_cliente',
         'fecha_llegada', 'fecha_salida',
-        'get_estado_badge',
+        'get_estado_badge', 'motivo_rechazo',
     )
     list_filter         = ('estado', 'fecha_llegada')
     search_fields       = (

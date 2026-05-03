@@ -1,0 +1,84 @@
+<!-- Modal motivo de rechazo — reutilizable -->
+<div id="modal-rechazo" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+     background:rgba(0,0,0,0.5);z-index:1100;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:var(--radius-lg);padding:1.5rem;
+              width:420px;max-width:95%;box-shadow:var(--shadow-md)">
+    <h3 style="margin-bottom:.5rem;color:var(--danger)">Rechazar solicitud</h3>
+    <p style="font-size:13px;color:var(--text-mid);margin-bottom:1rem">
+      Embarcación: <strong id="modal-rechazo-nombre"></strong>
+    </p>
+    <input type="hidden" id="modal-rechazo-pk">
+    <input type="hidden" id="modal-rechazo-origen" value="list">
+    <label style="font-size:12px;font-weight:600;color:var(--text-mid);
+                  text-transform:uppercase;letter-spacing:.4px">
+      Motivo del rechazo <span style="color:var(--danger)">*</span>
+    </label>
+    <textarea id="modal-rechazo-motivo" rows="4"
+      placeholder="Describe el motivo por el cual se rechaza esta solicitud..."
+      style="width:100%;margin-top:.35rem;padding:.6rem;border:1px solid var(--border);
+             border-radius:var(--radius);font-family:var(--font-sans);font-size:13px;
+             resize:vertical;box-sizing:border-box"></textarea>
+    <div id="modal-rechazo-error" style="display:none;color:var(--danger);
+         font-size:12px;margin-top:.4rem"></div>
+    <div style="display:flex;gap:.5rem;margin-top:1rem;justify-content:flex-end">
+      <button class="btn btn-default" onclick="cerrarModalRechazo()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmarRechazo()">Confirmar rechazo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function abrirModalRechazo(pk, nombre, origen){
+    document.getElementById('modal-rechazo-pk').value = pk;
+    document.getElementById('modal-rechazo-nombre').textContent = nombre;
+    document.getElementById('modal-rechazo-origen').value = origen || 'list';
+    document.getElementById('modal-rechazo-motivo').value = '';
+    document.getElementById('modal-rechazo-error').style.display = 'none';
+    document.getElementById('modal-rechazo').style.display = 'flex';
+}
+
+function cerrarModalRechazo(){
+    document.getElementById('modal-rechazo').style.display = 'none';
+    document.getElementById('modal-rechazo-motivo').value = '';
+    document.getElementById('modal-rechazo-error').style.display = 'none';
+}
+
+async function confirmarRechazo(){
+    const pk     = document.getElementById('modal-rechazo-pk').value;
+    const motivo = document.getElementById('modal-rechazo-motivo').value.trim();
+    const origen = document.getElementById('modal-rechazo-origen').value;
+    const errEl  = document.getElementById('modal-rechazo-error');
+    const CSRF   = document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                   || "{{ csrf_token }}";
+
+    if(!motivo){
+        errEl.textContent = 'El motivo es obligatorio.';
+        errEl.style.display = 'block';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', CSRF);
+    formData.append('motivo_rechazo', motivo);
+    formData.append('origen', origen);
+
+    try{
+        const resp = await fetch(`/solicitudes/${pk}/estado/RECHAZADA/`, {
+            method: 'POST',
+            body: formData
+        });
+        if(resp.redirected){
+            window.location.href = resp.url;
+        } else if(resp.ok){
+            cerrarModalRechazo();
+            window.location.reload();
+        } else {
+            errEl.textContent = 'No se pudo rechazar la solicitud.';
+            errEl.style.display = 'block';
+        }
+    } catch(err){
+        errEl.textContent = 'Error de conexión.';
+        errEl.style.display = 'block';
+    }
+}
+</script>

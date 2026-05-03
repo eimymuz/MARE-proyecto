@@ -115,9 +115,12 @@
   </div>
 </div>
 
+
 <script>
 const CSRF = "{{ csrf_token }}";
 
+
+// ── POPUP PRINCIPAL ───────────────────────────────────────
 async function abrirPopup(pk){
   const overlay = document.getElementById('popup-overlay');
   overlay.style.display = 'flex';
@@ -192,33 +195,8 @@ async function abrirPopup(pk){
     document.getElementById('popup-btn-revisar').href =
       `https://mail.google.com/mail/u/0/#search/${data.email_cliente}`;
 
-    document.getElementById('popup-btn-rechazar').onclick = async () => {
-      const confirmar = confirm(`¿Deseas rechazar la solicitud de ${data.embarcacion}?`);
-      if (!confirmar) return;
-
-      try {
-        const resp = await fetch(`/solicitudes/${pk}/estado/RECHAZADA/`, {
-          method: 'POST',
-          headers: {
-            'X-CSRFToken': CSRF,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (resp.redirected) {
-          window.location.href = resp.url;
-          return;
-        }
-
-        if (resp.ok) {
-          cerrarPopup();
-          window.location.reload();
-        } else {
-          alert('No se pudo rechazar la solicitud.');
-        }
-      } catch (error) {
-        alert('Error al rechazar la solicitud.');
-      }
+    document.getElementById('popup-btn-rechazar').onclick = () => {
+        abrirModalRechazo(pk, data.embarcacion, 'aprobadas');
     };
 
   } catch(err){
@@ -227,14 +205,17 @@ async function abrirPopup(pk){
   }
 }
 
+// ── POPUP PRINCIPAL CERRAR ────────────────────────────────
 function cerrarPopup(){
   document.getElementById('popup-overlay').style.display = 'none';
 }
 
 document.getElementById('popup-overlay').addEventListener('click', function(ev){
-  if(ev.target === this){
-    cerrarPopup();
-  }
+  if(ev.target === this) cerrarPopup();
 });
 </script>
+
+
+{% csrf_token %}
+{% include "components/modal_rechazo.html" %}
 {% endblock %}
