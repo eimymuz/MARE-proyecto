@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.http import JsonResponse
 from .models import Solicitud
+from django.db import models
 
 
 def _auto_completar(solicitudes):
@@ -26,33 +27,117 @@ def _auto_completar(solicitudes):
 
 @login_required
 def solicitud_list(request):
-    """CRUD principal — muestra todas las solicitudes PENDIENTES."""
     qs = Solicitud.objects.select_related(
         'embarcacion__cliente',
         'embarcacion__tipo_barco',
     ).filter(estado='PENDIENTE').order_by('-fecha_solicitud', '-id')
 
+    # filtros de fecha — exacto si solo uno, rango si ambos
+    q                  = request.GET.get('q', '').strip()
+    tipo_id            = request.GET.get('tipo', '')
+    primera_entrada    = request.GET.get('primera_entrada', '')
+
+    modo_fecha    = request.GET.get('modo_fecha', 'solicitud')
+    fecha_a       = request.GET.get('fecha_a', '')
+    fecha_b       = request.GET.get('fecha_b', '')
+    fecha_llegada = request.GET.get('fecha_llegada', '')
+    fecha_salida  = request.GET.get('fecha_salida', '')
+
+    if modo_fecha == 'solicitud':
+        if fecha_a and fecha_b:
+            qs = qs.filter(fecha_solicitud__range=[fecha_a, fecha_b])
+        elif fecha_a:
+            qs = qs.filter(fecha_solicitud=fecha_a)
+        elif fecha_b:
+            qs = qs.filter(fecha_solicitud=fecha_b)
+
+    elif modo_fecha == 'llegada':
+        if fecha_a and fecha_b:
+            qs = qs.filter(fecha_llegada__range=[fecha_a, fecha_b])
+        elif fecha_a:
+            qs = qs.filter(fecha_llegada=fecha_a)
+        elif fecha_b:
+            qs = qs.filter(fecha_llegada=fecha_b)
+
+    elif modo_fecha == 'salida':
+        if fecha_a and fecha_b:
+            qs = qs.filter(fecha_salida__range=[fecha_a, fecha_b])
+        elif fecha_a:
+            qs = qs.filter(fecha_salida=fecha_a)
+        elif fecha_b:
+            qs = qs.filter(fecha_salida=fecha_b)
+
+    elif modo_fecha == 'estancia':
+        if fecha_llegada:
+            qs = qs.filter(fecha_llegada__gte=fecha_llegada)
+        if fecha_salida:
+            qs = qs.filter(fecha_salida__lte=fecha_salida)
+
+    if q:
+        qs = qs.filter(
+            models.Q(embarcacion__nombre_bote__icontains=q) |
+            models.Q(embarcacion__cliente__fullname__icontains=q)
+        )
+    if tipo_id:
+        qs = qs.filter(embarcacion__tipo_barco_id=tipo_id)
+    if primera_entrada == '1':
+        qs = qs.filter(primera_entrada_mexico=True)
+    
     paginator = Paginator(qs, 10)
     try:
         page_obj = paginator.page(request.GET.get('page', 1))
     except (PageNotAnInteger, EmptyPage):
         page_obj = paginator.page(1)
 
+    from apps.embarcaciones.models import TipoBarco
     return render(request, 'solicitudes/solicitud_list.html', {
         'page_obj':    page_obj,
         'solicitudes': page_obj.object_list,
         'titulo':      'Solicitudes pendientes',
         'estado_activo': 'PENDIENTE',
+        'tipos_barco': TipoBarco.objects.order_by('tipo_barco'),
+        'q':              q,
+        'tipo_id':        tipo_id,
+        'primera_entrada': primera_entrada,
+        'modo_fecha':    modo_fecha,
+        'fecha_a':       fecha_a,
+        'fecha_b':       fecha_b,
+        'fecha_llegada': fecha_llegada,
+        'fecha_salida':  fecha_salida,
+        'hay_filtros': any([q, tipo_id, primera_entrada, fecha_a, fecha_b, fecha_llegada, fecha_salida]),
     })
 
 
 @login_required
 def solicitud_en_espera_list(request):
-    """Solicitudes EN_ESPERA — en negociación con el cliente."""
     qs = Solicitud.objects.select_related(
         'embarcacion__cliente',
         'embarcacion__tipo_barco',
     ).filter(estado='EN_ESPERA').order_by('-fecha_solicitud', '-id')
+
+    # filtros
+    q           = request.GET.get('q', '').strip()
+    tipo_id     = request.GET.get('tipo', '')
+    fecha_desde = request.GET.get('fecha_desde', '')
+    fecha_hasta = request.GET.get('fecha_hasta', '')
+    orden = request.GET.get('orden', 'reciente')
+
+    if orden == 'urgente':
+        qs = qs.order_by('fecha_llegada', '-id')  # llegada más próxima primero
+    else:
+        qs = qs.order_by('-fecha_solicitud', '-id')  # más reciente primero
+
+    if q:
+        qs = qs.filter(
+            models.Q(embarcacion__nombre_bote__icontains=q) |
+            models.Q(embarcacion__cliente__fullname__icontains=q)
+        )
+    if tipo_id:
+        qs = qs.filter(embarcacion__tipo_barco_id=tipo_id)
+    if fecha_desde:
+        qs = qs.filter(fecha_llegada__gte=fecha_desde)
+    if fecha_hasta:
+        qs = qs.filter(fecha_llegada__lte=fecha_hasta)
 
     paginator = Paginator(qs, 10)
     try:
@@ -60,11 +145,19 @@ def solicitud_en_espera_list(request):
     except (PageNotAnInteger, EmptyPage):
         page_obj = paginator.page(1)
 
+    from apps.embarcaciones.models import TipoBarco
     return render(request, 'solicitudes/solicitud_list.html', {
         'page_obj':      page_obj,
         'solicitudes':   page_obj.object_list,
         'titulo':        'Pendientes de asignación',
         'estado_activo': 'EN_ESPERA',
+        'tipos_barco':   TipoBarco.objects.order_by('tipo_barco'),
+        'q':             q,
+        'tipo_id':       tipo_id,
+        'fecha_desde':   fecha_desde,
+        'fecha_hasta':   fecha_hasta,
+        'orden': orden,
+        'hay_filtros':   any([q, tipo_id, fecha_desde, fecha_hasta]),
     })
 
 @login_required

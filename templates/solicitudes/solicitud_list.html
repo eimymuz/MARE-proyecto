@@ -9,7 +9,189 @@
   </div>
 </div>
 
+
+<!-- FILTROS COLAPSABLE -->
+<form method="get" id="form-filtros">
+ 
+  <!-- Barra trigger -->
+  <div style="display:flex;align-items:center;justify-content:space-between;
+       background:var(--surface);border:1px solid var(--border);
+       border-radius:var(--radius-lg);padding:.6rem 1rem;cursor:pointer;
+       user-select:none;margin-bottom:4px" onclick="toggleFiltros()">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:13px;font-weight:500;color:var(--text)">⚙ Filtros</span>
+      <div id="chips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="filtros-count" style="display:none;font-size:11px;padding:2px 8px;
+            border-radius:20px;background:var(--info-bg);color:var(--info);font-weight:500"></span>
+      <span id="arrow" style="font-size:11px;color:var(--text-light);transition:transform .2s">▾</span>
+    </div>
+  </div>
+ 
+  <!-- Panel colapsable -->
+  <div id="panel-filtros" style="display:{% if hay_filtros %}block{% else %}none{% endif %};
+       background:var(--surface);border:1px solid var(--border);
+       border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1rem">
+ 
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+ 
+      <!-- Columna izquierda -->
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <div>
+          <label>Buscar</label>
+          <input type="text" name="q" id="inp-q" value="{{ q }}"
+            placeholder="Embarcación o cliente...">
+        </div>
+        <div>
+          <label>Tipo de barco</label>
+          <select name="tipo" id="inp-tipo">
+            <option value="">Todos</option>
+            {% for t in tipos_barco %}
+              <option value="{{ t.pk }}" {% if tipo_id == t.pk|stringformat:'s' %}selected{% endif %}>
+                {{ t.tipo_barco }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% if estado_activo == 'PENDIENTE' %}
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;
+               font-weight:normal;color:var(--text);cursor:pointer;margin:0">
+          <input type="checkbox" name="primera_entrada" id="inp-primera" value="1"
+            style="width:auto" {% if primera_entrada == '1' %}checked{% endif %}>
+          Primera entrada a México
+        </label>
+        {% endif %}
+
+        <div style="display:flex;gap:.4rem;margin-top:auto;padding-top:.5rem;
+             border-top:1px solid var(--border)">
+          <button type="submit" class="btn btn-primary btn-sm" style="flex:1;justify-content:center">Filtrar</button>
+          
+          {% if hay_filtros %}
+          <a href="." class="btn btn-default btn-sm" id="btn-reset">✕ Resetear</a>
+          {% endif %}
+
+        </div>
+
+
+      </div>
+ 
+      <!-- Columna derecha: fechas -->
+      <div>
+        <label style="margin-bottom:.5rem">Fecha</label>
+ 
+        <!-- Tabs modo -->
+        <div style="display:flex;gap:3px;margin-bottom:.6rem">
+          <button type="button" id="tab-solicitud" onclick="setModo('solicitud')"
+            title="Fecha en que se envió la solicitud"
+            style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
+                   font-size:10px;font-weight:500;
+                   background:{% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info-bg){% else %}var(--bg){% endif %};
+                   color:{% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info){% else %}var(--text-mid){% endif %};
+                   border:1px solid {% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info){% else %}var(--border){% endif %}">
+            ✦ Solicitud
+          </button>
+          <button type="button" id="tab-llegada" onclick="setModo('llegada')"
+            title="Fecha de llegada de la embarcación"
+            style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
+                   font-size:10px;font-weight:500;
+                   background:{% if modo_fecha == 'llegada' %}var(--info-bg){% else %}var(--bg){% endif %};
+                   color:{% if modo_fecha == 'llegada' %}var(--info){% else %}var(--text-mid){% endif %};
+                   border:1px solid {% if modo_fecha == 'llegada' %}var(--info){% else %}var(--border){% endif %}">
+            → Llegada
+          </button>
+          <button type="button" id="tab-salida" onclick="setModo('salida')"
+            title="Fecha de salida de la embarcación"
+            style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
+                   font-size:10px;font-weight:500;
+                   background:{% if modo_fecha == 'salida' %}var(--info-bg){% else %}var(--bg){% endif %};
+                   color:{% if modo_fecha == 'salida' %}var(--info){% else %}var(--text-mid){% endif %};
+                   border:1px solid {% if modo_fecha == 'salida' %}var(--info){% else %}var(--border){% endif %}">
+            ← Salida
+          </button>
+          <button type="button" id="tab-estancia" onclick="setModo('estancia')"
+            title="Embarcaciones cuya estancia caiga en el periodo"
+            style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
+                   font-size:10px;font-weight:500;
+                   background:{% if modo_fecha == 'estancia' %}var(--info-bg){% else %}var(--bg){% endif %};
+                   color:{% if modo_fecha == 'estancia' %}var(--info){% else %}var(--text-mid){% endif %};
+                   border:1px solid {% if modo_fecha == 'estancia' %}var(--info){% else %}var(--border){% endif %}">
+            ↔ Estancia
+          </button>
+        </div>
+ 
+        <!-- Input simple -->
+        <div id="input-simple" style="display:{% if modo_fecha == 'estancia' %}none{% else %}flex{% endif %};
+             align-items:center;border:1px solid var(--border);border-radius:var(--radius);
+             overflow:hidden;background:var(--surface)">
+          <input type="date" id="fecha-a" name="fecha_a" value="{{ fecha_a }}"
+            style="flex:1;border:none;outline:none;padding:7px 10px;font-size:12px;
+                   background:transparent;color:var(--text)">
+          <button type="button" id="btn-periodo" onclick="togglePeriodo()"
+            title="Activar búsqueda por rango"
+            style="padding:7px 10px;border:none;border-left:1px solid var(--border);
+                   cursor:pointer;font-size:12px;background:transparent;
+                   color:{% if fecha_b %}var(--info){% else %}var(--text-mid){% endif %}">↔</button>
+          <div id="fecha-b-wrap" style="display:{% if fecha_b %}flex{% else %}none{% endif %};
+               flex:1;border-left:1px solid var(--info)">
+            <input type="date" id="fecha-b" name="fecha_b" value="{{ fecha_b }}"
+              style="width:100%;border:none;outline:none;padding:7px 10px;font-size:12px;
+                     background:transparent;color:var(--text);box-sizing:border-box">
+          </div>
+        </div>
+ 
+        <!-- Input estancia -->
+        <div id="input-estancia" style="display:{% if modo_fecha == 'estancia' %}block{% else %}none{% endif %};
+             border:1px solid var(--border);border-radius:var(--radius);
+             overflow:hidden;background:var(--surface)">
+          <div style="display:flex">
+            <div style="flex:1;border-right:1px solid var(--border)">
+              <div style="padding:3px 10px 0;font-size:10px;color:var(--text-light)">llegada</div>
+              <input type="date" name="fecha_llegada" id="fecha-llegada" value="{{ fecha_llegada }}"
+                style="width:100%;border:none;outline:none;padding:2px 10px 7px;font-size:12px;
+                       background:transparent;color:var(--text);box-sizing:border-box">
+            </div>
+            <div style="flex:1">
+              <div style="padding:3px 10px 0;font-size:10px;color:var(--text-light)">salida</div>
+              <input type="date" name="fecha_salida" id="fecha-salida" value="{{ fecha_salida }}"
+                style="width:100%;border:none;outline:none;padding:2px 10px 7px;font-size:12px;
+                       background:transparent;color:var(--text);box-sizing:border-box">
+            </div>
+          </div>
+        </div>
+ 
+        <!-- Hint -->
+        <div id="hint" style="font-size:11px;color:var(--text-light);margin-top:.4rem"></div>
+
+        {% if estado_activo == 'EN_ESPERA' %}
+        <br>
+        <div>
+          <label>Ordenar por</label>
+          <select name="orden" id="inp-orden">
+            <option value="reciente" {% if orden == 'reciente' or not orden %}selected{% endif %}>
+              Más reciente
+            </option>
+            <option value="urgente" {% if orden == 'urgente' %}selected{% endif %}>
+              Más urgente (llegada próxima)
+            </option>
+          </select>
+        </div>
+        {% endif %}
+
+
+      </div>
+ 
+    </div>
+  </div>
+ 
+  <input type="hidden" name="modo_fecha" id="modo-fecha" value="{{ modo_fecha|default:'solicitud' }}">
+ 
+</form>
+
 <div class="table-wrap">
+
+    
+
   <table>
     <thead>
       <tr>
@@ -100,6 +282,112 @@
   {% endif %}
 </div>
 {% endif %}
+
+
+<script>
+let abierto = {% if hay_filtros %}true{% else %}false{% endif %};
+let modo    = '{{ modo_fecha|default:"solicitud" }}';
+let periodoActivo = {% if fecha_b %}true{% else %}false{% endif %};
+ 
+const CFG = {
+  solicitud: { hint:'Fecha exacta de solicitud · activa ↔ para rango', hintP:'Solicitudes enviadas entre esas fechas' },
+  llegada:   { hint:'Fecha exacta de llegada · activa ↔ para rango',   hintP:'Embarcaciones que llegan entre esas fechas' },
+  salida:    { hint:'Fecha exacta de salida · activa ↔ para rango',    hintP:'Embarcaciones que salen entre esas fechas' },
+  estancia:  { hint:'Introduce llegada y salida para buscar por estancia', hintP:'' },
+};
+ 
+// estado inicial del arrow
+document.getElementById('arrow').style.transform = abierto ? 'rotate(180deg)' : 'rotate(0)';
+document.getElementById('hint').textContent = 'ℹ ' + (periodoActivo ? CFG[modo].hintP : CFG[modo].hint);
+ 
+function toggleFiltros(){
+  abierto = !abierto;
+  document.getElementById('panel-filtros').style.display = abierto ? 'block' : 'none';
+  document.getElementById('arrow').style.transform = abierto ? 'rotate(180deg)' : 'rotate(0)';
+}
+ 
+function setModo(m){
+  modo = m; periodoActivo = false;
+  document.getElementById('modo-fecha').value = m;
+  ['solicitud','llegada','salida','estancia'].forEach(t=>{
+    const btn = document.getElementById('tab-'+t);
+    const act = t===m;
+    btn.style.background = act?'var(--info-bg)':'var(--bg)';
+    btn.style.color      = act?'var(--info)':'var(--text-mid)';
+    btn.style.border     = act?'1px solid var(--info)':'1px solid var(--border)';
+  });
+  const simple   = document.getElementById('input-simple');
+  const estancia = document.getElementById('input-estancia');
+  const bWrap    = document.getElementById('fecha-b-wrap');
+  const btnP     = document.getElementById('btn-periodo');
+  if(m==='estancia'){
+    simple.style.display='none'; estancia.style.display='block';
+  } else {
+    simple.style.display='flex'; estancia.style.display='none';
+    bWrap.style.display='none'; btnP.style.color='var(--text-mid)';
+    document.getElementById('fecha-b').value='';
+  }
+  document.getElementById('hint').textContent='ℹ '+CFG[m].hint;
+  actualizarChips();
+}
+ 
+function togglePeriodo(){
+  if(modo==='estancia') return;
+  periodoActivo=!periodoActivo;
+  const bWrap=document.getElementById('fecha-b-wrap');
+  const btnP=document.getElementById('btn-periodo');
+  bWrap.style.display=periodoActivo?'flex':'none';
+  btnP.style.color=periodoActivo?'var(--info)':'var(--text-mid)';
+  if(!periodoActivo) document.getElementById('fecha-b').value='';
+  document.getElementById('hint').textContent='ℹ '+(periodoActivo?CFG[modo].hintP:CFG[modo].hint);
+  actualizarChips();
+}
+ 
+function fmt(d){ return d?new Date(d+'T00:00').toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}):null; }
+ 
+function actualizarChips(){
+  const chips=[];
+  const q     = document.getElementById('inp-q')?.value.trim();
+  const tipo  = document.getElementById('inp-tipo')?.options[document.getElementById('inp-tipo').selectedIndex]?.text;
+  const prim  = document.getElementById('inp-primera')?.checked;
+  const a     = document.getElementById('fecha-a').value;
+  const b     = document.getElementById('fecha-b').value;
+  const ll    = document.getElementById('fecha-llegada').value;
+  const sl    = document.getElementById('fecha-salida').value;
+ 
+  if(q) chips.push(q);
+  if(tipo && tipo!=='Todos') chips.push(tipo);
+  if(prim) chips.push('1ª entrada MX');
+  if(modo==='estancia'){ if(ll) chips.push(`Llega ${fmt(ll)}`); if(sl) chips.push(`Sale ${fmt(sl)}`); }
+  else if(a){
+    const etq={solicitud:'Sol',llegada:'Llegada',salida:'Salida'}[modo];
+    chips.push(periodoActivo&&b ? `${etq}: ${fmt(a)}–${fmt(b)}` : `${etq}: ${fmt(a)}`);
+  }
+ 
+  const cont=document.getElementById('chips');
+  cont.innerHTML=chips.slice(0,3).map(c=>`
+    <span style="font-size:11px;padding:2px 8px;border-radius:20px;
+          background:var(--info-bg);color:var(--info);border:1px solid var(--info)">${c}</span>
+  `).join('');
+ 
+  const count=document.getElementById('filtros-count');
+  if(chips.length){ count.textContent=chips.length+' activo'+(chips.length>1?'s':''); count.style.display='inline'; }
+  else count.style.display='none';
+
+  const ordenEl = document.getElementById('inp-orden');
+  if(ordenEl && ordenEl.value === 'urgente') chips.push('Urgente primero');
+}
+ 
+// init chips con valores del servidor
+actualizarChips();
+ 
+// escuchar cambios en inputs
+['inp-q','inp-tipo','inp-primera','fecha-a','fecha-b','fecha-llegada','fecha-salida'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('change', actualizarChips);
+  if(el && el.type==='text') el.addEventListener('input', actualizarChips);
+});
+</script>
 
 {% csrf_token %}
 {% include "components/modal_rechazo.html" %}
