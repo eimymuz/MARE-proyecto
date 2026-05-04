@@ -33,7 +33,18 @@
         Asignadas
       </a>
 
-  
+
+      <a href="{% url 'mapa' %}"
+         class="nav-link {% if request.resolver_match.url_name == 'mapa' %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+          <line x1="9" y1="3" x2="9" y2="18"/>
+          <line x1="15" y1="6" x2="15" y2="21"/>
+        </svg>
+        Mapa
+      </a>
+
+
       <a href="{% url 'reporte_solicitudes' %}"
          class="nav-link {% if request.resolver_match.url_name == 'reporte_solicitudes' %}active{% endif %}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -45,16 +56,6 @@
           <circle cx="17" cy="8" r="1"/>
         </svg>
         Reportes
-      </a>
-
-        <a href="{% url 'mapa' %}"
-         class="nav-link {% if request.resolver_match.url_name == 'mapa' %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
-          <line x1="9" y1="3" x2="9" y2="18"/>
-          <line x1="15" y1="6" x2="15" y2="21"/>
-        </svg>
-        Mapa
       </a>
 
     </nav>

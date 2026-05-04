@@ -3,82 +3,176 @@
 <head>
   <meta charset="UTF-8">
   <title>Reporte de solicitudes</title>
+
   <style>
+    @page {
+      size: letter;
+      margin: 1.5cm;
+    }
+
     body {
       font-family: Arial, sans-serif;
-      font-size: 12px;
-      color: #222;
+      font-size: 11px;
+      color: #1a2a3a;
     }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 10px;
+    .header {
+      border-bottom: 3px solid #c9b157;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
     }
 
-    .info {
-      margin-bottom: 8px;
+    .header-table {
+      width: 100%;
+      border: none;
     }
 
-    .fecha-descarga {
-      margin-bottom: 15px;
+    .header-table td {
+      border: none;
+      vertical-align: middle;
+      padding: 0;
     }
 
-    table {
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0a2540;
+      text-align: right;
+      margin: 0;
+    }
+
+    .subtitle {
+      text-align: right;
+      font-size: 11px;
+      color: #4a6080;
+      margin-top: 4px;
+    }
+
+    .info-box {
+      background: #f0f4f8;
+      border: 1px solid #dde4ed;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 16px;
+    }
+
+    .info-box p {
+      margin: 4px 0;
+    }
+
+    .label {
+      font-weight: bold;
+      color: #0a2540;
+    }
+
+    table.report-table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
     }
 
-    table, th, td {
-      border: 1px solid #999;
-    }
-
-    th {
-      background: #eaeaea;
+    .report-table th {
+      background: #0a2540;
+      color: white;
       padding: 8px;
+      font-size: 10px;
       text-align: left;
+      border: 1px solid #0a2540;
     }
 
-    td {
-      padding: 8px;
+    .report-table td {
+      padding: 7px;
+      border: 1px solid #cfd8e3;
+      vertical-align: top;
     }
 
-    .total {
-      margin-top: 15px;
-      text-align: right;
+    .report-table tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    .estado-aprobada {
+      color: #1a7a4a;
       font-weight: bold;
+    }
+
+    .estado-rechazada {
+      color: #c0392b;
+      font-weight: bold;
+    }
+
+    .total-box {
+      margin-top: 16px;
+      text-align: right;
+      font-size: 13px;
+      font-weight: bold;
+      color: #0a2540;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: -0.8cm;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 9px;
+      color: #8aa0b8;
+      border-top: 1px solid #dde4ed;
+      padding-top: 6px;
+    }
+
+    .small {
+      font-size: 10px;
     }
   </style>
 </head>
+
 <body>
-  <h1>Reporte de Solicitudes</h1>
 
-  <div class="info">
-    <strong>Filtro:</strong>
-    {% if estado == 'aceptado' %}
-      Aprobadas
-    {% elif estado == 'rechazado' %}
-      Rechazadas
-    {% else %}
-      Aprobadas y Rechazadas
-    {% endif %}
+  <div class="header">
+    <table class="header-table">
+      <tr>
+        <td>
+          <strong style="font-size:18px; color:#0a2540;">MARE</strong><br>
+          <span style="font-size:10px; color:#4a6080;">Manejador Administrativo y Registro de Embarcaciones</span>
+        </td>
+        <td>
+          <h1 class="title">Reporte de Solicitudes</h1>
+          <div class="subtitle">Documento generado automáticamente</div>
+        </td>
+      </tr>
+    </table>
   </div>
 
-  <div class="fecha-descarga">
-    <strong>Fecha de descarga:</strong>
-    {{ fecha_descarga|date:"d/m/Y H:i" }}
+  <div class="info-box">
+    <p>
+      <span class="label">Filtro por estado:</span>
+      {% if estado == 'aceptado' %}
+        Aprobadas
+      {% elif estado == 'rechazado' %}
+        Rechazadas
+      {% else %}
+        Aprobadas y Rechazadas
+      {% endif %}
+    </p>
+
+    <p>
+      <span class="label">Fecha de descarga:</span>
+      {{ fecha_descarga|date:"d/m/Y" }}
+    </p>
   </div>
 
-  <table>
+  <table class="report-table">
     <thead>
       <tr>
-        <th>No.</th>
-        <th>Embarcación</th>
-        <th>Cliente</th>
-        <th>Fecha de resolución</th>
-        <th>Estado</th>
+        <th style="width:6%;">No.</th>
+        <th style="width:17%;">Embarcación</th>
+        <th style="width:16%;">Cliente</th>
+        <th style="width:18%;">Fecha de resolución</th>
+        <th style="width:13%;">Estado</th>
+        <th style="width:30%;">Motivo de rechazo</th>
       </tr>
     </thead>
+
     <tbody>
       {% for s in solicitudes %}
       <tr>
@@ -92,18 +186,38 @@
             No disponible
           {% endif %}
         </td>
-        <td>{{ s.estado }}</td>
+        <td>
+          {% if s.estado == 'APROBADA' %}
+            <span class="estado-aprobada">APROBADA</span>
+          {% elif s.estado == 'RECHAZADA' %}
+            <span class="estado-rechazada">RECHAZADA</span>
+          {% else %}
+            {{ s.estado }}
+          {% endif %}
+        </td>
+        <td>
+          {% if s.estado == 'RECHAZADA' %}
+            {{ s.motivo_rechazo|default:"No especificado" }}
+          {% else %}
+            —
+          {% endif %}
+        </td>
       </tr>
       {% empty %}
       <tr>
-        <td colspan="5">No hay registros.</td>
+        <td colspan="6" style="text-align:center;">No hay registros.</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 
-  <div class="total">
-    Total: {{ total }}
+  <div class="total-box">
+    Total de registros: {{ total }}
   </div>
+
+  <div class="footer">
+    MARE · Reporte generado por el sistema · {{ fecha_descarga|date:"d/m/Y H:i" }}
+  </div>
+
 </body>
 </html>

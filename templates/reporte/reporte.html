@@ -9,7 +9,8 @@
 
 <div class="card">
   <form method="get" style="display:flex; gap:12px; align-items:end; flex-wrap:wrap;">
-    <div class="form-group" style="min-width:260px; margin-bottom:0;">
+
+    <div class="form-group" style="min-width:240px;">
       <label for="estado">Filtrar por estado</label>
       <select name="estado" id="estado">
         <option value="todos" {% if estado == 'todos' %}selected{% endif %}>Aprobadas y Rechazadas</option>
@@ -18,9 +19,38 @@
       </select>
     </div>
 
+    <div class="form-group" style="min-width:180px;">
+      <label for="mes">Mes</label>
+      <select name="mes" id="mes">
+        <option value="">Todos</option>
+        {% for numero, nombre in meses %}
+          <option value="{{ numero }}" {% if mes == numero|stringformat:"s" %}selected{% endif %}>
+            {{ nombre }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group" style="min-width:140px;">
+      <label for="anio">Año</label>
+      <select name="anio" id="anio">
+        <option value="">Todos</option>
+        {% for y in anios %}
+          <option value="{{ y }}" {% if anio == y|stringformat:"s" %}selected{% endif %}>
+            {{ y }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
     <button type="submit" class="btn btn-primary">Filtrar</button>
+
     <a href="{% url 'reporte_solicitudes' %}" class="btn btn-secondary">Limpiar</a>
-    <a href="{% url 'reporte_solicitudes_pdf' %}?estado={{ estado }}" class="btn btn-accent">Descargar PDF</a>
+
+    <a href="{% url 'reporte_solicitudes_pdf' %}?estado={{ estado }}&mes={{ mes }}&anio={{ anio }}" class="btn btn-accent">
+      Descargar PDF
+    </a>
+
   </form>
 </div>
 
@@ -29,14 +59,16 @@
     <table>
       <thead>
         <tr>
-          <th>ID</th>
+          <th>No.</th>
           <th>Embarcación</th>
           <th>Cliente</th>
           <th>Fecha de resolución</th>
           <th>Estado</th>
+          <th>Motivo</th>
           <th>Acciones</th>
         </tr>
       </thead>
+
       <tbody>
         {% for s in solicitudes %}
         <tr>
@@ -60,17 +92,21 @@
             {% endif %}
           </td>
           <td>
-            <button
-              type="button"
-              class="btn btn-info btn-sm"
-              onclick="abrirModal('modal-{{ s.id }}')">
+            {% if s.estado == 'RECHAZADA' %}
+              {{ s.motivo_rechazo|default:"No especificado" }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>
+            <button type="button" class="btn btn-info btn-sm" onclick="abrirModal('modal-{{ s.id }}')">
               Ver detalle
             </button>
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="6" style="text-align:center;">No hay datos para este filtro.</td>
+          <td colspan="7" style="text-align:center;">No hay datos para este filtro.</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -86,7 +122,7 @@
 <div id="modal-{{ s.id }}" class="mare-modal-overlay" onclick="cerrarModalFondo(event, 'modal-{{ s.id }}')">
   <div class="mare-modal">
     <div class="mare-modal-header">
-      <h3>Detalle de la solicitud #{{ s.id }}</h3>
+      <h3>Detalle de la solicitud #{{ forloop.counter }}</h3>
       <button type="button" class="mare-close-btn" onclick="cerrarModal('modal-{{ s.id }}')">&times;</button>
     </div>
 
@@ -95,62 +131,40 @@
         <div class="card-header">
           <span class="card-title">Información de la embarcación</span>
         </div>
+
         <table style="font-size:13px;">
-          <tr>
-            <td style="color:var(--text-mid);padding:.4rem 0;width:180px;">Nombre</td>
-            <td>{{ s.embarcacion.nombre_bote }}</td>
-          </tr>
-          <tr>
-            <td style="color:var(--text-mid);padding:.4rem 0;">Cliente</td>
-            <td>{{ s.embarcacion.cliente.fullname }}</td>
-          </tr>
-          <tr>
-            <td style="color:var(--text-mid);padding:.4rem 0;">Tipo</td>
-            <td>{{ s.embarcacion.tipo_barco.tipo_barco }}</td>
-          </tr>
-          <tr>
-            <td style="color:var(--text-mid);padding:.4rem 0;">Eslora</td>
-            <td>{{ s.embarcacion.eslora }} m</td>
-          </tr>
-          <tr>
-            <td style="color:var(--text-mid);padding:.4rem 0;">Manga</td>
-            <td>{{ s.embarcacion.manga }} m</td>
-          </tr>
-          <tr>
-            <td style="color:var(--text-mid);padding:.4rem 0;">Calado</td>
-            <td>{{ s.embarcacion.calado }} m</td>
-          </tr>
+          <tr><td>Nombre</td><td>{{ s.embarcacion.nombre_bote }}</td></tr>
+          <tr><td>Cliente</td><td>{{ s.embarcacion.cliente.fullname }}</td></tr>
+          <tr><td>Tipo</td><td>{{ s.embarcacion.tipo_barco.tipo_barco }}</td></tr>
+          <tr><td>Eslora</td><td>{{ s.embarcacion.eslora }} m</td></tr>
+          <tr><td>Manga</td><td>{{ s.embarcacion.manga }} m</td></tr>
+          <tr><td>Calado</td><td>{{ s.embarcacion.calado }} m</td></tr>
         </table>
       </div>
 
-      <div class="card" style="margin-bottom:0;">
+      <div class="card">
         <div class="card-header">
           <span class="card-title">Información de la resolución</span>
         </div>
 
         <table style="font-size:13px;">
-          <tr>
-            <td style="color:var(--text-mid);padding:.4rem 0;width:180px;">Fecha solicitud</td>
-            <td>{{ s.fecha_solicitud|date:"d/m/Y" }}</td>
-          </tr>
+          <tr><td>Fecha solicitud</td><td>{{ s.fecha_solicitud|date:"d/m/Y" }}</td></tr>
 
           <tr>
-            <td style="color:var(--text-mid);padding:.4rem 0;">Estado</td>
+            <td>Estado</td>
             <td>
               {% if s.estado == 'APROBADA' %}
                 <span class="badge badge-success">Aprobada</span>
               {% elif s.estado == 'RECHAZADA' %}
                 <span class="badge badge-danger">Rechazada</span>
               {% else %}
-                <span class="badge badge-neutral">{{ s.estado }}</span>
+                {{ s.estado }}
               {% endif %}
             </td>
           </tr>
 
           <tr>
-            <td style="color:var(--text-mid);padding:.4rem 0;">
-              Fecha de {% if s.estado == 'APROBADA' %}aprobación{% elif s.estado == 'RECHAZADA' %}rechazo{% else %}resolución{% endif %}
-            </td>
+            <td>Fecha de resolución</td>
             <td>
               {% if s.fecha_resolucion %}
                 {{ s.fecha_resolucion|date:"d/m/Y H:i" }}
@@ -160,10 +174,14 @@
             </td>
           </tr>
 
+          <tr><td>Comentario</td><td>{{ s.comentario|default:"Sin comentario" }}</td></tr>
+
+          {% if s.estado == 'RECHAZADA' %}
           <tr>
-            <td style="color:var(--text-mid);padding:.4rem 0;">Comentario</td>
-            <td>{{ s.comentario|default:"Sin comentario" }}</td>
+            <td>Motivo de rechazo</td>
+            <td>{{ s.motivo_rechazo|default:"No especificado" }}</td>
           </tr>
+          {% endif %}
         </table>
       </div>
     </div>
@@ -230,21 +248,15 @@
 
 <script>
   function abrirModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) {
-      modal.style.display = 'flex';
-    }
+    document.getElementById(id).style.display = 'flex';
   }
 
   function cerrarModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) {
-      modal.style.display = 'none';
-    }
+    document.getElementById(id).style.display = 'none';
   }
 
-  function cerrarModalFondo(event, id) {
-    if (event.target.id === id) {
+  function cerrarModalFondo(e, id) {
+    if (e.target.id === id) {
       cerrarModal(id);
     }
   }
@@ -257,4 +269,5 @@
     }
   });
 </script>
+
 {% endblock %}

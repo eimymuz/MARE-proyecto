@@ -9,6 +9,8 @@ from apps.solicitudes.models import Solicitud
 
 def reporte_solicitudes(request):
     estado = request.GET.get('estado', 'todos')
+    mes = request.GET.get('mes', '')
+    anio = request.GET.get('anio', '')
 
     solicitudes = (
         Solicitud.objects.select_related(
@@ -21,15 +23,17 @@ def reporte_solicitudes(request):
         .order_by('-fecha_solicitud')
     )
 
+    # filtro por estado
     if estado == 'aceptado':
         solicitudes = solicitudes.filter(estado='APROBADA')
     elif estado == 'rechazado':
         solicitudes = solicitudes.filter(estado='RECHAZADA')
-    elif estado == 'todos':
+    else:
         solicitudes = solicitudes.filter(estado__in=['APROBADA', 'RECHAZADA'])
 
     solicitudes = list(solicitudes)
 
+    # calcular fecha de resolución
     for s in solicitudes:
         historial = (
             s.historial.filter(
@@ -40,11 +44,39 @@ def reporte_solicitudes(request):
         )
         s.fecha_resolucion = historial.fecha_cambio if historial else None
 
+    # 🔥 filtro por mes
+    if mes:
+        solicitudes = [
+            s for s in solicitudes
+            if s.fecha_resolucion and s.fecha_resolucion.month == int(mes)
+        ]
+
+    # 🔥 filtro por año
+    if anio:
+        solicitudes = [
+            s for s in solicitudes
+            if s.fecha_resolucion and s.fecha_resolucion.year == int(anio)
+        ]
+
     total = len(solicitudes)
+
+    # listas para selects
+    meses = [
+        (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'),
+        (4, 'Abril'), (5, 'Mayo'), (6, 'Junio'),
+        (7, 'Julio'), (8, 'Agosto'), (9, 'Septiembre'),
+        (10, 'Octubre'), (11, 'Noviembre'), (12, 'Diciembre')
+    ]
+
+    anios = range(2026, timezone.now().year + 5)
 
     context = {
         'solicitudes': solicitudes,
         'estado': estado,
+        'mes': mes,
+        'anio': anio,
+        'meses': meses,
+        'anios': anios,
         'total': total,
     }
 
@@ -53,6 +85,8 @@ def reporte_solicitudes(request):
 
 def reporte_solicitudes_pdf(request):
     estado = request.GET.get('estado', 'todos')
+    mes = request.GET.get('mes', '')
+    anio = request.GET.get('anio', '')
 
     solicitudes = (
         Solicitud.objects.select_related(
@@ -69,7 +103,7 @@ def reporte_solicitudes_pdf(request):
         solicitudes = solicitudes.filter(estado='APROBADA')
     elif estado == 'rechazado':
         solicitudes = solicitudes.filter(estado='RECHAZADA')
-    elif estado == 'todos':
+    else:
         solicitudes = solicitudes.filter(estado__in=['APROBADA', 'RECHAZADA'])
 
     solicitudes = list(solicitudes)
@@ -84,6 +118,19 @@ def reporte_solicitudes_pdf(request):
         )
         s.fecha_resolucion = historial.fecha_cambio if historial else None
 
+    # filtros en PDF también
+    if mes:
+        solicitudes = [
+            s for s in solicitudes
+            if s.fecha_resolucion and s.fecha_resolucion.month == int(mes)
+        ]
+
+    if anio:
+        solicitudes = [
+            s for s in solicitudes
+            if s.fecha_resolucion and s.fecha_resolucion.year == int(anio)
+        ]
+
     total = len(solicitudes)
 
     html_string = render_to_string(
@@ -91,6 +138,8 @@ def reporte_solicitudes_pdf(request):
         {
             'solicitudes': solicitudes,
             'estado': estado,
+            'mes': mes,
+            'anio': anio,
             'total': total,
             'fecha_descarga': timezone.localtime(),
         }
