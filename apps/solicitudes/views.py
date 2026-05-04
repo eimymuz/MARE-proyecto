@@ -289,20 +289,6 @@ def solicitud_update(request, pk):
 
     return render(request, 'solicitudes/solicitud_form.html', context)
 
-
-@login_required
-def solicitud_delete(request, pk):
-    solicitud = get_object_or_404(Solicitud, pk=pk)
-    if request.method == 'POST':
-        solicitud.delete()
-        messages.success(request, 'Solicitud eliminada.')
-        return redirect('solicitud_list')
-    return render(request, 'solicitudes/solicitud_confirm_delete.html', {
-        'solicitud': solicitud
-    })
-
-
-
 @login_required
 @require_POST
 def solicitud_cambiar_estado(request, pk, nuevo_estado):
