@@ -4,7 +4,16 @@
 {% block content %}
 <div class="page-header">
   <h2>Editar solicitud #{{ solicitud.pk }}</h2>
-  <a href="{% url 'solicitud_detail' solicitud.pk %}" class="btn btn-default">← Volver</a>
+    <!-- Volver -->
+  {% if solicitud.estado == 'PENDIENTE' %}
+    <a href="{% url 'solicitud_list' %}" class="btn btn-default">← Volver</a>
+  {% elif solicitud.estado == 'EN_ESPERA' %}
+    <a href="{% url 'solicitud_en_espera_list' %}" class="btn btn-default">← Volver</a>
+  {% elif solicitud.estado == 'APROBADA' %}
+    <a href="{% url 'solicitud_aprobadas_list' %}" class="btn btn-default">← Volver</a>
+  {% else %}
+    <a href="{% url 'solicitud_list' %}" class="btn btn-default">← Volver</a>
+  {% endif %}
 </div>
 
 {% if errors %}
@@ -110,7 +119,16 @@
 
   <div style="display:flex;gap:.5rem">
     <button type="submit" class="btn btn-primary">Guardar cambios</button>
-    <a href="{% url 'solicitud_detail' solicitud.pk %}" class="btn btn-default">Cancelar</a>
+    <!-- Cancelar -->
+    {% if solicitud.estado == 'PENDIENTE' %}
+      <a href="{% url 'solicitud_list' %}" class="btn btn-default">Cancelar</a>
+    {% elif solicitud.estado == 'EN_ESPERA' %}
+      <a href="{% url 'solicitud_en_espera_list' %}" class="btn btn-default">Cancelar</a>
+    {% elif solicitud.estado == 'APROBADA' %}
+      <a href="{% url 'solicitud_aprobadas_list' %}" class="btn btn-default">Cancelar</a>
+    {% else %}
+      <a href="{% url 'solicitud_list' %}" class="btn btn-default">Cancelar</a>
+    {% endif %}
   </div>
 </form>
 {% endblock %}

@@ -12,7 +12,17 @@
   <form method="post" style="margin-top:1.25rem;display:flex;gap:.5rem">
     {% csrf_token %}
     <button type="submit" class="btn btn-danger">Sí, eliminar</button>
-    <a href="{% url 'solicitud_detail' solicitud.pk %}" class="btn btn-default">Cancelar</a>
+
+    {% if solicitud.estado == 'PENDIENTE' %}
+      <a href="{% url 'solicitud_list' %}" class="btn btn-default">Cancelar</a>
+    {% elif solicitud.estado == 'EN_ESPERA' %}
+      <a href="{% url 'solicitud_en_espera_list' %}" class="btn btn-default">Cancelar</a>
+    {% elif solicitud.estado == 'APROBADA' %}
+      <a href="{% url 'solicitud_aprobadas_list' %}" class="btn btn-default">Cancelar</a>
+    {% else %}
+      <a href="{% url 'solicitud_list' %}" class="btn btn-default">Cancelar</a>
+    {% endif %}
+    
   </form>
 </div>
 {% endblock %}

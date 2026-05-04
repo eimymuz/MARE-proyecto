@@ -10,183 +10,185 @@
 </div>
 
 
-<!-- FILTROS COLAPSABLE -->
-<form method="get" id="form-filtros">
- 
-  <!-- Barra trigger -->
-  <div style="display:flex;align-items:center;justify-content:space-between;
-       background:var(--surface);border:1px solid var(--border);
-       border-radius:var(--radius-lg);padding:.6rem 1rem;cursor:pointer;
-       user-select:none;margin-bottom:4px" onclick="toggleFiltros()">
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:13px;font-weight:500;color:var(--text)">⚙ Filtros</span>
-      <div id="chips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span id="filtros-count" style="display:none;font-size:11px;padding:2px 8px;
-            border-radius:20px;background:var(--info-bg);color:var(--info);font-weight:500"></span>
-      <span id="arrow" style="font-size:11px;color:var(--text-light);transition:transform .2s">▾</span>
-    </div>
-  </div>
- 
-  <!-- Panel colapsable -->
-  <div id="panel-filtros" style="display:{% if hay_filtros %}block{% else %}none{% endif %};
-       background:var(--surface);border:1px solid var(--border);
-       border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1rem">
- 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
- 
-      <!-- Columna izquierda -->
-      <div style="display:flex;flex-direction:column;gap:.75rem">
-        <div>
-          <label>Buscar</label>
-          <input type="text" name="q" id="inp-q" value="{{ q }}"
-            placeholder="Embarcación o cliente...">
+    <!-- FILTROS COLAPSABLE -->
+    <form method="get" id="form-filtros">
+    
+      <!-- Barra trigger -->
+      <div style="display:flex;align-items:center;justify-content:space-between;
+          background:var(--surface);border:1px solid var(--border);
+          border-radius:var(--radius-lg);padding:.6rem 1rem;cursor:pointer;
+          user-select:none;margin-bottom:4px" onclick="toggleFiltros()">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:13px;font-weight:500;color:var(--text)">⚙ Filtros</span>
+          <div id="chips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
         </div>
-        <div>
-          <label>Tipo de barco</label>
-          <select name="tipo" id="inp-tipo">
-            <option value="">Todos</option>
-            {% for t in tipos_barco %}
-              <option value="{{ t.pk }}" {% if tipo_id == t.pk|stringformat:'s' %}selected{% endif %}>
-                {{ t.tipo_barco }}
-              </option>
-            {% endfor %}
-          </select>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="filtros-count" style="display:none;font-size:11px;padding:2px 8px;
+                border-radius:20px;background:var(--info-bg);color:var(--info);font-weight:500"></span>
+          <span id="arrow" style="font-size:11px;color:var(--text-light);transition:transform .2s">▾</span>
         </div>
-        {% if estado_activo == 'PENDIENTE' %}
-        <label style="display:flex;align-items:center;gap:8px;font-size:12px;
-               font-weight:normal;color:var(--text);cursor:pointer;margin:0">
-          <input type="checkbox" name="primera_entrada" id="inp-primera" value="1"
-            style="width:auto" {% if primera_entrada == '1' %}checked{% endif %}>
-          Primera entrada a México
-        </label>
-        {% endif %}
-
-        <div style="display:flex;gap:.4rem;margin-top:auto;padding-top:.5rem;
-             border-top:1px solid var(--border)">
-          <button type="submit" class="btn btn-primary btn-sm" style="flex:1;justify-content:center">Filtrar</button>
-          
-          {% if hay_filtros %}
-          <a href="." class="btn btn-default btn-sm" id="btn-reset">✕ Resetear</a>
-          {% endif %}
-
-        </div>
-
-
       </div>
- 
-      <!-- Columna derecha: fechas -->
-      <div>
-        <label style="margin-bottom:.5rem">Fecha</label>
- 
-        <!-- Tabs modo -->
-        <div style="display:flex;gap:3px;margin-bottom:.6rem">
-          <button type="button" id="tab-solicitud" onclick="setModo('solicitud')"
-            title="Fecha en que se envió la solicitud"
-            style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
-                   font-size:10px;font-weight:500;
-                   background:{% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info-bg){% else %}var(--bg){% endif %};
-                   color:{% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info){% else %}var(--text-mid){% endif %};
-                   border:1px solid {% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info){% else %}var(--border){% endif %}">
-            ✦ Solicitud
-          </button>
-          <button type="button" id="tab-llegada" onclick="setModo('llegada')"
-            title="Fecha de llegada de la embarcación"
-            style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
-                   font-size:10px;font-weight:500;
-                   background:{% if modo_fecha == 'llegada' %}var(--info-bg){% else %}var(--bg){% endif %};
-                   color:{% if modo_fecha == 'llegada' %}var(--info){% else %}var(--text-mid){% endif %};
-                   border:1px solid {% if modo_fecha == 'llegada' %}var(--info){% else %}var(--border){% endif %}">
-            → Llegada
-          </button>
-          <button type="button" id="tab-salida" onclick="setModo('salida')"
-            title="Fecha de salida de la embarcación"
-            style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
-                   font-size:10px;font-weight:500;
-                   background:{% if modo_fecha == 'salida' %}var(--info-bg){% else %}var(--bg){% endif %};
-                   color:{% if modo_fecha == 'salida' %}var(--info){% else %}var(--text-mid){% endif %};
-                   border:1px solid {% if modo_fecha == 'salida' %}var(--info){% else %}var(--border){% endif %}">
-            ← Salida
-          </button>
-          <button type="button" id="tab-estancia" onclick="setModo('estancia')"
-            title="Embarcaciones cuya estancia caiga en el periodo"
-            style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
-                   font-size:10px;font-weight:500;
-                   background:{% if modo_fecha == 'estancia' %}var(--info-bg){% else %}var(--bg){% endif %};
-                   color:{% if modo_fecha == 'estancia' %}var(--info){% else %}var(--text-mid){% endif %};
-                   border:1px solid {% if modo_fecha == 'estancia' %}var(--info){% else %}var(--border){% endif %}">
-            ↔ Estancia
-          </button>
-        </div>
- 
-        <!-- Input simple -->
-        <div id="input-simple" style="display:{% if modo_fecha == 'estancia' %}none{% else %}flex{% endif %};
-             align-items:center;border:1px solid var(--border);border-radius:var(--radius);
-             overflow:hidden;background:var(--surface)">
-          <input type="date" id="fecha-a" name="fecha_a" value="{{ fecha_a }}"
-            style="flex:1;border:none;outline:none;padding:7px 10px;font-size:12px;
-                   background:transparent;color:var(--text)">
-          <button type="button" id="btn-periodo" onclick="togglePeriodo()"
-            title="Activar búsqueda por rango"
-            style="padding:7px 10px;border:none;border-left:1px solid var(--border);
-                   cursor:pointer;font-size:12px;background:transparent;
-                   color:{% if fecha_b %}var(--info){% else %}var(--text-mid){% endif %}">↔</button>
-          <div id="fecha-b-wrap" style="display:{% if fecha_b %}flex{% else %}none{% endif %};
-               flex:1;border-left:1px solid var(--info)">
-            <input type="date" id="fecha-b" name="fecha_b" value="{{ fecha_b }}"
-              style="width:100%;border:none;outline:none;padding:7px 10px;font-size:12px;
-                     background:transparent;color:var(--text);box-sizing:border-box">
-          </div>
-        </div>
- 
-        <!-- Input estancia -->
-        <div id="input-estancia" style="display:{% if modo_fecha == 'estancia' %}block{% else %}none{% endif %};
-             border:1px solid var(--border);border-radius:var(--radius);
-             overflow:hidden;background:var(--surface)">
-          <div style="display:flex">
-            <div style="flex:1;border-right:1px solid var(--border)">
-              <div style="padding:3px 10px 0;font-size:10px;color:var(--text-light)">llegada</div>
-              <input type="date" name="fecha_llegada" id="fecha-llegada" value="{{ fecha_llegada }}"
-                style="width:100%;border:none;outline:none;padding:2px 10px 7px;font-size:12px;
-                       background:transparent;color:var(--text);box-sizing:border-box">
+    
+      <!-- Panel colapsable -->
+      <div id="panel-filtros" style="display:{% if hay_filtros %}block{% else %}none{% endif %};
+          background:var(--surface);border:1px solid var(--border);
+          border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1rem">
+    
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+    
+          <!-- Columna izquierda -->
+          <div style="display:flex;flex-direction:column;gap:.75rem">
+            <div>
+              <label>Buscar</label>
+              <input type="text" name="q" id="inp-q" value="{{ q }}"
+                placeholder="Embarcación o cliente...">
             </div>
-            <div style="flex:1">
-              <div style="padding:3px 10px 0;font-size:10px;color:var(--text-light)">salida</div>
-              <input type="date" name="fecha_salida" id="fecha-salida" value="{{ fecha_salida }}"
-                style="width:100%;border:none;outline:none;padding:2px 10px 7px;font-size:12px;
-                       background:transparent;color:var(--text);box-sizing:border-box">
+            <div>
+              <label>Tipo de barco</label>
+              <select name="tipo" id="inp-tipo">
+                <option value="">Todos</option>
+                {% for t in tipos_barco %}
+                  <option value="{{ t.pk }}" {% if tipo_id == t.pk|stringformat:'s' %}selected{% endif %}>
+                    {{ t.tipo_barco }}
+                  </option>
+                {% endfor %}
+              </select>
             </div>
+            {% if estado_activo == 'PENDIENTE' %}
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;
+                  font-weight:normal;color:var(--text);cursor:pointer;margin:0">
+              <input type="checkbox" name="primera_entrada" id="inp-primera" value="1"
+                style="width:auto" {% if primera_entrada == '1' %}checked{% endif %}>
+              Primera entrada a México
+            </label>
+            {% endif %}
+
+            <div style="display:flex;gap:.4rem;margin-top:auto;padding-top:.5rem;
+                border-top:1px solid var(--border)">
+              <button type="submit" class="btn btn-primary btn-sm" style="flex:1;justify-content:center">Filtrar</button>
+              
+              {% if hay_filtros %}
+              <a href="." class="btn btn-default btn-sm" id="btn-reset">✕ Resetear</a>
+              {% endif %}
+
+            </div>
+
+
           </div>
+    
+          <!-- Columna derecha: fechas -->
+          <div>
+            <label style="margin-bottom:.5rem">Fecha</label>
+    
+            <!-- Tabs modo -->
+            <div style="display:flex;gap:3px;margin-bottom:.6rem">
+              <button type="button" id="tab-solicitud" onclick="setModo('solicitud')"
+                title="Fecha en que se envió la solicitud"
+                style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
+                      font-size:10px;font-weight:500;
+                      background:{% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info-bg){% else %}var(--bg){% endif %};
+                      color:{% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info){% else %}var(--text-mid){% endif %};
+                      border:1px solid {% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info){% else %}var(--border){% endif %}">
+                ✦ Solicitud
+              </button>
+              <button type="button" id="tab-llegada" onclick="setModo('llegada')"
+                title="Fecha de llegada de la embarcación"
+                style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
+                      font-size:10px;font-weight:500;
+                      background:{% if modo_fecha == 'llegada' %}var(--info-bg){% else %}var(--bg){% endif %};
+                      color:{% if modo_fecha == 'llegada' %}var(--info){% else %}var(--text-mid){% endif %};
+                      border:1px solid {% if modo_fecha == 'llegada' %}var(--info){% else %}var(--border){% endif %}">
+                → Llegada
+              </button>
+              <button type="button" id="tab-salida" onclick="setModo('salida')"
+                title="Fecha de salida de la embarcación"
+                style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
+                      font-size:10px;font-weight:500;
+                      background:{% if modo_fecha == 'salida' %}var(--info-bg){% else %}var(--bg){% endif %};
+                      color:{% if modo_fecha == 'salida' %}var(--info){% else %}var(--text-mid){% endif %};
+                      border:1px solid {% if modo_fecha == 'salida' %}var(--info){% else %}var(--border){% endif %}">
+                ← Salida
+              </button>
+              <button type="button" id="tab-estancia" onclick="setModo('estancia')"
+                title="Embarcaciones cuya estancia caiga en el periodo"
+                style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
+                      font-size:10px;font-weight:500;
+                      background:{% if modo_fecha == 'estancia' %}var(--info-bg){% else %}var(--bg){% endif %};
+                      color:{% if modo_fecha == 'estancia' %}var(--info){% else %}var(--text-mid){% endif %};
+                      border:1px solid {% if modo_fecha == 'estancia' %}var(--info){% else %}var(--border){% endif %}">
+                ↔ Estancia
+              </button>
+            </div>
+    
+            <!-- Input simple -->
+            <div id="input-simple" style="display:{% if modo_fecha == 'estancia' %}none{% else %}flex{% endif %};
+                align-items:center;border:1px solid var(--border);border-radius:var(--radius);
+                overflow:hidden;background:var(--surface)">
+              <input type="date" id="fecha-a" name="fecha_a" value="{{ fecha_a }}"
+                style="flex:1;border:none;outline:none;padding:7px 10px;font-size:12px;
+                      background:transparent;color:var(--text)">
+              <button type="button" id="btn-periodo" onclick="togglePeriodo()"
+                title="Activar búsqueda por rango"
+                style="padding:7px 10px;border:none;border-left:1px solid var(--border);
+                      cursor:pointer;font-size:12px;background:transparent;
+                      color:{% if fecha_b %}var(--info){% else %}var(--text-mid){% endif %}">↔</button>
+              <div id="fecha-b-wrap" style="display:{% if fecha_b %}flex{% else %}none{% endif %};
+                  flex:1;border-left:1px solid var(--info)">
+                <input type="date" id="fecha-b" name="fecha_b" value="{{ fecha_b }}"
+                  style="width:100%;border:none;outline:none;padding:7px 10px;font-size:12px;
+                        background:transparent;color:var(--text);box-sizing:border-box">
+              </div>
+            </div>
+    
+            <!-- Input estancia -->
+            <div id="input-estancia" style="display:{% if modo_fecha == 'estancia' %}block{% else %}none{% endif %};
+                border:1px solid var(--border);border-radius:var(--radius);
+                overflow:hidden;background:var(--surface)">
+              <div style="display:flex">
+                <div style="flex:1;border-right:1px solid var(--border)">
+                  <div style="padding:3px 10px 0;font-size:10px;color:var(--text-light)">llegada</div>
+                  <input type="date" name="fecha_llegada" id="fecha-llegada" value="{{ fecha_llegada }}"
+                    style="width:100%;border:none;outline:none;padding:2px 10px 7px;font-size:12px;
+                          background:transparent;color:var(--text);box-sizing:border-box">
+                </div>
+                <div style="flex:1">
+                  <div style="padding:3px 10px 0;font-size:10px;color:var(--text-light)">salida</div>
+                  <input type="date" name="fecha_salida" id="fecha-salida" value="{{ fecha_salida }}"
+                    style="width:100%;border:none;outline:none;padding:2px 10px 7px;font-size:12px;
+                          background:transparent;color:var(--text);box-sizing:border-box">
+                </div>
+              </div>
+            </div>
+    
+            <!-- Hint -->
+            <div id="hint" style="font-size:11px;color:var(--text-light);margin-top:.4rem"></div>
+
+            {% if estado_activo == 'EN_ESPERA' %}
+            <br>
+            <div>
+              <label>Ordenar por</label>
+              <select name="orden" id="inp-orden">
+                <option value="reciente" {% if orden == 'reciente' or not orden %}selected{% endif %}>
+                  Más reciente
+                </option>
+                <option value="urgente" {% if orden == 'urgente' %}selected{% endif %}>
+                  Más urgente (llegada próxima)
+                </option>
+              </select>
+            </div>
+            {% endif %}
+
+
+          </div>
+    
         </div>
- 
-        <!-- Hint -->
-        <div id="hint" style="font-size:11px;color:var(--text-light);margin-top:.4rem"></div>
-
-        {% if estado_activo == 'EN_ESPERA' %}
-        <br>
-        <div>
-          <label>Ordenar por</label>
-          <select name="orden" id="inp-orden">
-            <option value="reciente" {% if orden == 'reciente' or not orden %}selected{% endif %}>
-              Más reciente
-            </option>
-            <option value="urgente" {% if orden == 'urgente' %}selected{% endif %}>
-              Más urgente (llegada próxima)
-            </option>
-          </select>
-        </div>
-        {% endif %}
-
-
       </div>
- 
-    </div>
-  </div>
- 
-  <input type="hidden" name="modo_fecha" id="modo-fecha" value="{{ modo_fecha|default:'solicitud' }}">
- 
-</form>
+    
+      <input type="hidden" name="modo_fecha" id="modo-fecha" value="{{ modo_fecha|default:'solicitud' }}">
+    
+    </form>
+    
+<!-- FIN FILTROS -->
 
 <div class="table-wrap">
 
@@ -209,7 +211,7 @@
       {% for sol in solicitudes %}
       <tr>
         <td style="color:var(--text-light)">#{{ sol.id }}</td>
-        <td><a href="{% url 'solicitud_detail' sol.pk %}" style="color:var(--navy);font-weight:500">{{ sol.embarcacion.nombre_bote }}</a></td>
+        <td style="font-weight:500">{{ sol.embarcacion.nombre_bote }}</td>
         <td>{{ sol.embarcacion.cliente.fullname }}</td>
         <td>{{ sol.embarcacion.tipo_barco.tipo_barco }}</td>
         <td>{{ sol.fecha_llegada|date:"d/m/Y" }}</td>
@@ -256,7 +258,7 @@
             <!--Poner url de mapa (ya)-->
               <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Reasignar</a>
             {% endif %}
-            <a href="{% url 'solicitud_detail' sol.pk %}" class="btn btn-default btn-sm">Ver</a>
+           <button class="btn btn-default btn-sm" onclick="abrirPopupVer({{ sol.pk }})">Ver</button>
           </div>
         </td>
       </tr>
@@ -282,6 +284,121 @@
   {% endif %}
 </div>
 {% endif %}
+
+
+
+
+<!-- Popup Ver solicitud -->
+<<!-- Popup Ver solicitud -->
+<div id="popup-ver" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+     background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;
+     opacity:0;transition:opacity .2s ease">
+  <div id="popup-ver-card" style="background:var(--surface);border-radius:var(--radius-lg);
+       width:740px;max-width:95%;max-height:90vh;overflow-y:auto;
+       box-shadow:var(--shadow-md);
+       transform:scale(0.95);transition:transform .25s cubic-bezier(.34,1.56,.64,1)">
+ 
+    <!-- Header -->
+    <div style="padding:1.5rem 2rem;border-bottom:1px solid var(--border);
+         display:flex;justify-content:space-between;align-items:flex-start;
+         position:sticky;top:0;background:var(--surface);z-index:1">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <span id="ver-titulo" style="font-size:22px;font-weight:500;color:var(--text)"></span>
+          <span id="ver-badge" style="font-size:12px;padding:3px 12px;border-radius:20px;font-weight:500"></span>
+        </div>
+        <span id="ver-subtitulo" style="font-size:14px;color:var(--text-light)"></span>
+      </div>
+      <button onclick="cerrarPopupVer()"
+        style="background:none;border:none;cursor:pointer;color:var(--text-light);
+               font-size:22px;padding:4px;line-height:1;transition:color .15s;border-radius:50%;
+               width:34px;height:34px;display:flex;align-items:center;justify-content:center"
+        onmouseover="this.style.background='var(--bg)';this.style.color='var(--text)'"
+        onmouseout="this.style.background='none';this.style.color='var(--text-light)'">✕</button>
+    </div>
+ 
+    <!-- Body -->
+    <div style="padding:2rem">
+      <div id="ver-loading" style="text-align:center;color:var(--text-light);font-size:15px;padding:3rem">
+        Cargando...
+      </div>
+      <div id="ver-body" style="display:none">
+ 
+        <!-- 3 columnas -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-bottom:1.5rem">
+ 
+          <!-- Embarcación -->
+          <div style="padding-right:28px">
+            <div style="font-size:11px;font-weight:600;color:#c9a84c;
+                 text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px">
+                 Embarcación
+            </div>
+            <div id="ver-emb" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+ 
+          <!-- Cliente -->
+          <div style="border-left:1px solid var(--border);padding:0 28px">
+            <div style="font-size:11px;font-weight:600;color:#c9a84c;
+                 text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px">
+                 Cliente
+            </div>
+            <div id="ver-cliente" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+ 
+          <!-- Estancia -->
+          <div style="border-left:1px solid var(--border);padding-left:28px">
+            <div style="font-size:11px;font-weight:600;color:#c9a84c;
+                 text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px">
+                 Estancia
+            </div>
+            <div id="ver-estancia" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+ 
+        </div>
+ 
+        <!-- Comentario -->
+        <div id="ver-comentario-wrap" style="display:none;
+             border-left:3px solid #c9a84c;border-radius:0 var(--radius) var(--radius) 0;
+             padding:.85rem 1.1rem">
+          <div style="font-size:10px;font-weight:600;color:#8aa0b8;
+               text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">
+            Solicitudes especiales
+          </div>
+          <div id="ver-comentario" style="font-size:14px;color:var(--text)"></div>
+        </div>
+ 
+      </div>
+    </div>
+ 
+    <!-- Footer -->
+    <div id="ver-footer" style="padding:1.1rem 2rem;border-top:1px solid var(--border);
+         background:var(--bg);display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+         position:sticky;bottom:0">
+    </div>
+ 
+  </div>
+</div>
+
+<style>
+.ver-field {
+  padding:7px 9px;border-radius:6px;cursor:default;
+  transition:background .15s;
+}
+.ver-field:hover { background:var(--bg); }
+.ver-field:hover .ver-field-val { transform:scale(1.03); color:var(--navy); }
+.ver-field-label { font-size:11px;color:var(--text-light);margin-bottom:3px; }
+.ver-field-val {
+  font-size:15px;font-weight:500;color:var(--text);
+  transition:transform .15s, color .15s;
+  display:inline-block;transform-origin:left center;
+}
+.ver-field-val-info {
+  font-size:14px;font-weight:500;color:var(--info);
+  transition:transform .15s;
+  display:inline-block;transform-origin:left center;
+}
+.ver-field:hover .ver-field-val-info { transform:scale(1.03); }
+</style>
 
 
 <script>
@@ -386,6 +503,136 @@ actualizarChips();
   const el=document.getElementById(id);
   if(el) el.addEventListener('change', actualizarChips);
   if(el && el.type==='text') el.addEventListener('input', actualizarChips);
+});
+</script>
+
+
+<!-- SCRIPT DEL POPUP -->
+
+<script>
+const CSRF_VER = "{{ csrf_token }}";
+ 
+const BADGE_STYLES = {
+  'Pendiente':  'background:var(--warning-bg);color:var(--warning)',
+  'En espera':  'background:var(--info-bg);color:var(--info)',
+  'Aprobada':   'background:var(--success-bg);color:var(--success)',
+  'Completada': 'background:var(--bg);color:var(--text-mid)',
+  'Rechazada':  'background:var(--danger-bg);color:var(--danger)',
+};
+ 
+function campo(label, valor, esInfo=false){
+  return `<div class="ver-field">
+    <div class="ver-field-label">${label}</div>
+    <div class="${esInfo?'ver-field-val-info':'ver-field-val'}">${valor}</div>
+  </div>`;
+}
+ 
+async function abrirPopupVer(pk){
+  const popup = document.getElementById('popup-ver');
+  const card  = document.getElementById('popup-ver-card');
+  popup.style.display = 'flex';
+  requestAnimationFrame(()=>{
+    popup.style.opacity = '1';
+    card.style.transform = 'scale(1)';
+  });
+ 
+  document.getElementById('ver-loading').style.display='block';
+  document.getElementById('ver-body').style.display='none';
+  document.getElementById('ver-footer').innerHTML='';
+  document.getElementById('ver-titulo').textContent='Cargando...';
+  document.getElementById('ver-subtitulo').textContent='';
+  document.getElementById('ver-badge').textContent='';
+ 
+  try{
+    const res  = await fetch(`/solicitudes/${pk}/json/`);
+    const data = await res.json();
+ 
+    document.getElementById('ver-titulo').textContent    = data.embarcacion;
+    document.getElementById('ver-subtitulo').textContent = `${data.cliente} · Solicitud #${data.id}`;
+    const badge = document.getElementById('ver-badge');
+    badge.textContent   = data.estado;
+    badge.style.cssText = `font-size:12px;padding:3px 12px;border-radius:20px;font-weight:500;${BADGE_STYLES[data.estado]||''}`;
+ 
+    document.getElementById('ver-emb').innerHTML =
+      campo('Tipo',   data.tipo) +
+      campo('Eslora', data.eslora+' m') +
+      campo('Manga',  data.manga+' m') +
+      campo('Calado', data.calado+' m');
+ 
+    document.getElementById('ver-cliente').innerHTML =
+      campo('Nombre',        data.cliente) +
+      campo('Email',         `<a href="mailto:${data.email_cliente}" style="color:var(--info);text-decoration:none">${data.email_cliente}</a>`, true) +
+      campo('Teléfono',      data.telefono_cliente) +
+      campo('1ª entrada MX', data.primera_entrada_mexico
+        ? '<span style="color:var(--warning);font-weight:500">Sí</span>'
+        : '<span style="color:var(--text-light)">No</span>');
+ 
+    document.getElementById('ver-estancia').innerHTML =
+      campo('Solicitud', data.fecha_solicitud) +
+      campo('Llegada',   data.fecha_llegada) +
+      campo('Salida',    data.fecha_salida);
+ 
+    const comentWrap = document.getElementById('ver-comentario-wrap');
+    const comentEl   = document.getElementById('ver-comentario');
+    if(data.comentario){
+      comentEl.textContent        = data.comentario;
+      comentWrap.style.display    = 'block';
+    } else {
+      comentWrap.style.display    = 'none';
+    }
+ 
+    document.getElementById('ver-loading').style.display='none';
+    document.getElementById('ver-body').style.display='block';
+    renderBotonesVer(data);
+ 
+  } catch(err){
+    document.getElementById('ver-loading').innerHTML=
+      `<span style="color:var(--danger)">Error al cargar: ${err.message}</span>`;
+  }
+}
+ 
+function renderBotonesVer(data){
+  const pk     = data.id;
+  const footer = document.getElementById('ver-footer');
+  let html     = '';
+ 
+  if(data.estado === 'Pendiente'){
+    html += `<form method="post" action="/solicitudes/${pk}/estado/EN_ESPERA/" style="display:inline">
+      <input type="hidden" name="csrfmiddlewaretoken" value="${CSRF_VER}">
+      <button type="submit" class="btn btn-success">Aprobar</button>
+    </form>`;
+    html += `<button class="btn btn-danger"
+      onclick="cerrarPopupVer();abrirModalRechazo(${pk},this.dataset.nombre,'list')"
+      data-nombre="${data.embarcacion.replace(/"/g,'&quot;')}">Rechazar</button>`;
+    html += `<a href="/solicitudes/${pk}/editar/" class="btn btn-default">Editar</a>`;
+ 
+  } else if(data.estado === 'En espera'){
+    html += `<a href="/mapa/?solicitud_id=${pk}" class="btn btn-accent">Asignar en mapa</a>`;
+    html += `<button class="btn btn-default"
+      onclick="window.open('https://mail.google.com/mail/?view=cm&to=${data.email_cliente}&su=Solicitud — ${data.embarcacion}&body=Estimado ${data.cliente}','_blank')">Contactar</button>`;
+    html += `<a href="https://mail.google.com/mail/u/0/#search/${data.email_cliente}"
+      target="_blank" class="btn btn-default">Revisar</a>`;
+    html += `<button class="btn btn-danger"
+      onclick="cerrarPopupVer();abrirModalRechazo(${pk},this.dataset.nombre,'en_espera')"
+      data-nombre="${data.embarcacion.replace(/"/g,'&quot;')}">Rechazar</button>`;
+    html += `<a href="/solicitudes/${pk}/editar/" class="btn btn-default">Editar</a>`;
+  }
+ 
+  html += `<button onclick="cerrarPopupVer()" class="btn btn-default"
+    style="margin-left:auto">Cerrar</button>`;
+  footer.innerHTML = html;
+}
+ 
+function cerrarPopupVer(){
+  const popup = document.getElementById('popup-ver');
+  const card  = document.getElementById('popup-ver-card');
+  popup.style.opacity    = '0';
+  card.style.transform   = 'scale(0.95)';
+  setTimeout(()=>{ popup.style.display='none'; }, 200);
+}
+ 
+document.getElementById('popup-ver').addEventListener('click', function(ev){
+  if(ev.target === this) cerrarPopupVer();
 });
 </script>
 
