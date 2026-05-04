@@ -5,7 +5,7 @@
 <div class="page-header">
   <h2>Asignadas — en marina</h2>
 </div>
-
+    <!-- FILTROS -->
     <form method="get" id="form-filtros">
 
       <!-- Barra trigger -->
@@ -124,6 +124,7 @@
 
     </form>
 
+    <!-- Tabla crud -->
 <div class="table-wrap">
   <table>
     <thead>
@@ -161,10 +162,11 @@
         </td>
         <td>
           <div style="display:flex;gap:.3rem">
-            <button class="btn btn-default btn-sm" onclick="abrirPopup({{ sol.pk }})">
-              Ver más
-            </button>
+
             <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}"class="btn btn-accent btn-sm">Reasignar</a>
+            <button class="btn btn-default btn-sm" onclick="abrirPopup({{ sol.pk }})">
+              Ver
+            </button>
           </div>
         </td>
       </tr>
@@ -191,117 +193,213 @@
 </div>
 {% endif %}
 
-<!-- POPUP -->
-<div id="popup-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:flex-start;justify-content:center;padding-top:60px;overflow-y:auto">
-  <div style="background:var(--surface);border-radius:var(--radius-lg);width:620px;max-width:95%;box-shadow:var(--shadow-md);margin-bottom:60px">
+<!-- POPUP APROBADAS -->
+<div id="popup-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+     background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;
+     opacity:0;transition:opacity .2s ease">
+  <div id="popup-card" style="background:var(--surface);border-radius:var(--radius-lg);
+       width:740px;max-width:95%;max-height:90vh;overflow-y:auto;
+       box-shadow:var(--shadow-md);
+       transform:scale(0.95);transition:transform .25s cubic-bezier(.34,1.56,.64,1)">
 
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border)">
+    <!-- Header -->
+    <div style="padding:1.5rem 2rem;border-bottom:1px solid var(--border);
+         display:flex;justify-content:space-between;align-items:flex-start;
+         position:sticky;top:0;background:var(--surface);z-index:1">
       <div>
-        <div id="popup-titulo" style="font-size:16px;font-weight:600;color:var(--text)"></div>
-        <div id="popup-subtitulo" style="font-size:12px;color:var(--text-light);margin-top:2px"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <span id="popup-titulo" style="font-size:22px;font-weight:500;color:var(--text)"></span>
+          <span id="popup-badge" style="font-size:12px;padding:3px 12px;border-radius:20px;font-weight:500;
+                background:var(--success-bg);color:var(--success)"></span>
+        </div>
+        <span id="popup-subtitulo" style="font-size:14px;color:var(--text-light)"></span>
       </div>
-      <button onclick="cerrarPopup()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-light);padding:.25rem">✕</button>
+      <button onclick="cerrarPopup()"
+        style="background:none;border:none;cursor:pointer;color:var(--text-light);
+               font-size:22px;padding:4px;line-height:1;border-radius:50%;
+               width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+               transition:color .15s"
+        onmouseover="this.style.background='var(--bg)';this.style.color='var(--text)'"
+        onmouseout="this.style.background='none';this.style.color='var(--text-light)'">✕</button>
     </div>
 
-    <div style="padding:1.25rem 1.5rem">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
-        <div>
-          <div style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem">Embarcación</div>
-          <div id="popup-emb-info" style="font-size:13px;line-height:1.9;color:var(--text)"></div>
-        </div>
-        <div>
-          <div style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem">Estadía</div>
-          <div id="popup-estadia-info" style="font-size:13px;line-height:1.9;color:var(--text)"></div>
-        </div>
+    <!-- Body -->
+    <div style="padding:2rem">
+      <div id="popup-loading" style="text-align:center;color:var(--text-light);font-size:15px;padding:3rem">
+        Cargando...
       </div>
+      <div id="popup-body" style="display:none">
 
-      <div style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem">
-        Historial de ubicaciones
+        <!-- 3 columnas info -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-bottom:1.5rem">
+
+          <!-- Embarcación -->
+          <div style="padding-right:28px">
+            <div style="font-size:11px;font-weight:600;color:#c9a84c;
+                 text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px">Embarcación</div>
+            <div id="popup-emb" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+
+          <!-- Cliente -->
+          <div style="border-left:1px solid var(--border);padding:0 28px">
+            <div style="font-size:11px;font-weight:600;color:#c9a84c;
+                 text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px">Cliente</div>
+            <div id="popup-cliente" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+
+          <!-- Estancia -->
+          <div style="border-left:1px solid var(--border);padding-left:28px">
+            <div style="font-size:11px;font-weight:600;color:#c9a84c;
+                 text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px">Estancia</div>
+            <div id="popup-estancia" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+
+        </div>
+
+        <!-- Comentario -->
+        <div id="popup-comentario-wrap" style="display:none;margin-bottom:1.5rem;
+             border-left:3px solid #c9a84c;border-radius:0 var(--radius) var(--radius) 0;
+             padding:.85rem 1.1rem">
+          <div style="font-size:10px;font-weight:600;color:#c9a84c;
+               text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">
+            Solicitudes especiales
+          </div>
+          <div id="popup-comentario" style="font-size:14px;color:var(--text)"></div>
+        </div>
+
+        <!-- Historial de ubicaciones -->
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#c9a84c;
+               text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">
+            Historial de ubicaciones
+          </div>
+          <div id="popup-historial"></div>
+        </div>
+
       </div>
-      <div id="popup-historial" style="margin-bottom:1rem"></div>
     </div>
 
-    <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.5rem;flex-wrap:wrap">
-      <a id="popup-btn-contactar" href="#" class="btn btn-info btn-sm">Contactar</a>
-      <a id="popup-btn-revisar" href="#" class="btn btn-default btn-sm" target="_blank">Revisar</a>
-      <a id="popup-btn-reasignar" href="#" class="btn btn-accent btn-sm">Reasignar</a>
-      <a id="popup-btn-editar" href="#" class="btn btn-default btn-sm">Editar</a>
-      <button id="popup-btn-rechazar" type="button" class="btn btn-danger btn-sm">Rechazar</button>
-      <button onclick="cerrarPopup()" class="btn btn-default btn-sm" style="margin-left:auto">Cerrar</button>
+    <!-- Footer -->
+    <div style="padding:1.1rem 2rem;border-top:1px solid var(--border);
+         background:var(--bg);display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+         position:sticky;bottom:0">
+      <a id="popup-btn-contactar" href="#" class="btn btn-default">Contactar</a>
+      <a id="popup-btn-revisar"   href="#" class="btn btn-default" target="_blank">Revisar</a>
+      <a id="popup-btn-reasignar" href="#" class="btn btn-accent">Reasignar</a>
+      <a id="popup-btn-editar"    href="#" class="btn btn-default">Editar</a>
+      <button id="popup-btn-rechazar" type="button" class="btn btn-danger">Rechazar</button>
+      <button onclick="cerrarPopup()" class="btn btn-default" style="margin-left:auto">Cerrar</button>
     </div>
 
   </div>
 </div>
 
+<style>
+.apb-field {
+  padding:7px 9px;border-radius:6px;cursor:default;transition:background .15s;
+}
+.apb-field:hover { background:var(--bg); }
+.apb-field:hover .apb-val { transform:scale(1.03);color:var(--navy); }
+.apb-label { font-size:11px;color:var(--text-light);margin-bottom:3px; }
+.apb-val {
+  font-size:15px;font-weight:500;color:var(--text);
+  transition:transform .15s,color .15s;
+  display:inline-block;transform-origin:left center;
+}
+.apb-val-info {
+  font-size:14px;font-weight:500;color:var(--info);
+  transition:transform .15s;display:inline-block;transform-origin:left center;
+}
+.apb-field:hover .apb-val-info { transform:scale(1.03); }
+</style>
 
 <script>
 const CSRF = "{{ csrf_token }}";
 
+function apbCampo(label, valor, esInfo=false){
+  return `<div class="apb-field">
+    <div class="apb-label">${label}</div>
+    <div class="${esInfo?'apb-val-info':'apb-val'}">${valor}</div>
+  </div>`;
+}
 
-// ── POPUP PRINCIPAL ───────────────────────────────────────
 async function abrirPopup(pk){
   const overlay = document.getElementById('popup-overlay');
+  const card    = document.getElementById('popup-card');
   overlay.style.display = 'flex';
+  requestAnimationFrame(()=>{
+    overlay.style.opacity  = '1';
+    card.style.transform   = 'scale(1)';
+  });
 
-  document.getElementById('popup-titulo').textContent = 'Cargando...';
+  document.getElementById('popup-loading').style.display = 'block';
+  document.getElementById('popup-body').style.display    = 'none';
+  document.getElementById('popup-titulo').textContent    = 'Cargando...';
   document.getElementById('popup-subtitulo').textContent = '';
-  document.getElementById('popup-emb-info').innerHTML = '';
-  document.getElementById('popup-estadia-info').innerHTML = '';
-  document.getElementById('popup-historial').innerHTML = '<span style="color:var(--text-light);font-size:12px">Cargando...</span>';
+  document.getElementById('popup-badge').textContent     = '';
 
   try{
-    const res = await fetch(`/solicitudes/${pk}/json/`);
+    const res  = await fetch(`/solicitudes/${pk}/json/`);
     const data = await res.json();
 
-    document.getElementById('popup-titulo').textContent = data.embarcacion;
-    document.getElementById('popup-subtitulo').textContent = `${data.cliente} · ${data.tipo}`;
+    document.getElementById('popup-titulo').textContent    = data.embarcacion;
+    document.getElementById('popup-subtitulo').textContent = `${data.cliente} · Solicitud #${data.id}`;
+    document.getElementById('popup-badge').textContent     = data.estado;
 
-    document.getElementById('popup-emb-info').innerHTML = `
-      <div><span style="color:var(--text-mid)">Eslora:</span> ${data.eslora} m</div>
-      <div><span style="color:var(--text-mid)">Manga:</span> ${data.manga} m</div>
-      <div><span style="color:var(--text-mid)">Calado:</span> ${data.calado} m</div>
-      <div><span style="color:var(--text-mid)">Estado:</span>
-        <span class="badge badge-success" style="font-size:11px">${data.estado}</span>
-      </div>
-    `;
+    document.getElementById('popup-emb').innerHTML =
+      apbCampo('Tipo',   data.tipo) +
+      apbCampo('Eslora', data.eslora+' m') +
+      apbCampo('Manga',  data.manga+' m') +
+      apbCampo('Calado', data.calado+' m');
 
-    document.getElementById('popup-estadia-info').innerHTML = `
-      <div><span style="color:var(--text-mid)">Llegada:</span> ${data.fecha_llegada}</div>
-      <div><span style="color:var(--text-mid)">Salida:</span> ${data.fecha_salida}</div>
-      ${data.comentario ? `<div><span style="color:var(--text-mid)">Nota:</span> ${data.comentario}</div>` : ''}
-    `;
+    document.getElementById('popup-cliente').innerHTML =
+      apbCampo('Nombre',        data.cliente) +
+      apbCampo('Email',         `<a href="mailto:${data.email_cliente}" style="color:var(--info);text-decoration:none">${data.email_cliente}</a>`, true) +
+      apbCampo('Teléfono',      data.telefono_cliente) +
+      apbCampo('1ª entrada MX', data.primera_entrada_mexico
+        ? '<span style="color:var(--warning);font-weight:500">Sí</span>'
+        : '<span style="color:var(--text-light)">No</span>');
 
+    document.getElementById('popup-estancia').innerHTML =
+      apbCampo('Solicitud', data.fecha_solicitud) +
+      apbCampo('Llegada',   data.fecha_llegada) +
+      apbCampo('Salida',    data.fecha_salida);
+
+    const comentWrap = document.getElementById('popup-comentario-wrap');
+    if(data.comentario){
+      document.getElementById('popup-comentario').textContent = data.comentario;
+      comentWrap.style.display = 'block';
+    } else {
+      comentWrap.style.display = 'none';
+    }
+
+    // Historial
     if(data.asignaciones.length === 0){
       document.getElementById('popup-historial').innerHTML =
-        '<span style="color:var(--text-light);font-size:12px">Sin asignaciones registradas.</span>';
+        '<span style="color:var(--text-light);font-size:13px">Sin asignaciones registradas.</span>';
     } else {
       let html = '<div class="table-wrap"><table><thead><tr><th>Muelle</th><th>Espacios</th><th>Inicio</th><th>Fin</th><th>Admin</th></tr></thead><tbody>';
-
       data.asignaciones.forEach((a, i) => {
         const espacios = a.espacios.map(e => e.numero).join(', ') || '—';
-        const actual = i === 0
+        const actual   = i === 0
           ? `<span class="badge badge-success" style="font-size:10px;margin-left:4px">actual</span>`
           : '';
-
-        html += `
-          <tr>
-            <td>${a.muelle}${actual}</td>
-            <td>${espacios}</td>
-            <td>${a.fecha_inicio}</td>
-            <td>${a.fecha_fin}</td>
-            <td style="font-size:12px;color:var(--text-light)">${a.administrador}</td>
-          </tr>
-        `;
+        html += `<tr>
+          <td>${a.muelle}${actual}</td>
+          <td>${espacios}</td>
+          <td>${a.fecha_inicio}</td>
+          <td>${a.fecha_fin}</td>
+          <td style="font-size:12px;color:var(--text-light)">${a.administrador}</td>
+        </tr>`;
       });
-
       html += '</tbody></table></div>';
       document.getElementById('popup-historial').innerHTML = html;
     }
 
-    document.getElementById('popup-btn-editar').href = `/solicitudes/${pk}/editar/`;
+    // Botones
+    document.getElementById('popup-btn-editar').href    = `/solicitudes/${pk}/editar/`;
     document.getElementById('popup-btn-reasignar').href = `/mapa/?solicitud_id=${pk}`;
 
-    document.getElementById('popup-btn-contactar').href = '#';
     document.getElementById('popup-btn-contactar').onclick = (e) => {
       e.preventDefault();
       window.open(
@@ -314,18 +412,24 @@ async function abrirPopup(pk){
       `https://mail.google.com/mail/u/0/#search/${data.email_cliente}`;
 
     document.getElementById('popup-btn-rechazar').onclick = () => {
-        abrirModalRechazo(pk, data.embarcacion, 'aprobadas');
+      abrirModalRechazo(pk, data.embarcacion, 'aprobadas');
     };
 
+    document.getElementById('popup-loading').style.display = 'none';
+    document.getElementById('popup-body').style.display    = 'block';
+
   } catch(err){
-    document.getElementById('popup-historial').innerHTML =
-      `<span style="color:var(--danger);font-size:12px">Error al cargar: ${err.message}</span>`;
+    document.getElementById('popup-loading').innerHTML =
+      `<span style="color:var(--danger);font-size:13px">Error al cargar: ${err.message}</span>`;
   }
 }
 
-// ── POPUP PRINCIPAL CERRAR ────────────────────────────────
 function cerrarPopup(){
-  document.getElementById('popup-overlay').style.display = 'none';
+  const overlay = document.getElementById('popup-overlay');
+  const card    = document.getElementById('popup-card');
+  overlay.style.opacity  = '0';
+  card.style.transform   = 'scale(0.95)';
+  setTimeout(()=>{ overlay.style.display='none'; }, 200);
 }
 
 document.getElementById('popup-overlay').addEventListener('click', function(ev){
@@ -333,6 +437,7 @@ document.getElementById('popup-overlay').addEventListener('click', function(ev){
 });
 </script>
 
+<!-- FILTROS -->
 <script>
 let abierto = {% if hay_filtros %}true{% else %}false{% endif %};
 let periodoActivo = {% if fecha_salida_hasta %}true{% else %}false{% endif %};
