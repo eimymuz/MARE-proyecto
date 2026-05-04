@@ -69,6 +69,9 @@ MARE_PROYECTO/
 │   ├── urls.py
 │   └── wsgi.py
 │
+├── fixtures/
+│   └── muelles.json
+│
 ├── templates/
 │   ├── components/
 │   ├── publico/
