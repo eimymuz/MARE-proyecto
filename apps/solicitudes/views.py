@@ -230,21 +230,7 @@ def solicitud_aprobadas_list(request):
         'hay_filtros': any([q, muelle_id, tipo_id, fecha_salida_desde, fecha_salida_hasta]),
     })
 
-@login_required
-def solicitud_detail(request, pk):
-    solicitud = get_object_or_404(
-        Solicitud.objects.select_related(
-            'embarcacion__cliente',
-            'embarcacion__tipo_barco',
-        ), pk=pk
-    )
-    return render(request, 'solicitudes/solicitud_detail.html', {
-        'solicitud':   solicitud,
-        'historial':   solicitud.historial.order_by('-fecha_cambio'),
-        'asignaciones': solicitud.asignaciones.select_related(
-            'muelle', 'administrador__user'
-        ).prefetch_related('espacios').order_by('-fecha_inicio'),
-    })
+
 
 @login_required
 def solicitud_update(request, pk):
@@ -287,7 +273,14 @@ def solicitud_update(request, pk):
                 solicitud.save()
 
             messages.success(request, 'Solicitud actualizada correctamente.')
-            return redirect('solicitud_detail', pk=solicitud.pk)
+            destinos = {
+                'PENDIENTE':  'solicitud_list',
+                'EN_ESPERA':  'solicitud_en_espera_list',
+                'APROBADA':   'solicitud_aprobadas_list',
+                'COMPLETADA': 'solicitud_list',
+                'RECHAZADA':  'solicitud_list',
+            }
+            return redirect(destinos.get(solicitud.estado, 'solicitud_list'))
 
         except ValidationError as exc:
             context['errors'] = exc.message_dict if hasattr(exc,'message_dict') else exc.messages
@@ -295,20 +288,6 @@ def solicitud_update(request, pk):
             context['errors'] = [str(exc)]
 
     return render(request, 'solicitudes/solicitud_form.html', context)
-
-
-@login_required
-def solicitud_delete(request, pk):
-    solicitud = get_object_or_404(Solicitud, pk=pk)
-    if request.method == 'POST':
-        solicitud.delete()
-        messages.success(request, 'Solicitud eliminada.')
-        return redirect('solicitud_list')
-    return render(request, 'solicitudes/solicitud_confirm_delete.html', {
-        'solicitud': solicitud
-    })
-
-
 
 @login_required
 @require_POST
@@ -318,7 +297,7 @@ def solicitud_cambiar_estado(request, pk, nuevo_estado):
 
     if nuevo_estado not in estados_validos:
         messages.error(request, 'Estado no válido.')
-        return redirect('solicitud_detail', pk=pk)
+        return redirect('solicitud_list')
 
     # guardar motivo de rechazo si viene
     if nuevo_estado == 'RECHAZADA':
@@ -383,17 +362,20 @@ def solicitud_detalle_json(request, pk):
         })
 
     return JsonResponse({
-        'id':           solicitud.pk,
-        'embarcacion':  solicitud.embarcacion.nombre_bote,
-        'cliente':      solicitud.embarcacion.cliente.fullname,
-        'tipo':         solicitud.embarcacion.tipo_barco.tipo_barco,
-        'eslora':       float(solicitud.embarcacion.eslora),
-        'manga':        float(solicitud.embarcacion.manga),
-        'calado':       float(solicitud.embarcacion.calado),
-        'fecha_llegada':solicitud.fecha_llegada.strftime('%d/%m/%Y'),
-        'fecha_salida': solicitud.fecha_salida.strftime('%d/%m/%Y'),
-        'estado':       solicitud.get_estado_display(),
-        'comentario':   solicitud.comentario or '',
-        'asignaciones': asignaciones_data,
-        'email_cliente': solicitud.embarcacion.cliente.email,
+        'id':                    solicitud.pk,
+        'embarcacion':           solicitud.embarcacion.nombre_bote,
+        'cliente':               solicitud.embarcacion.cliente.fullname,
+        'tipo':                  solicitud.embarcacion.tipo_barco.tipo_barco,
+        'eslora':                float(solicitud.embarcacion.eslora),
+        'manga':                 float(solicitud.embarcacion.manga),
+        'calado':                float(solicitud.embarcacion.calado),
+        'fecha_llegada':         solicitud.fecha_llegada.strftime('%d/%m/%Y'),
+        'fecha_salida':          solicitud.fecha_salida.strftime('%d/%m/%Y'),
+        'fecha_solicitud':       solicitud.fecha_solicitud.strftime('%d/%m/%Y'),
+        'estado':                solicitud.get_estado_display(),
+        'comentario':            solicitud.comentario or '',
+        'email_cliente':         solicitud.embarcacion.cliente.email,
+        'telefono_cliente':      solicitud.embarcacion.cliente.telefono,
+        'primera_entrada_mexico': solicitud.primera_entrada_mexico,
+        'asignaciones':          asignaciones_data,
     })
