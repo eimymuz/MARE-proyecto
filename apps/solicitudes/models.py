@@ -1,6 +1,6 @@
 from django.db              import models
 from django.core.exceptions import ValidationError
-from django.utils           import timezone
+from django.utils.timezone import localdate 
 from apps.embarcaciones.models import Embarcacion
 
 class Solicitud(models.Model):
@@ -35,7 +35,7 @@ class Solicitud(models.Model):
     def clean(self):
         # fecha_solicitud tiene auto_now_add — en objetos nuevos es None durante clean()
         # usamos today como referencia segura
-        today = timezone.now().date()
+        today = localdate()
 
         if self.fecha_llegada and self.fecha_llegada < today:
             raise ValidationError('La fecha de llegada no puede ser anterior a hoy.')
