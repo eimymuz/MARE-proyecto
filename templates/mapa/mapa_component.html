@@ -154,7 +154,7 @@ const layerT    = document.getElementById('mapa-layer-tierra');
 const layerE    = document.getElementById('mapa-layer-espacios');
 const layerL    = document.getElementById('mapa-layer-labels');
 
-let vx=0, vy=0, vscale=1;
+let vx=600, vy=270, vscale=0.36;
 let panning=false, panStart=null, panOrigin=null, spaceDown=false;
 let espaciosData=[], espaciosSeleccionados=new Set(), solicitudActiva=null;
 let filtroMuelle='', filtroTipo='', filtroTamano='';
@@ -165,7 +165,7 @@ function applyTransform(){
   svg.style.transformOrigin='0 0';
   if(!READONLY) document.getElementById('mapa-zoom-label').textContent=Math.round(vscale*100)+'%';
 }
-window.mapaResetView=function(){ vx=0;vy=0;vscale=1;applyTransform(); };
+window.mapaResetView=function(){ vx=600;vy=270;vscale=0.36;applyTransform(); };
 
 container.addEventListener('wheel',ev=>{
   ev.preventDefault();
@@ -554,6 +554,7 @@ if(!READONLY){
   cargarSolicitudes();
 }
 cargarMapa();
+applyTransform();
 
 })();
 </script>
