@@ -4,242 +4,738 @@
 
 {% block content %}
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- =========================
+  HEADER DEL DASHBOARD
+========================= -->
+<div class="page-header dashboard-header">
 
-<div class="page-header"
-     style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        gap:15px;
-     ">
+  <div>
+    <h2>Estadísticas</h2>
 
-  <h2>Estadísticas</h2>
+    <p class="dashboard-subtitle">
+      Panel general de solicitudes, estados y embarcaciones registradas.
+    </p>
+  </div>
 
-  <a href="{% url 'reporte_solicitudes' %}"
-     class="btn btn-primary"
-     style="
-        padding:10px 18px;
-        border-radius:10px;
-        text-decoration:none;
-        font-weight:600;
-     ">
-    Volver a reportes
-  </a>
+  <!-- BOTONES -->
+  <div class="dashboard-actions">
+
+    <!-- DESCARGAR PDF -->
+    <a href="{% url 'reporte_estadisticas_pdf' %}"
+       class="btn btn-accent">
+      Descargar PDF
+    </a>
+
+    <!-- VOLVER -->
+    <a href="{% url 'reporte_solicitudes' %}"
+       class="btn btn-primary">
+      Volver a reportes
+    </a>
+
+  </div>
 
 </div>
 
-<div class="card">
+<!-- =========================
+  TARJETAS PRINCIPALES
+========================= -->
+<div class="kpi-grid">
 
-  <h3 style="margin-top:0; margin-bottom:20px;">
-    Resumen general de solicitudes
-  </h3>
+  <!-- TOTAL -->
+  <div class="kpi-card kpi-total">
 
-  <div class="estadisticas-grid">
+    <span>Total de solicitudes</span>
 
-    <div class="estadistica-card">
-      <span>Total general</span>
-      <strong>{{ total_estadisticas }}</strong>
+    <strong>{{ total_estadisticas }}</strong>
+
+    <small>Registros acumulados</small>
+
+  </div>
+
+  <!-- APROBADAS -->
+  <div class="kpi-card kpi-success">
+
+    <span>Aprobadas</span>
+
+    <strong>{{ aprobadas }}</strong>
+
+    <small>{{ tasa_aprobacion }}% de aprobación</small>
+
+  </div>
+
+  <!-- RECHAZADAS -->
+  <div class="kpi-card kpi-danger">
+
+    <span>Rechazadas</span>
+
+    <strong>{{ rechazadas }}</strong>
+
+    <small>Solicitudes no aceptadas</small>
+
+  </div>
+
+  <!-- EN SEGUIMIENTO -->
+  <div class="kpi-card kpi-warning">
+
+    <span>En seguimiento</span>
+
+    <strong>{{ en_proceso }}</strong>
+
+    <small>Pendientes, en espera o aprobadas</small>
+
+  </div>
+
+</div>
+
+<!-- =========================
+  GRID PRINCIPAL
+========================= -->
+<div class="dashboard-grid">
+
+  <!-- =========================
+    GRÁFICA MENSUAL PROFESIONAL
+  ========================= -->
+  <div class="card panel panel-xl">
+
+    <div class="panel-title">
+
+      <h3>Solicitudes por mes</h3>
+
+      <p>
+        Evolución mensual de las solicitudes registradas.
+      </p>
+
     </div>
 
-    <div class="estadistica-card">
-      <span>Aprobadas</span>
-      <strong>{{ aprobadas }}</strong>
+    <!-- GRÁFICA PERSONALIZADA -->
+    <div class="grafica-mensual-pro">
+
+      {% for item in solicitudes_mes_data %}
+      <div class="mes-columna">
+
+        <!-- VALOR -->
+        <span class="valor-mes">
+          {{ item.total }}
+        </span>
+
+        <!-- BARRA -->
+        <div class="barra-mes-wrap">
+
+          <div
+            class="barra-mes {% if item.activo %}barra-activa{% endif %}"
+            style="height: {{ item.porcentaje }}%;">
+          </div>
+
+        </div>
+
+        <!-- NOMBRE MES -->
+        <span class="nombre-mes">
+          {{ item.mes }}
+        </span>
+
+      </div>
+      {% endfor %}
+
     </div>
 
-    <div class="estadistica-card">
-      <span>Rechazadas</span>
-      <strong>{{ rechazadas }}</strong>
+  </div>
+
+  <!-- =========================
+    DISTRIBUCIÓN POR ESTADO
+  ========================= -->
+  <div class="card panel panel-sm">
+
+    <div class="panel-title">
+
+      <h3>Distribución por estado</h3>
+
+      <p>
+        Comportamiento general del flujo de solicitudes.
+      </p>
+
     </div>
 
-    <div class="estadistica-card">
-      <span>Pendientes</span>
-      <strong>{{ pendientes }}</strong>
+    <!-- DONUT -->
+    <div class="donut-wrapper">
+
+      <div
+        class="donut"
+        style="
+          background:
+          conic-gradient(
+            #22c55e 0% {{ porcentaje_completadas }}%,
+            #eab308 {{ porcentaje_completadas }}% {{ porcentaje_completadas|add:porcentaje_proceso }}%,
+            #ef4444 {{ porcentaje_completadas|add:porcentaje_proceso }}% 100%
+          );
+        ">
+
+        <!-- CENTRO -->
+        <div class="donut-center">
+
+          <strong>{{ total_estadisticas }}</strong>
+
+          <span>Total</span>
+
+        </div>
+
+      </div>
+
     </div>
 
-    <div class="estadistica-card">
-      <span>En espera</span>
-      <strong>{{ en_espera }}</strong>
+    <!-- LISTA -->
+    <div class="estado-list">
+
+      <!-- COMPLETADAS -->
+      <div>
+
+        <span class="dot verde"></span>
+
+        <p>Completadas</p>
+
+        <strong>{{ completadas }}</strong>
+
+      </div>
+
+      <!-- EN PROCESO -->
+      <div>
+
+        <span class="dot amarillo"></span>
+
+        <p>En seguimiento</p>
+
+        <strong>{{ en_proceso }}</strong>
+
+      </div>
+
+      <!-- RECHAZADAS -->
+      <div>
+
+        <span class="dot rojo"></span>
+
+        <p>Rechazadas</p>
+
+        <strong>{{ rechazadas }}</strong>
+
+      </div>
+
     </div>
 
-    <div class="estadistica-card">
-      <span>Completadas</span>
-      <strong>{{ completadas }}</strong>
+  </div>
+
+  <!-- =========================
+    TIPOS DE EMBARCACIÓN
+  ========================= -->
+  <div class="card panel panel-xl">
+
+    <div class="panel-title">
+
+      <h3>Estancias por tipo de embarcación</h3>
+
+      <p>
+        Clasificación de solicitudes según el tipo de embarcación.
+      </p>
+
+    </div>
+
+    <!-- BARRAS -->
+    <div class="bar-list">
+
+      {% for item in estancias_tipo_data %}
+
+      <div class="bar-item">
+
+        <!-- TOP -->
+        <div class="bar-top">
+
+          <span>{{ item.tipo }}</span>
+
+          <strong>{{ item.total }}</strong>
+
+        </div>
+
+        <!-- BARRA -->
+        <div class="bar-track">
+
+          <div
+            class="bar-fill"
+            style="width: {{ item.porcentaje }}%;">
+          </div>
+
+        </div>
+
+      </div>
+
+      {% empty %}
+
+      <p>No hay datos disponibles.</p>
+
+      {% endfor %}
+
+    </div>
+
+  </div>
+
+  <!-- =========================
+    TOP EMBARCACIONES
+  ========================= -->
+  <div class="card panel panel-sm">
+
+    <div class="panel-title">
+
+      <h3>Top embarcaciones</h3>
+
+      <p>
+        Embarcaciones con mayor número de solicitudes.
+      </p>
+
+    </div>
+
+    <!-- LISTA -->
+    <div class="ranking-list">
+
+      {% for item in top_embarcaciones %}
+
+      <div class="ranking-item">
+
+        <!-- NÚMERO -->
+        <div class="ranking-number">
+
+          {{ forloop.counter }}
+
+        </div>
+
+        <!-- INFO -->
+        <div class="ranking-info">
+
+          <strong>
+            {{ item.embarcacion__nombre_bote|default:"Sin nombre" }}
+          </strong>
+
+          <span>
+            {{ item.embarcacion__tipo_barco__tipo_barco|default:"Sin tipo" }}
+          </span>
+
+        </div>
+
+        <!-- TOTAL -->
+        <div class="ranking-total">
+
+          {{ item.total }}x
+
+        </div>
+
+      </div>
+
+      {% empty %}
+
+      <p>No hay datos disponibles.</p>
+
+      {% endfor %}
+
     </div>
 
   </div>
 
 </div>
 
-<div class="card">
-
-  <h3 style="margin-top:0; margin-bottom:20px;">
-    Solicitudes por mes
-  </h3>
-
-  <div style="height:420px;">
-    <canvas id="graficaSolicitudes"></canvas>
-  </div>
-
-</div>
-
-<div class="card">
-
-  <h3 style="margin-top:0; margin-bottom:20px;">
-    Distribución general
-  </h3>
-
-  <div class="contenedor-grafica">
-
-    <div
-      class="grafica-circular"
-      style="
-        background:
-        conic-gradient(
-          #4ade80 0% {{ porcentaje_completadas }}%,
-          #facc15 {{ porcentaje_completadas }}% {{ porcentaje_completadas|add:porcentaje_proceso }}%,
-          #f87171 {{ porcentaje_completadas|add:porcentaje_proceso }}% 100%
-        );
-      ">
-    </div>
-
-    <div class="leyenda">
-
-      <p>
-        <span class="verde"></span>
-        Completadas: {{ completadas }}
-      </p>
-
-      <p>
-        <span class="amarillo"></span>
-        En proceso: {{ en_proceso }}
-      </p>
-
-      <p>
-        <span class="rojo"></span>
-        Rechazadas: {{ rechazadas }}
-      </p>
-
-      <p>
-        <strong>Total general:</strong>
-        {{ total_estadisticas }}
-      </p>
-
-    </div>
-
-  </div>
-
-</div>
-
+<!-- =========================
+  ESTILOS
+========================= -->
 <style>
-  .estadisticas-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 18px;
-  }
 
-  .estadistica-card {
-    background: #f8fafc;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 22px;
-  }
-
-  .estadistica-card span {
-    display: block;
-    color: var(--text-mid);
-    font-weight: 600;
-    margin-bottom: 14px;
-  }
-
-  .estadistica-card strong {
-    display: block;
-    color: var(--primary);
-    font-size: 34px;
-  }
-
-  .contenedor-grafica {
+  /* =========================
+    HEADER
+  ========================= */
+  .dashboard-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 50px;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .dashboard-subtitle {
+    margin: 5px 0 0;
+    color: var(--text-mid);
+    font-size: 14px;
+  }
+
+  .dashboard-actions {
+    display: flex;
+    gap: 10px;
     flex-wrap: wrap;
   }
 
-  .grafica-circular {
-    width: 230px;
+  /* =========================
+    KPI
+  ========================= */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+
+  .kpi-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    min-height: 120px;
+  }
+
+  .kpi-card span {
+    display: block;
+    font-weight: 700;
+    color: var(--text-mid);
+    margin-bottom: 12px;
+  }
+
+  .kpi-card strong {
+    display: block;
+    font-size: 36px;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+
+  .kpi-card small {
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .kpi-total {
+    border-left: 6px solid #0b3558;
+  }
+
+  .kpi-success {
+    border-left: 6px solid #22c55e;
+  }
+
+  .kpi-danger {
+    border-left: 6px solid #ef4444;
+  }
+
+  .kpi-warning {
+    border-left: 6px solid #eab308;
+  }
+
+  /* =========================
+    GRID
+  ========================= */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 22px;
+    margin-bottom: 22px;
+  }
+
+  /* =========================
+    PANELES
+  ========================= */
+  .panel {
+    padding: 26px;
+  }
+
+  .panel-xl {
+    min-height: 340px;
+  }
+
+  .panel-sm {
+    min-height: 340px;
+  }
+
+  .panel-title {
+    margin-bottom: 18px;
+  }
+
+  .panel-title h3 {
+    margin: 0 0 6px;
+    color: var(--primary);
+    font-size: 17px;
+  }
+
+  .panel-title p {
+    margin: 0;
+    color: var(--text-mid);
+    font-size: 13px;
+  }
+
+  /* =========================
+    GRÁFICA MENSUAL
+  ========================= */
+  .grafica-mensual-pro {
+    height: 330px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    align-items: end;
+    gap: 14px;
+    padding: 28px 8px 4px;
+  }
+
+  .mes-columna {
+    height: 100%;
+    display: grid;
+    grid-template-rows: 24px 1fr 22px;
+    align-items: end;
+    text-align: center;
+  }
+
+  .valor-mes {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  .barra-mes-wrap {
     height: 230px;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+  }
+
+  .barra-mes {
+    width: 100%;
+    max-width: 56px;
+    min-height: 8px;
+    border-radius: 8px 8px 0 0;
+    background: #a9bbcb;
+    box-shadow: inset 0 -10px 20px rgba(15, 23, 42, 0.08);
+    transition: 0.3s ease;
+  }
+
+  .barra-mes:hover {
+    transform: translateY(-4px);
+  }
+
+  .barra-activa {
+    background: linear-gradient(180deg, #1f5f9e, #0b3558);
+  }
+
+  .nombre-mes {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 8px;
+  }
+
+  /* =========================
+    DONUT
+  ========================= */
+  .donut-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 22px 0;
+  }
+
+  .donut {
+    width: 205px;
+    height: 205px;
     border-radius: 50%;
-    border: 5px solid white;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    position: relative;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.14);
   }
 
-  .leyenda p {
-    margin-bottom: 15px;
-    font-size: 16px;
+  .donut::after {
+    content: "";
+    position: absolute;
+    inset: 38px;
+    background: white;
+    border-radius: 50%;
   }
 
-  .leyenda span {
-    width: 18px;
-    height: 18px;
-    display: inline-block;
-    border-radius: 4px;
-    margin-right: 8px;
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  .donut-center strong {
+    font-size: 32px;
+    color: var(--primary);
+  }
+
+  .donut-center span {
+    color: var(--text-mid);
+    font-weight: 600;
+  }
+
+  /* =========================
+    ESTADOS
+  ========================= */
+  .estado-list {
+    display: grid;
+    gap: 10px;
+  }
+
+  .estado-list div {
+    display: grid;
+    grid-template-columns: 16px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .estado-list p {
+    margin: 0;
+    font-weight: 600;
+    color: var(--text-mid);
+  }
+
+  .estado-list strong {
+    color: var(--primary);
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
   }
 
   .verde {
-    background: #4ade80;
+    background: #22c55e;
   }
 
   .amarillo {
-    background: #facc15;
+    background: #eab308;
   }
 
   .rojo {
-    background: #f87171;
+    background: #ef4444;
+  }
+
+  /* =========================
+    BARRAS
+  ========================= */
+  .bar-list {
+    display: grid;
+    gap: 20px;
+  }
+
+  .bar-top {
+    display: flex;
+    justify-content: space-between;
+    color: var(--primary);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .bar-track {
+    height: 12px;
+    background: #eef2f7;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0b3558, #1d5f99);
+    border-radius: 999px;
+  }
+
+  /* =========================
+    RANKING
+  ========================= */
+  .ranking-list {
+    display: grid;
+    gap: 4px;
+  }
+
+  .ranking-item {
+    display: grid;
+    grid-template-columns: 34px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ranking-item:last-child {
+    border-bottom: none;
+  }
+
+  .ranking-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #eef2f7;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+  }
+
+  .ranking-info strong {
+    display: block;
+    color: var(--primary);
+    font-size: 15px;
+  }
+
+  .ranking-info span {
+    display: block;
+    color: var(--text-mid);
+    font-size: 13px;
+    margin-top: 2px;
+  }
+
+  .ranking-total {
+    color: var(--primary);
+    font-weight: 800;
+  }
+
+  /* =========================
+    RESPONSIVE
+  ========================= */
+  @media (max-width: 1150px) {
+
+    .kpi-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
+
   }
 
   @media (max-width: 900px) {
-    .estadisticas-grid {
-      grid-template-columns: repeat(2, 1fr);
+
+    .grafica-mensual-pro {
+      overflow-x: auto;
+      grid-template-columns: repeat(12, 70px);
     }
+
   }
 
-  @media (max-width: 600px) {
-    .estadisticas-grid {
+  @media (max-width: 650px) {
+
+    .dashboard-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .dashboard-actions {
+      width: 100%;
+    }
+
+    .dashboard-actions .btn {
+      width: 100%;
+      text-align: center;
+    }
+
+    .kpi-grid {
       grid-template-columns: 1fr;
     }
+
   }
+
 </style>
-
-<script>
-  const ctx = document.getElementById('graficaSolicitudes');
-
-  new Chart(ctx, {
-    type: 'bar',
-
-    data: {
-      labels: {{ labels|safe }},
-      datasets: [{
-        label: 'Solicitudes por mes',
-        data: {{ data|safe }},
-        borderWidth: 1
-      }]
-    },
-
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            precision: 0
-          }
-        }
-      }
-    }
-  });
-</script>
 
 {% endblock %}

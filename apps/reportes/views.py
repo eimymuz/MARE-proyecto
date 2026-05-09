@@ -177,27 +177,93 @@ def estadisticas_solicitudes(request):
         .order_by('fecha_solicitud__month')
     )
 
-    meses = [
-        'Enero', 'Febrero', 'Marzo',
-        'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre',
-        'Octubre', 'Noviembre', 'Diciembre'
+    meses_cortos = [
+        'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+        'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
     ]
 
-    labels = []
-    data = []
+    conteo_por_mes = {i: 0 for i in range(1, 13)}
 
     for item in solicitudes_mes:
         mes_num = item['fecha_solicitud__month']
 
         if mes_num:
-            labels.append(meses[mes_num - 1])
-            data.append(item['total'])
+            conteo_por_mes[mes_num] = item['total']
+
+    maximo_mes = max(conteo_por_mes.values())
+
+    solicitudes_mes_data = []
+
+    for numero_mes in range(1, 13):
+        total_mes = conteo_por_mes[numero_mes]
+
+        porcentaje = 0
+
+        if maximo_mes > 0:
+            porcentaje = round((total_mes / maximo_mes) * 100, 2)
+
+        solicitudes_mes_data.append({
+            'mes': meses_cortos[numero_mes - 1],
+            'total': total_mes,
+            'porcentaje': porcentaje,
+            'activo': total_mes > 0,
+        })
+
+    top_embarcaciones = (
+        Solicitud.objects
+        .values(
+            'embarcacion__nombre_bote',
+            'embarcacion__tipo_barco__tipo_barco'
+        )
+        .annotate(total=Count('id'))
+        .order_by('-total')[:5]
+    )
+
+    estancias_tipo = (
+        Solicitud.objects
+        .values('embarcacion__tipo_barco__tipo_barco')
+        .annotate(total=Count('id'))
+        .order_by('-total')
+    )
+
+    total_tipo = sum(item['total'] for item in estancias_tipo)
+
+    estancias_tipo_data = []
+
+    for item in estancias_tipo:
+        porcentaje = 0
+
+        if total_tipo > 0:
+            porcentaje = round((item['total'] / total_tipo) * 100, 2)
+
+        estancias_tipo_data.append({
+            'tipo': item['embarcacion__tipo_barco__tipo_barco'] or 'Sin tipo',
+            'total': item['total'],
+            'porcentaje': porcentaje,
+        })
+
+    total_solicitudes = Solicitud.objects.count()
+
+    solicitudes_aprobadas = Solicitud.objects.filter(
+        estado__in=['APROBADA', 'COMPLETADA']
+    ).count()
+
+    tasa_aprobacion = 0
+
+    if total_solicitudes > 0:
+        tasa_aprobacion = round(
+            (solicitudes_aprobadas / total_solicitudes) * 100,
+            2
+        )
 
     context = {
         **estadisticas,
-        'labels': labels,
-        'data': data,
+        'solicitudes_mes_data': solicitudes_mes_data,
+        'top_embarcaciones': top_embarcaciones,
+        'estancias_tipo_data': estancias_tipo_data,
+        'total_solicitudes': total_solicitudes,
+        'solicitudes_aprobadas': solicitudes_aprobadas,
+        'tasa_aprobacion': tasa_aprobacion,
     }
 
     return render(request, 'reporte/estadisticas.html', context)
