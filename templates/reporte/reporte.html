@@ -3,6 +3,7 @@
 {% block title %}Reportes{% endblock %}
 
 {% block content %}
+
 <div class="page-header">
   <h2>Reportes</h2>
 </div>
@@ -16,6 +17,8 @@
         <option value="todos" {% if estado == 'todos' %}selected{% endif %}>Aprobadas y Rechazadas</option>
         <option value="aceptado" {% if estado == 'aceptado' %}selected{% endif %}>Aprobadas</option>
         <option value="rechazado" {% if estado == 'rechazado' %}selected{% endif %}>Rechazadas</option>
+        <option value="completado" {% if estado == 'completado' %}selected{% endif %}>Completadas</option>
+        <option value="proceso" {% if estado == 'proceso' %}selected{% endif %}>En proceso</option>
       </select>
     </div>
 
@@ -51,6 +54,10 @@
       Descargar PDF
     </a>
 
+    <a href="{% url 'reporte_estadisticas_pdf' %}" class="btn btn-accent">
+      Descargar PDF Estadístico
+    </a>
+
   </form>
 </div>
 
@@ -82,15 +89,21 @@
               No disponible
             {% endif %}
           </td>
+
           <td>
             {% if s.estado == 'APROBADA' %}
               <span class="badge badge-success">Aprobada</span>
             {% elif s.estado == 'RECHAZADA' %}
               <span class="badge badge-danger">Rechazada</span>
+            {% elif s.estado == 'COMPLETADA' %}
+              <span class="badge badge-success">Completada</span>
+            {% elif s.estado == 'PENDIENTE' or s.estado == 'EN_ESPERA' %}
+              <span class="badge badge-neutral">En proceso</span>
             {% else %}
               <span class="badge badge-neutral">{{ s.estado }}</span>
             {% endif %}
           </td>
+
           <td>
             {% if s.estado == 'RECHAZADA' %}
               {{ s.motivo_rechazo|default:"No especificado" }}
@@ -98,6 +111,7 @@
               —
             {% endif %}
           </td>
+
           <td>
             <button type="button" class="btn btn-info btn-sm" onclick="abrirModal('modal-{{ s.id }}')">
               Ver detalle
@@ -115,7 +129,53 @@
 </div>
 
 <div class="card" style="text-align:right;">
-  <h3 style="margin:0;">Total: {{ total }}</h3>
+  <h3 style="margin:0;">Total del filtro: {{ total }}</h3>
+</div>
+
+<div class="card-estadisticas">
+
+  <h2>Estadísticas generales</h2>
+
+  <div class="contenedor-grafica">
+
+    <div
+      class="grafica-circular"
+      style="
+        background:
+        conic-gradient(
+          #4ade80 0% {{ porcentaje_completadas }}%,
+          #facc15 {{ porcentaje_completadas }}% {{ porcentaje_completadas|add:porcentaje_proceso }}%,
+          #f87171 {{ porcentaje_completadas|add:porcentaje_proceso }}% 100%
+        );
+      ">
+    </div>
+
+    <div class="leyenda">
+
+      <p>
+        <span class="verde"></span>
+        Completadas: {{ completadas }}
+      </p>
+
+      <p>
+        <span class="amarillo"></span>
+        En proceso: {{ en_proceso }}
+      </p>
+
+      <p>
+        <span class="rojo"></span>
+        Rechazadas: {{ rechazadas }}
+      </p>
+
+      <p>
+        <strong>Total general:</strong>
+        {{ total_estadisticas }}
+      </p>
+
+    </div>
+
+  </div>
+
 </div>
 
 {% for s in solicitudes %}
@@ -149,6 +209,8 @@
 
         <table style="font-size:13px;">
           <tr><td>Fecha solicitud</td><td>{{ s.fecha_solicitud|date:"d/m/Y" }}</td></tr>
+          <tr><td>Fecha llegada</td><td>{{ s.fecha_llegada|date:"d/m/Y" }}</td></tr>
+          <tr><td>Fecha salida</td><td>{{ s.fecha_salida|date:"d/m/Y" }}</td></tr>
 
           <tr>
             <td>Estado</td>
@@ -157,6 +219,10 @@
                 <span class="badge badge-success">Aprobada</span>
               {% elif s.estado == 'RECHAZADA' %}
                 <span class="badge badge-danger">Rechazada</span>
+              {% elif s.estado == 'COMPLETADA' %}
+                <span class="badge badge-success">Completada</span>
+              {% elif s.estado == 'PENDIENTE' or s.estado == 'EN_ESPERA' %}
+                <span class="badge badge-neutral">En proceso</span>
               {% else %}
                 {{ s.estado }}
               {% endif %}
@@ -190,6 +256,54 @@
 {% endfor %}
 
 <style>
+  .card-estadisticas{
+    margin-top:40px;
+    background:white;
+    border-radius:18px;
+    padding:30px;
+  }
+
+  .contenedor-grafica{
+    display:flex;
+    align-items:center;
+    gap:50px;
+    margin-top:30px;
+    flex-wrap:wrap;
+  }
+
+  .grafica-circular{
+    width:260px;
+    height:260px;
+    border-radius:50%;
+    border:5px solid white;
+    box-shadow:0 4px 14px rgba(0,0,0,0.15);
+  }
+
+  .leyenda p{
+    margin-bottom:15px;
+    font-size:16px;
+  }
+
+  .leyenda span{
+    width:18px;
+    height:18px;
+    display:inline-block;
+    border-radius:4px;
+    margin-right:8px;
+  }
+
+  .verde{
+    background:#4ade80;
+  }
+
+  .amarillo{
+    background:#facc15;
+  }
+
+  .rojo{
+    background:#f87171;
+  }
+
   .mare-modal-overlay {
     display: none;
     position: fixed;

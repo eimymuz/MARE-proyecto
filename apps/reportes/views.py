@@ -7,7 +7,19 @@ from weasyprint import HTML
 from apps.solicitudes.models import Solicitud
 
 
-def reporte_solicitudes(request):
+def calcular_fecha_resolucion(solicitud):
+    historial = (
+        solicitud.historial.filter(
+            estado_nuevo__in=['APROBADA', 'RECHAZADA', 'COMPLETADA']
+        )
+        .order_by('-fecha_cambio')
+        .first()
+    )
+
+    return historial.fecha_cambio if historial else None
+
+
+def obtener_solicitudes_filtradas(request):
     estado = request.GET.get('estado', 'todos')
     mes = request.GET.get('mes', '')
     anio = request.GET.get('anio', '')
@@ -23,44 +35,85 @@ def reporte_solicitudes(request):
         .order_by('-fecha_solicitud')
     )
 
-    # filtro por estado
     if estado == 'aceptado':
         solicitudes = solicitudes.filter(estado='APROBADA')
     elif estado == 'rechazado':
         solicitudes = solicitudes.filter(estado='RECHAZADA')
+    elif estado == 'completado':
+        solicitudes = solicitudes.filter(estado='COMPLETADA')
+    elif estado == 'proceso':
+        solicitudes = solicitudes.filter(
+            estado__in=['PENDIENTE', 'EN_ESPERA', 'APROBADA']
+        )
     else:
-        solicitudes = solicitudes.filter(estado__in=['APROBADA', 'RECHAZADA'])
+        solicitudes = solicitudes.filter(
+            estado__in=['APROBADA', 'RECHAZADA']
+        )
 
     solicitudes = list(solicitudes)
 
-    # calcular fecha de resolución
-    for s in solicitudes:
-        historial = (
-            s.historial.filter(
-                estado_nuevo__in=['APROBADA', 'RECHAZADA']
-            )
-            .order_by('-fecha_cambio')
-            .first()
-        )
-        s.fecha_resolucion = historial.fecha_cambio if historial else None
+    for solicitud in solicitudes:
+        solicitud.fecha_resolucion = calcular_fecha_resolucion(solicitud)
 
-    # 🔥 filtro por mes
     if mes:
         solicitudes = [
             s for s in solicitudes
             if s.fecha_resolucion and s.fecha_resolucion.month == int(mes)
         ]
 
-    # 🔥 filtro por año
     if anio:
         solicitudes = [
             s for s in solicitudes
             if s.fecha_resolucion and s.fecha_resolucion.year == int(anio)
         ]
 
-    total = len(solicitudes)
+    return solicitudes, estado, mes, anio
 
-    # listas para selects
+
+def obtener_estadisticas():
+    completadas = Solicitud.objects.filter(
+        estado='COMPLETADA'
+    ).count()
+
+    rechazadas = Solicitud.objects.filter(
+        estado='RECHAZADA'
+    ).count()
+
+    en_proceso = Solicitud.objects.filter(
+        estado__in=['PENDIENTE', 'EN_ESPERA', 'APROBADA']
+    ).count()
+
+    total_estadisticas = completadas + rechazadas + en_proceso
+
+    porcentaje_completadas = (
+        round((completadas / total_estadisticas) * 100, 2)
+        if total_estadisticas > 0 else 0
+    )
+
+    porcentaje_proceso = (
+        round((en_proceso / total_estadisticas) * 100, 2)
+        if total_estadisticas > 0 else 0
+    )
+
+    porcentaje_rechazadas = (
+        round((rechazadas / total_estadisticas) * 100, 2)
+        if total_estadisticas > 0 else 0
+    )
+
+    return {
+        'completadas': completadas,
+        'rechazadas': rechazadas,
+        'en_proceso': en_proceso,
+        'total_estadisticas': total_estadisticas,
+        'porcentaje_completadas': porcentaje_completadas,
+        'porcentaje_proceso': porcentaje_proceso,
+        'porcentaje_rechazadas': porcentaje_rechazadas,
+    }
+
+
+def reporte_solicitudes(request):
+    solicitudes, estado, mes, anio = obtener_solicitudes_filtradas(request)
+
     meses = [
         (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'),
         (4, 'Abril'), (5, 'Mayo'), (6, 'Junio'),
@@ -77,61 +130,15 @@ def reporte_solicitudes(request):
         'anio': anio,
         'meses': meses,
         'anios': anios,
-        'total': total,
+        'total': len(solicitudes),
+        **obtener_estadisticas(),
     }
 
     return render(request, 'reporte/reporte.html', context)
 
 
 def reporte_solicitudes_pdf(request):
-    estado = request.GET.get('estado', 'todos')
-    mes = request.GET.get('mes', '')
-    anio = request.GET.get('anio', '')
-
-    solicitudes = (
-        Solicitud.objects.select_related(
-            'embarcacion',
-            'embarcacion__cliente',
-            'embarcacion__tipo_barco'
-        )
-        .prefetch_related('historial')
-        .all()
-        .order_by('-fecha_solicitud')
-    )
-
-    if estado == 'aceptado':
-        solicitudes = solicitudes.filter(estado='APROBADA')
-    elif estado == 'rechazado':
-        solicitudes = solicitudes.filter(estado='RECHAZADA')
-    else:
-        solicitudes = solicitudes.filter(estado__in=['APROBADA', 'RECHAZADA'])
-
-    solicitudes = list(solicitudes)
-
-    for s in solicitudes:
-        historial = (
-            s.historial.filter(
-                estado_nuevo__in=['APROBADA', 'RECHAZADA']
-            )
-            .order_by('-fecha_cambio')
-            .first()
-        )
-        s.fecha_resolucion = historial.fecha_cambio if historial else None
-
-    # filtros en PDF también
-    if mes:
-        solicitudes = [
-            s for s in solicitudes
-            if s.fecha_resolucion and s.fecha_resolucion.month == int(mes)
-        ]
-
-    if anio:
-        solicitudes = [
-            s for s in solicitudes
-            if s.fecha_resolucion and s.fecha_resolucion.year == int(anio)
-        ]
-
-    total = len(solicitudes)
+    solicitudes, estado, mes, anio = obtener_solicitudes_filtradas(request)
 
     html_string = render_to_string(
         'reporte/reporte_pdf.html',
@@ -140,13 +147,32 @@ def reporte_solicitudes_pdf(request):
             'estado': estado,
             'mes': mes,
             'anio': anio,
-            'total': total,
+            'total': len(solicitudes),
             'fecha_descarga': timezone.localtime(),
         }
     )
 
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="reporte_solicitudes.pdf"'
+
+    HTML(string=html_string).write_pdf(response)
+
+    return response
+
+
+def reporte_estadisticas_pdf(request):
+    estadisticas = obtener_estadisticas()
+
+    html_string = render_to_string(
+        'reporte/reporte_estadisticas_pdf.html',
+        {
+            **estadisticas,
+            'fecha_descarga': timezone.localtime(),
+        }
+    )
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="reporte_estadisticas.pdf"'
 
     HTML(string=html_string).write_pdf(response)
 

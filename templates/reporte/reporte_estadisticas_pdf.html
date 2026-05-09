@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte Estadístico</title>
+
+  <style>
+    @page {
+      size: letter landscape;
+      margin: 1.2cm;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      color: #08213d;
+      font-size: 12px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 3px solid #c9ab47;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+
+    .marca h2 {
+      margin: 0;
+      color: #08213d;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .marca p {
+      margin: 2px 0 0;
+      font-size: 11px;
+      color: #38527a;
+    }
+
+    .titulo {
+      text-align: right;
+    }
+
+    .titulo h1 {
+      margin: 0;
+      font-size: 28px;
+      color: #08213d;
+    }
+
+    .titulo p {
+      margin: 4px 0 0;
+      color: #6b7c93;
+      font-size: 12px;
+    }
+
+    .info {
+      background: #eef3f8;
+      border: 1px solid #d7e1ec;
+      padding: 12px;
+      margin-bottom: 18px;
+      font-size: 12px;
+    }
+
+    .contenedor {
+      display: flex;
+      gap: 40px;
+      align-items: center;
+      margin-top: 25px;
+    }
+
+    .grafica {
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: conic-gradient(
+        #4ade80 0% {{ porcentaje_completadas }}%,
+        #facc15 {{ porcentaje_completadas }}% {{ porcentaje_completadas|add:porcentaje_proceso }}%,
+        #f87171 {{ porcentaje_completadas|add:porcentaje_proceso }}% 100%
+      );
+      border: 4px solid #ffffff;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+    }
+
+    table {
+      width: 55%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th {
+      background: #08213d;
+      color: white;
+      padding: 9px;
+      text-align: left;
+    }
+
+    td {
+      border: 1px solid #d3dde8;
+      padding: 9px;
+    }
+
+    .verde {
+      color: #16a34a;
+      font-weight: bold;
+    }
+
+    .amarillo {
+      color: #ca8a04;
+      font-weight: bold;
+    }
+
+    .rojo {
+      color: #dc2626;
+      font-weight: bold;
+    }
+
+    .total {
+      text-align: right;
+      margin-top: 25px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #08213d;
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      border-top: 1px solid #d7e1ec;
+      text-align: center;
+      font-size: 10px;
+      color: #8aa0bd;
+      padding-top: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <div class="marca">
+      <h2>MARE</h2>
+      <p>Manejador Administrativo y Registro de Embarcaciones</p>
+    </div>
+
+    <div class="titulo">
+      <h1>Reporte Estadístico</h1>
+      <p>Documento generado automáticamente</p>
+    </div>
+  </div>
+
+  <div class="info">
+    <strong>Tipo de reporte:</strong> Solicitudes por estado<br>
+    <strong>Fecha de descarga:</strong> {{ fecha_descarga|date:"d/m/Y" }}
+  </div>
+
+  <div class="contenedor">
+
+    <div class="grafica"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Estado</th>
+          <th>Cantidad</th>
+          <th>Porcentaje</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr>
+          <td class="verde">COMPLETADAS</td>
+          <td>{{ completadas }}</td>
+          <td>{{ porcentaje_completadas }}%</td>
+        </tr>
+
+        <tr>
+          <td class="amarillo">EN PROCESO</td>
+          <td>{{ en_proceso }}</td>
+          <td>{{ porcentaje_proceso }}%</td>
+        </tr>
+
+        <tr>
+          <td class="rojo">RECHAZADAS</td>
+          <td>{{ rechazadas }}</td>
+          <td>{{ porcentaje_rechazadas }}%</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+
+  <div class="total">
+    Total de registros: {{ total_estadisticas }}
+  </div>
+
+  <div class="footer">
+    MARE · Reporte generado por el sistema · {{ fecha_descarga|date:"d/m/Y" }}
+  </div>
+
+</body>
+</html>
