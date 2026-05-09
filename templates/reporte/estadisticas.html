@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas{% endblock %}
+
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="page-header"
+     style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:15px;
+     ">
+
+  <h2>Estadísticas</h2>
+
+  <a href="{% url 'reporte_solicitudes' %}"
+     class="btn btn-primary"
+     style="
+        padding:10px 18px;
+        border-radius:10px;
+        text-decoration:none;
+        font-weight:600;
+     ">
+    Volver a reportes
+  </a>
+
+</div>
+
+<div class="card">
+
+  <h3 style="margin-top:0; margin-bottom:20px;">
+    Resumen general de solicitudes
+  </h3>
+
+  <div class="estadisticas-grid">
+
+    <div class="estadistica-card">
+      <span>Total general</span>
+      <strong>{{ total_estadisticas }}</strong>
+    </div>
+
+    <div class="estadistica-card">
+      <span>Aprobadas</span>
+      <strong>{{ aprobadas }}</strong>
+    </div>
+
+    <div class="estadistica-card">
+      <span>Rechazadas</span>
+      <strong>{{ rechazadas }}</strong>
+    </div>
+
+    <div class="estadistica-card">
+      <span>Pendientes</span>
+      <strong>{{ pendientes }}</strong>
+    </div>
+
+    <div class="estadistica-card">
+      <span>En espera</span>
+      <strong>{{ en_espera }}</strong>
+    </div>
+
+    <div class="estadistica-card">
+      <span>Completadas</span>
+      <strong>{{ completadas }}</strong>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="card">
+
+  <h3 style="margin-top:0; margin-bottom:20px;">
+    Solicitudes por mes
+  </h3>
+
+  <div style="height:420px;">
+    <canvas id="graficaSolicitudes"></canvas>
+  </div>
+
+</div>
+
+<div class="card">
+
+  <h3 style="margin-top:0; margin-bottom:20px;">
+    Distribución general
+  </h3>
+
+  <div class="contenedor-grafica">
+
+    <div
+      class="grafica-circular"
+      style="
+        background:
+        conic-gradient(
+          #4ade80 0% {{ porcentaje_completadas }}%,
+          #facc15 {{ porcentaje_completadas }}% {{ porcentaje_completadas|add:porcentaje_proceso }}%,
+          #f87171 {{ porcentaje_completadas|add:porcentaje_proceso }}% 100%
+        );
+      ">
+    </div>
+
+    <div class="leyenda">
+
+      <p>
+        <span class="verde"></span>
+        Completadas: {{ completadas }}
+      </p>
+
+      <p>
+        <span class="amarillo"></span>
+        En proceso: {{ en_proceso }}
+      </p>
+
+      <p>
+        <span class="rojo"></span>
+        Rechazadas: {{ rechazadas }}
+      </p>
+
+      <p>
+        <strong>Total general:</strong>
+        {{ total_estadisticas }}
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
+
+<style>
+  .estadisticas-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+
+  .estadistica-card {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+  }
+
+  .estadistica-card span {
+    display: block;
+    color: var(--text-mid);
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  .estadistica-card strong {
+    display: block;
+    color: var(--primary);
+    font-size: 34px;
+  }
+
+  .contenedor-grafica {
+    display: flex;
+    align-items: center;
+    gap: 50px;
+    flex-wrap: wrap;
+  }
+
+  .grafica-circular {
+    width: 230px;
+    height: 230px;
+    border-radius: 50%;
+    border: 5px solid white;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  }
+
+  .leyenda p {
+    margin-bottom: 15px;
+    font-size: 16px;
+  }
+
+  .leyenda span {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    border-radius: 4px;
+    margin-right: 8px;
+  }
+
+  .verde {
+    background: #4ade80;
+  }
+
+  .amarillo {
+    background: #facc15;
+  }
+
+  .rojo {
+    background: #f87171;
+  }
+
+  @media (max-width: 900px) {
+    .estadisticas-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .estadisticas-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  const ctx = document.getElementById('graficaSolicitudes');
+
+  new Chart(ctx, {
+    type: 'bar',
+
+    data: {
+      labels: {{ labels|safe }},
+      datasets: [{
+        label: 'Solicitudes por mes',
+        data: {{ data|safe }},
+        borderWidth: 1
+      }]
+    },
+
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0
+          }
+        }
+      }
+    }
+  });
+</script>
+
+{% endblock %}
