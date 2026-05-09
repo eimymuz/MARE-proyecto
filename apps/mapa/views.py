@@ -5,6 +5,7 @@ from django.utils.dateparse import parse_date
 from django.utils import timezone
 from apps.muelles.models import Espacio, EtiquetaMuelle, ZonaTierra
 from apps.asignaciones.models import Asignacion, Administrador
+from apps.mapa.services.marine_api import obtener_clima
 from apps.solicitudes.models import Solicitud
 
 import json
@@ -202,7 +203,6 @@ def asignar_espacio(request):
     except Exception as e:
         return JsonResponse({'ok': False, 'error': str(e)}, status=400)
 
-
 @login_required
 def inicio(request):
     hoy = timezone.now().date()
@@ -213,15 +213,31 @@ def inicio(request):
         activa=True,
     ).values_list('espacios', flat=True).distinct().count()
 
-    total_espacios = Espacio.objects.filter(es_pasillo=False, activo=True).count()
-    libres         = total_espacios - ocupados
-    pendientes     = Solicitud.objects.filter(estado__in=['PENDIENTE','EN_ESPERA']).count()
+    total_espacios = Espacio.objects.filter(
+        es_pasillo=False,
+        activo=True
+    ).count()
+
+    libres = total_espacios - ocupados
+
+    pendientes = Solicitud.objects.filter(
+        estado__in=['PENDIENTE', 'EN_ESPERA']
+    ).count()
+
+    if total_espacios > 0:
+        porcentaje_ocupacion = round((ocupados / total_espacios) * 100)
+    else:
+        porcentaje_ocupacion = 0
+
+    clima = obtener_clima()
 
     return render(request, 'inicio.html', {
-        'ocupados':       ocupados,
-        'libres':         libres,
-        'pendientes':     pendientes,
+        'ocupados': ocupados,
+        'libres': libres,
+        'pendientes': pendientes,
         'total_espacios': total_espacios,
-        'fecha_hoy':      hoy.strftime('%d/%m/%Y'),
-        'fecha_hoy_iso':  hoy.strftime('%Y-%m-%d'),
+        'porcentaje_ocupacion': porcentaje_ocupacion,
+        'clima': clima,
+        'fecha_hoy': hoy.strftime('%d/%m/%Y'),
+        'fecha_hoy_iso': hoy.strftime('%Y-%m-%d'),
     })
