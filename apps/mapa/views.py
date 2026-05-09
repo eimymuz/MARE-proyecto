@@ -6,6 +6,7 @@ from django.utils import timezone
 from apps.muelles.models import Espacio, EtiquetaMuelle, ZonaTierra
 from apps.asignaciones.models import Asignacion, Administrador
 from apps.solicitudes.models import Solicitud
+from django.core.exceptions import ValidationError
 
 import json
 from django.db import transaction
@@ -177,6 +178,22 @@ def asignar_espacio(request):
         muelle    = espacios.first().muelle
 
         with transaction.atomic():
+            traslapes = Asignacion.objects.filter(
+                espacios__in=espacio_ids,
+                fecha_inicio__lte=fecha_fin,
+                fecha_fin__gte=fecha_inicio,
+                activa=True,
+            ).exclude(solicitud=solicitud).distinct()
+            
+            if traslapes.exists():
+                t = traslapes.first()
+                espacio_ocupado = t.espacios.filter(id__in=espacio_ids).first()
+                raise Exception(
+                    f'El espacio {espacio_ocupado.numero} del muelle {espacio_ocupado.muelle.nombre} '
+                    f'ya está ocupado por {t.solicitud.embarcacion.nombre_bote} '
+                    f'del {t.fecha_inicio.strftime("%d/%m/%Y")} al {t.fecha_fin.strftime("%d/%m/%Y")}.'
+                )
+
             Asignacion.objects.filter(
                 solicitud=solicitud,
                 activa=True
@@ -191,13 +208,12 @@ def asignar_espacio(request):
                 activa        = True,
             )
             asignacion.espacios.set(espacios)
-            asignacion.validar_traslape_espacios()
 
             solicitud.estado = 'APROBADA'
             solicitud.full_clean()
             solicitud.save()
 
-        return JsonResponse({'ok': True, 'asignacion_id': asignacion.pk})
+            return JsonResponse({'ok': True, 'asignacion_id': asignacion.pk})  # ← adentro del atomic
 
     except Exception as e:
         return JsonResponse({'ok': False, 'error': str(e)}, status=400)
