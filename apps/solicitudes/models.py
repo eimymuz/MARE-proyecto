@@ -86,6 +86,10 @@ class Solicitud(models.Model):
                 estado_anterior=estado_anterior,
                 estado_nuevo=self.estado,
             )
+            
+
+    def asignacion_activa(self):
+        return self.asignaciones.filter(activa=True).first()
 
     def __str__(self):
         return f"Solicitud #{self.id} - {self.embarcacion.nombre_bote}"

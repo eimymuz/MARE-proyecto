@@ -149,7 +149,7 @@
         <td>{{ sol.fecha_llegada|date:"d/m/Y" }}</td>
         <td>{{ sol.fecha_salida|date:"d/m/Y" }}</td>
         <td>
-          {% with ultima=sol.asignaciones.all|first %}
+          {% with ultima=sol.asignacion_activa %}
             {% if ultima %}
               <span style="font-size:12px">
                 {{ ultima.muelle.nombre }} —

@@ -311,6 +311,13 @@ def solicitud_cambiar_estado(request, pk, nuevo_estado):
                 return redirect('solicitud_aprobadas_list')
             return redirect('solicitud_list')
         solicitud.motivo_rechazo = motivo.upper()
+        
+    if nuevo_estado == 'RECHAZADA':
+        from apps.asignaciones.models import Asignacion
+        Asignacion.objects.filter(
+            solicitud=solicitud,
+            activa=True
+        ).update(activa=False)
 
     solicitud.estado = nuevo_estado
     try:

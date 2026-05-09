@@ -75,6 +75,7 @@ class Asignacion(models.Model):
             espacios__in=espacios_ids,
             fecha_inicio__lte=self.fecha_fin,
             fecha_fin__gte=self.fecha_inicio,
+            activa=True,  # ← ya tiene esto, pero verificar que esté
         ).exclude(pk=self.pk).distinct()
 
         if traslapes.exists():
