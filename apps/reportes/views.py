@@ -166,12 +166,44 @@ def reporte_solicitudes_pdf(request):
 
     return response
 
-
 def estadisticas_solicitudes(request):
-    estadisticas = obtener_estadisticas()
+    mes = request.GET.get('mes', '')
+    anio = request.GET.get('anio', '')
+
+    solicitudes = Solicitud.objects.select_related(
+        'embarcacion',
+        'embarcacion__tipo_barco'
+    ).all()
+
+    if mes:
+        solicitudes = solicitudes.filter(fecha_solicitud__month=int(mes))
+
+    if anio:
+        solicitudes = solicitudes.filter(fecha_solicitud__year=int(anio))
+
+    total_estadisticas = solicitudes.count()
+
+    aprobadas = solicitudes.filter(estado='APROBADA').count()
+    rechazadas = solicitudes.filter(estado='RECHAZADA').count()
+    completadas = solicitudes.filter(estado='COMPLETADA').count()
+    pendientes = solicitudes.filter(estado='PENDIENTE').count()
+    en_espera = solicitudes.filter(estado='EN_ESPERA').count()
+
+    en_proceso = pendientes + en_espera + aprobadas
+
+    if total_estadisticas > 0:
+        porcentaje_completadas = round((completadas / total_estadisticas) * 100, 2)
+        porcentaje_proceso = round((en_proceso / total_estadisticas) * 100, 2)
+        porcentaje_rechazadas = round((rechazadas / total_estadisticas) * 100, 2)
+        tasa_aprobacion = round(((aprobadas + completadas) / total_estadisticas) * 100, 2)
+    else:
+        porcentaje_completadas = 0
+        porcentaje_proceso = 0
+        porcentaje_rechazadas = 0
+        tasa_aprobacion = 0
 
     solicitudes_mes = (
-        Solicitud.objects
+        solicitudes
         .values('fecha_solicitud__month')
         .annotate(total=Count('id'))
         .order_by('fecha_solicitud__month')
@@ -186,7 +218,6 @@ def estadisticas_solicitudes(request):
 
     for item in solicitudes_mes:
         mes_num = item['fecha_solicitud__month']
-
         if mes_num:
             conteo_por_mes[mes_num] = item['total']
 
@@ -198,7 +229,6 @@ def estadisticas_solicitudes(request):
         total_mes = conteo_por_mes[numero_mes]
 
         porcentaje = 0
-
         if maximo_mes > 0:
             porcentaje = round((total_mes / maximo_mes) * 100, 2)
 
@@ -210,7 +240,7 @@ def estadisticas_solicitudes(request):
         })
 
     top_embarcaciones = (
-        Solicitud.objects
+        solicitudes
         .values(
             'embarcacion__nombre_bote',
             'embarcacion__tipo_barco__tipo_barco'
@@ -220,7 +250,7 @@ def estadisticas_solicitudes(request):
     )
 
     estancias_tipo = (
-        Solicitud.objects
+        solicitudes
         .values('embarcacion__tipo_barco__tipo_barco')
         .annotate(total=Count('id'))
         .order_by('-total')
@@ -242,28 +272,67 @@ def estadisticas_solicitudes(request):
             'porcentaje': porcentaje,
         })
 
-    total_solicitudes = Solicitud.objects.count()
+    meses = [
+        (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'),
+        (4, 'Abril'), (5, 'Mayo'), (6, 'Junio'),
+        (7, 'Julio'), (8, 'Agosto'), (9, 'Septiembre'),
+        (10, 'Octubre'), (11, 'Noviembre'), (12, 'Diciembre')
+    ]
 
-    solicitudes_aprobadas = Solicitud.objects.filter(
-        estado__in=['APROBADA', 'COMPLETADA']
-    ).count()
+    anios = range(2026, timezone.now().year + 5)
+    mes_actual = timezone.now().month
+    mes_anterior = mes_actual - 1 if mes_actual > 1 else 12
 
-    tasa_aprobacion = 0
+    total_mes_actual = conteo_por_mes.get(mes_actual, 0)
+    total_mes_anterior = conteo_por_mes.get(mes_anterior, 0)
 
-    if total_solicitudes > 0:
-        tasa_aprobacion = round(
-            (solicitudes_aprobadas / total_solicitudes) * 100,
+    crecimiento_mensual = 0
+    tipo_crecimiento = 'neutral'
+
+    if total_mes_anterior > 0:
+        crecimiento_mensual = round(
+            ((total_mes_actual - total_mes_anterior) / total_mes_anterior) * 100,
             2
         )
 
+        if crecimiento_mensual > 0:
+            tipo_crecimiento = 'positivo'
+        elif crecimiento_mensual < 0:
+            tipo_crecimiento = 'negativo'
+    else:
+        if total_mes_actual > 0:
+            crecimiento_mensual = 100
+            tipo_crecimiento = 'positivo'
+
     context = {
-        **estadisticas,
+        'mes': mes,
+        'anio': anio,
+        'meses': meses,
+        'anios': anios,
+
+        'crecimiento_mensual': crecimiento_mensual,
+        'tipo_crecimiento': tipo_crecimiento,
+        'total_mes_actual': total_mes_actual,
+        'total_mes_anterior': total_mes_anterior,
+
+        'total_estadisticas': total_estadisticas,
+        'total_solicitudes': total_estadisticas,
+        'aprobadas': aprobadas,
+        'rechazadas': rechazadas,
+        'completadas': completadas,
+        'pendientes': pendientes,
+        'en_espera': en_espera,
+        'en_proceso': en_proceso,
+        'solicitudes_aprobadas': aprobadas + completadas,
+        'tasa_aprobacion': tasa_aprobacion,
+
+        'porcentaje_completadas': porcentaje_completadas,
+        'porcentaje_proceso': porcentaje_proceso,
+        'porcentaje_rechazadas': porcentaje_rechazadas,
+
         'solicitudes_mes_data': solicitudes_mes_data,
         'top_embarcaciones': top_embarcaciones,
         'estancias_tipo_data': estancias_tipo_data,
-        'total_solicitudes': total_solicitudes,
-        'solicitudes_aprobadas': solicitudes_aprobadas,
-        'tasa_aprobacion': tasa_aprobacion,
     }
 
     return render(request, 'reporte/estadisticas.html', context)
