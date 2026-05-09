@@ -289,17 +289,62 @@ def estadisticas_solicitudes(request):
     crecimiento_mensual = 0
     tipo_crecimiento = 'neutral'
 
+    # =========================
+    # CRECIMIENTO MENSUAL
+    # =========================
+
+    if mes:
+        mes_actual = int(mes)
+    else:
+        mes_actual = timezone.now().month
+
+    if anio:
+        anio_actual = int(anio)
+    else:
+        anio_actual = timezone.now().year
+
+    # MES ANTERIOR
+    if mes_actual == 1:
+        mes_anterior = 12
+        anio_anterior = anio_actual - 1
+    else:
+        mes_anterior = mes_actual - 1
+        anio_anterior = anio_actual
+
+    # TOTAL MES ACTUAL
+    total_mes_actual = Solicitud.objects.filter(
+        fecha_solicitud__month=mes_actual,
+        fecha_solicitud__year=anio_actual
+    ).count()
+
+    # TOTAL MES ANTERIOR
+    total_mes_anterior = Solicitud.objects.filter(
+        fecha_solicitud__month=mes_anterior,
+        fecha_solicitud__year=anio_anterior
+    ).count()
+
+    # CRECIMIENTO
+    crecimiento_mensual = 0
+    tipo_crecimiento = 'neutral'
+
     if total_mes_anterior > 0:
+
         crecimiento_mensual = round(
-            ((total_mes_actual - total_mes_anterior) / total_mes_anterior) * 100,
+            (
+                (total_mes_actual - total_mes_anterior)
+                / total_mes_anterior
+            ) * 100,
             2
         )
 
         if crecimiento_mensual > 0:
             tipo_crecimiento = 'positivo'
+
         elif crecimiento_mensual < 0:
             tipo_crecimiento = 'negativo'
+
     else:
+
         if total_mes_actual > 0:
             crecimiento_mensual = 100
             tipo_crecimiento = 'positivo'
@@ -339,19 +384,137 @@ def estadisticas_solicitudes(request):
 
 
 def reporte_estadisticas_pdf(request):
-    estadisticas = obtener_estadisticas()
+    mes = request.GET.get('mes', '')
+    anio = request.GET.get('anio', '')
+
+    solicitudes = Solicitud.objects.select_related(
+        'embarcacion',
+        'embarcacion__tipo_barco'
+    ).all()
+
+    if mes:
+        solicitudes = solicitudes.filter(
+            fecha_solicitud__month=int(mes)
+        )
+
+    if anio:
+        solicitudes = solicitudes.filter(
+            fecha_solicitud__year=int(anio)
+        )
+
+    total_estadisticas = solicitudes.count()
+
+    aprobadas = solicitudes.filter(
+        estado__in=['APROBADA', 'COMPLETADA']
+    ).count()
+
+    rechazadas = solicitudes.filter(
+        estado='RECHAZADA'
+    ).count()
+
+    completadas = solicitudes.filter(
+        estado='COMPLETADA'
+    ).count()
+
+    pendientes = solicitudes.filter(
+        estado='PENDIENTE'
+    ).count()
+
+    en_espera = solicitudes.filter(
+        estado='EN_ESPERA'
+    ).count()
+
+    en_proceso = pendientes + en_espera
+
+    if total_estadisticas > 0:
+        porcentaje_completadas = round((completadas / total_estadisticas) * 100, 2)
+        porcentaje_proceso = round((en_proceso / total_estadisticas) * 100, 2)
+        porcentaje_rechazadas = round((rechazadas / total_estadisticas) * 100, 2)
+        tasa_aprobacion = round((aprobadas / total_estadisticas) * 100, 2)
+    else:
+        porcentaje_completadas = 0
+        porcentaje_proceso = 0
+        porcentaje_rechazadas = 0
+        tasa_aprobacion = 0
+
+    top_embarcaciones = (
+        solicitudes
+        .values(
+            'embarcacion__nombre_bote',
+            'embarcacion__tipo_barco__tipo_barco'
+        )
+        .annotate(total=Count('id'))
+        .order_by('-total')[:10]
+    )
+
+    estancias_tipo = (
+        solicitudes
+        .values('embarcacion__tipo_barco__tipo_barco')
+        .annotate(total=Count('id'))
+        .order_by('-total')
+    )
+
+    total_tipo = sum(item['total'] for item in estancias_tipo)
+
+    estancias_tipo_data = []
+
+    for item in estancias_tipo:
+        porcentaje = 0
+
+        if total_tipo > 0:
+            porcentaje = round((item['total'] / total_tipo) * 100, 2)
+
+        estancias_tipo_data.append({
+            'tipo': item['embarcacion__tipo_barco__tipo_barco'] or 'Sin tipo',
+            'total': item['total'],
+            'porcentaje': porcentaje,
+        })
+
+    meses_dict = {
+        '1': 'Enero',
+        '2': 'Febrero',
+        '3': 'Marzo',
+        '4': 'Abril',
+        '5': 'Mayo',
+        '6': 'Junio',
+        '7': 'Julio',
+        '8': 'Agosto',
+        '9': 'Septiembre',
+        '10': 'Octubre',
+        '11': 'Noviembre',
+        '12': 'Diciembre',
+    }
+
+    context = {
+        'total_estadisticas': total_estadisticas,
+        'aprobadas': aprobadas,
+        'rechazadas': rechazadas,
+        'completadas': completadas,
+        'pendientes': pendientes,
+        'en_espera': en_espera,
+        'en_proceso': en_proceso,
+        'porcentaje_completadas': porcentaje_completadas,
+        'porcentaje_proceso': porcentaje_proceso,
+        'porcentaje_rechazadas': porcentaje_rechazadas,
+        'tasa_aprobacion': tasa_aprobacion,
+        'top_embarcaciones': top_embarcaciones,
+        'estancias_tipo_data': estancias_tipo_data,
+        'mes': meses_dict.get(mes, 'Todos'),
+        'anio': anio if anio else 'Todos',
+        'fecha_descarga': timezone.localtime(),
+    }
 
     html_string = render_to_string(
         'reporte/reporte_estadisticas_pdf.html',
-        {
-            **estadisticas,
-            'fecha_descarga': timezone.localtime(),
-        }
+        context
     )
 
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="reporte_estadisticas.pdf"'
 
-    HTML(string=html_string).write_pdf(response)
+    HTML(
+        string=html_string,
+        base_url=request.build_absolute_uri()
+    ).write_pdf(response)
 
     return response

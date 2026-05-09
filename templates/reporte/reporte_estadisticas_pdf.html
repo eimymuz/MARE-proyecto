@@ -2,125 +2,310 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Reporte Estadístico</title>
+  <title>Reporte Estadístico MARE</title>
 
   <style>
     @page {
       size: letter landscape;
-      margin: 1.2cm;
+      margin: 1.1cm;
     }
 
     body {
       font-family: Arial, sans-serif;
-      color: #08213d;
-      font-size: 12px;
+      color: #0f172a;
+      font-size: 11px;
+      background: white;
     }
 
     .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      border-bottom: 3px solid #c9ab47;
-      padding-bottom: 14px;
-      margin-bottom: 18px;
+      display: table;
+      width: 100%;
+      border-bottom: 4px solid #c9ab47;
+      padding-bottom: 12px;
+      margin-bottom: 14px;
     }
 
-    .marca h2 {
-      margin: 0;
-      color: #08213d;
-      font-size: 22px;
+    .header-left,
+    .header-right {
+      display: table-cell;
+      vertical-align: top;
+      width: 50%;
+    }
+
+    .header-right {
+      text-align: right;
+    }
+
+    .marca {
+      font-size: 24px;
       font-weight: bold;
+      color: #08213d;
+      letter-spacing: 1px;
     }
 
-    .marca p {
-      margin: 2px 0 0;
-      font-size: 11px;
-      color: #38527a;
+    .submarca {
+      font-size: 10px;
+      color: #475569;
+      margin-top: 3px;
     }
 
     .titulo {
-      text-align: right;
-    }
-
-    .titulo h1 {
-      margin: 0;
-      font-size: 28px;
+      font-size: 25px;
+      font-weight: bold;
       color: #08213d;
+      margin: 0;
     }
 
-    .titulo p {
-      margin: 4px 0 0;
-      color: #6b7c93;
-      font-size: 12px;
+    .subtitulo {
+      color: #64748b;
+      font-size: 11px;
+      margin-top: 4px;
     }
 
-    .info {
-      background: #eef3f8;
-      border: 1px solid #d7e1ec;
+    .info-box {
+      background: #f8fafc;
+      border: 1px solid #dbe3ec;
+      border-left: 5px solid #08213d;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+    }
+
+    .info-row {
+      display: table;
+      width: 100%;
+    }
+
+    .info-item {
+      display: table-cell;
+      width: 25%;
+    }
+
+    .info-label {
+      color: #64748b;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .info-value {
+      color: #08213d;
+      font-weight: bold;
+      margin-top: 3px;
+    }
+
+    .kpi-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 8px;
+      margin-bottom: 12px;
+    }
+
+    .kpi-table td {
+      background: #ffffff;
+      border: 1px solid #dbe3ec;
+      border-radius: 8px;
+      padding: 11px;
+      vertical-align: top;
+    }
+
+    .kpi-total {
+      border-left: 5px solid #08213d !important;
+    }
+
+    .kpi-aprobadas {
+      border-left: 5px solid #16a34a !important;
+    }
+
+    .kpi-rechazadas {
+      border-left: 5px solid #dc2626 !important;
+    }
+
+    .kpi-tasa {
+      border-left: 5px solid #c9ab47 !important;
+    }
+
+    .kpi-label {
+      color: #64748b;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .kpi-value {
+      color: #08213d;
+      font-size: 27px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .kpi-note {
+      color: #64748b;
+      font-size: 9px;
+      margin-top: 3px;
+    }
+
+    .layout {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
+
+    .col {
+      display: table-cell;
+      vertical-align: top;
+      width: 50%;
+    }
+
+    .col-left {
+      padding-right: 8px;
+    }
+
+    .col-right {
+      padding-left: 8px;
+    }
+
+    .panel {
+      border: 1px solid #dbe3ec;
+      border-radius: 10px;
       padding: 12px;
-      margin-bottom: 18px;
-      font-size: 12px;
+      margin-bottom: 12px;
+      page-break-inside: avoid;
     }
 
-    .contenedor {
-      display: flex;
-      gap: 40px;
-      align-items: center;
-      margin-top: 25px;
+    .panel-title {
+      font-size: 15px;
+      font-weight: bold;
+      color: #08213d;
+      margin-bottom: 3px;
     }
 
-    .grafica {
-      width: 280px;
-      height: 280px;
-      border-radius: 50%;
-      background: conic-gradient(
-        #4ade80 0% {{ porcentaje_completadas }}%,
-        #facc15 {{ porcentaje_completadas }}% {{ porcentaje_completadas|add:porcentaje_proceso }}%,
-        #f87171 {{ porcentaje_completadas|add:porcentaje_proceso }}% 100%
-      );
-      border: 4px solid #ffffff;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+    .panel-desc {
+      font-size: 10px;
+      color: #64748b;
+      margin-bottom: 12px;
     }
 
-    table {
-      width: 55%;
+    .bar-row {
+      margin-bottom: 11px;
+    }
+
+    .bar-head {
+      display: table;
+      width: 100%;
+      margin-bottom: 5px;
+    }
+
+    .bar-name {
+      display: table-cell;
+      color: #334155;
+      font-weight: bold;
+    }
+
+    .bar-value {
+      display: table-cell;
+      text-align: right;
+      color: #08213d;
+      font-weight: bold;
+    }
+
+    .bar-track {
+      height: 11px;
+      background: #eef3f8;
+      border-radius: 50px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 11px;
+      border-radius: 50px;
+    }
+
+    .green {
+      background: #16a34a;
+    }
+
+    .yellow {
+      background: #ca8a04;
+    }
+
+    .red {
+      background: #dc2626;
+    }
+
+    .blue {
+      background: #08213d;
+    }
+
+    .gold {
+      background: #c9ab47;
+    }
+
+    table.data-table {
+      width: 100%;
       border-collapse: collapse;
-      font-size: 12px;
+      font-size: 10.5px;
     }
 
-    th {
+    .data-table th {
       background: #08213d;
       color: white;
-      padding: 9px;
+      padding: 7px;
       text-align: left;
+      font-size: 10px;
     }
 
-    td {
-      border: 1px solid #d3dde8;
-      padding: 9px;
+    .data-table td {
+      border: 1px solid #dbe3ec;
+      padding: 7px;
     }
 
-    .verde {
-      color: #16a34a;
-      font-weight: bold;
+    .data-table tr:nth-child(even) td {
+      background: #f8fafc;
     }
 
-    .amarillo {
-      color: #ca8a04;
-      font-weight: bold;
-    }
-
-    .rojo {
-      color: #dc2626;
-      font-weight: bold;
-    }
-
-    .total {
-      text-align: right;
-      margin-top: 25px;
-      font-size: 16px;
-      font-weight: bold;
+    .rank {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #eef3f8;
       color: #08213d;
+      font-weight: bold;
+      text-align: center;
+      line-height: 24px;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .summary-table td {
+      border-bottom: 1px solid #dbe3ec;
+      padding: 8px 4px;
+    }
+
+    .summary-table td:first-child {
+      color: #64748b;
+      font-weight: bold;
+    }
+
+    .summary-table td:last-child {
+      text-align: right;
+      color: #08213d;
+      font-weight: bold;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 7px;
+      border-radius: 12px;
+      font-size: 9px;
+      font-weight: bold;
+    }
+
+    .badge-blue {
+      background: #e0f2fe;
+      color: #075985;
     }
 
     .footer {
@@ -128,11 +313,11 @@
       bottom: 0;
       left: 0;
       right: 0;
-      border-top: 1px solid #d7e1ec;
+      border-top: 1px solid #dbe3ec;
+      padding-top: 6px;
       text-align: center;
-      font-size: 10px;
-      color: #8aa0bd;
-      padding-top: 8px;
+      color: #94a3b8;
+      font-size: 9px;
     }
   </style>
 </head>
@@ -140,64 +325,221 @@
 <body>
 
   <div class="header">
-    <div class="marca">
-      <h2>MARE</h2>
-      <p>Manejador Administrativo y Registro de Embarcaciones</p>
+    <div class="header-left">
+      <div class="marca">MARE</div>
+      <div class="submarca">
+        Manejador Administrativo y Registro de Embarcaciones
+      </div>
     </div>
 
-    <div class="titulo">
-      <h1>Reporte Estadístico</h1>
-      <p>Documento generado automáticamente</p>
+    <div class="header-right">
+      <div class="titulo">Reporte Estadístico</div>
+      <div class="subtitulo">
+        Análisis ejecutivo de solicitudes y embarcaciones
+      </div>
     </div>
   </div>
 
-  <div class="info">
-    <strong>Tipo de reporte:</strong> Solicitudes por estado<br>
-    <strong>Fecha de descarga:</strong> {{ fecha_descarga|date:"d/m/Y" }}
+  <div class="info-box">
+    <div class="info-row">
+      <div class="info-item">
+        <div class="info-label">Tipo de reporte</div>
+        <div class="info-value">Estadísticas generales</div>
+      </div>
+
+      <div class="info-item">
+        <div class="info-label">Mes</div>
+        <div class="info-value">{{ mes }}</div>
+      </div>
+
+      <div class="info-item">
+        <div class="info-label">Año</div>
+        <div class="info-value">{{ anio }}</div>
+      </div>
+
+      <div class="info-item">
+        <div class="info-label">Fecha de descarga</div>
+        <div class="info-value">{{ fecha_descarga|date:"d/m/Y" }}</div>
+      </div>
+    </div>
   </div>
 
-  <div class="contenedor">
+  <table class="kpi-table">
+    <tr>
+      <td class="kpi-total">
+        <div class="kpi-label">Total solicitudes</div>
+        <div class="kpi-value">{{ total_estadisticas }}</div>
+        <div class="kpi-note">Registros del periodo</div>
+      </td>
 
-    <div class="grafica"></div>
+      <td class="kpi-aprobadas">
+        <div class="kpi-label">Aprobadas</div>
+        <div class="kpi-value">{{ aprobadas }}</div>
+        <div class="kpi-note">Incluye completadas</div>
+      </td>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Estado</th>
-          <th>Cantidad</th>
-          <th>Porcentaje</th>
-        </tr>
-      </thead>
+      <td class="kpi-rechazadas">
+        <div class="kpi-label">Rechazadas</div>
+        <div class="kpi-value">{{ rechazadas }}</div>
+        <div class="kpi-note">Solicitudes no aceptadas</div>
+      </td>
 
-      <tbody>
-        <tr>
-          <td class="verde">COMPLETADAS</td>
-          <td>{{ completadas }}</td>
-          <td>{{ porcentaje_completadas }}%</td>
-        </tr>
+      <td class="kpi-tasa">
+        <div class="kpi-label">Tasa de aprobación</div>
+        <div class="kpi-value">{{ tasa_aprobacion }}%</div>
+        <div class="kpi-note">Aprobadas sobre total</div>
+      </td>
+    </tr>
+  </table>
 
-        <tr>
-          <td class="amarillo">EN PROCESO</td>
-          <td>{{ en_proceso }}</td>
-          <td>{{ porcentaje_proceso }}%</td>
-        </tr>
+  <div class="layout">
 
-        <tr>
-          <td class="rojo">RECHAZADAS</td>
-          <td>{{ rechazadas }}</td>
-          <td>{{ porcentaje_rechazadas }}%</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="col col-left">
 
-  </div>
+      <div class="panel">
+        <div class="panel-title">Distribución por estado</div>
+        <div class="panel-desc">
+          Representación porcentual del avance de solicitudes.
+        </div>
 
-  <div class="total">
-    Total de registros: {{ total_estadisticas }}
+        <div class="bar-row">
+          <div class="bar-head">
+            <div class="bar-name">Completadas</div>
+            <div class="bar-value">{{ completadas }} · {{ porcentaje_completadas }}%</div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill green" style="width: {{ porcentaje_completadas }}%;"></div>
+          </div>
+        </div>
+
+        <div class="bar-row">
+          <div class="bar-head">
+            <div class="bar-name">En seguimiento</div>
+            <div class="bar-value">{{ en_proceso }} · {{ porcentaje_proceso }}%</div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill yellow" style="width: {{ porcentaje_proceso }}%;"></div>
+          </div>
+        </div>
+
+        <div class="bar-row">
+          <div class="bar-head">
+            <div class="bar-name">Rechazadas</div>
+            <div class="bar-value">{{ rechazadas }} · {{ porcentaje_rechazadas }}%</div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill red" style="width: {{ porcentaje_rechazadas }}%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Estancias por tipo de embarcación</div>
+        <div class="panel-desc">
+          Distribución de solicitudes agrupadas por tipo de embarcación.
+        </div>
+
+        {% for item in estancias_tipo_data %}
+        <div class="bar-row">
+          <div class="bar-head">
+            <div class="bar-name">{{ item.tipo }}</div>
+            <div class="bar-value">{{ item.total }} · {{ item.porcentaje }}%</div>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill blue" style="width: {{ item.porcentaje }}%;"></div>
+          </div>
+        </div>
+        {% empty %}
+          <p>No hay datos disponibles.</p>
+        {% endfor %}
+      </div>
+
+    </div>
+
+    <div class="col col-right">
+
+      <div class="panel">
+        <div class="panel-title">Top embarcaciones</div>
+        <div class="panel-desc">
+          Embarcaciones con mayor número de solicitudes registradas.
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Embarcación</th>
+              <th>Tipo</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for item in top_embarcaciones %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ item.embarcacion__nombre_bote|default:"Sin nombre" }}</td>
+              <td>
+                <span class="badge badge-blue">
+                  {{ item.embarcacion__tipo_barco__tipo_barco|default:"Sin tipo" }}
+                </span>
+              </td>
+              <td>{{ item.total }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4">No hay datos disponibles.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Resumen ejecutivo</div>
+        <div class="panel-desc">
+          Lectura rápida de los indicadores principales del periodo.
+        </div>
+
+        <table class="summary-table">
+          <tr>
+            <td>Total de solicitudes</td>
+            <td>{{ total_estadisticas }}</td>
+          </tr>
+
+          <tr>
+            <td>Solicitudes aprobadas</td>
+            <td>{{ aprobadas }}</td>
+          </tr>
+
+          <tr>
+            <td>Solicitudes completadas</td>
+            <td>{{ completadas }}</td>
+          </tr>
+
+          <tr>
+            <td>Solicitudes rechazadas</td>
+            <td>{{ rechazadas }}</td>
+          </tr>
+
+          <tr>
+            <td>Solicitudes en seguimiento</td>
+            <td>{{ en_proceso }}</td>
+          </tr>
+
+          <tr>
+            <td>Tasa de aprobación</td>
+            <td>{{ tasa_aprobacion }}%</td>
+          </tr>
+        </table>
+      </div>
+
+    </div>
+
   </div>
 
   <div class="footer">
-    MARE · Reporte generado por el sistema · {{ fecha_descarga|date:"d/m/Y" }}
+    MARE · Reporte generado automáticamente por el sistema · {{ fecha_descarga|date:"d/m/Y" }}
   </div>
 
 </body>
