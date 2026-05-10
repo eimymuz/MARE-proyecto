@@ -83,7 +83,6 @@
     <table>
       <thead>
         <tr>
-          <th>No.</th>
           <th>Embarcación</th>
           <th>Cliente</th>
           <th>Fecha de resolución</th>
@@ -96,7 +95,6 @@
       <tbody>
         {% for s in solicitudes %}
         <tr>
-          <td>{{ forloop.counter }}</td>
 
           <td>{{ s.embarcacion.nombre_bote }}</td>
 
@@ -153,6 +151,26 @@
 
 <div class="card" style="text-align:right;">
   <h3 style="margin:0;">Total del filtro: {{ total }}</h3>
+</div>
+
+<div class="pagination">
+
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&estado={{ estado }}&mes={{ mes }}&anio={{ anio }}">
+      ← Anterior
+    </a>
+  {% endif %}
+
+  <span>
+    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+  </span>
+
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&estado={{ estado }}&mes={{ mes }}&anio={{ anio }}">
+      Siguiente →
+    </a>
+  {% endif %}
+
 </div>
 
 {% for s in solicitudes %}
@@ -338,6 +356,33 @@
   .mare-close-btn:hover {
     color: var(--danger);
   }
+
+  .pagination{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:16px;
+  margin-top:24px;
+}
+
+.pagination a{
+  padding:10px 18px;
+  border-radius:10px;
+  background:#eef4ff;
+  color:#2457a7;
+  text-decoration:none;
+  font-weight:600;
+  transition:.2s;
+}
+
+.pagination a:hover{
+  background:#dbe9ff;
+}
+
+.pagination span{
+  font-weight:600;
+  color:#24344d;
+}
 </style>
 
 <script>

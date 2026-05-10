@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.db.models import Count
+from django.core.paginator import Paginator
 from weasyprint import HTML
 
 from apps.solicitudes.models import Solicitud
@@ -23,25 +24,11 @@ def calcular_fecha_resolucion(solicitud):
 def obtener_estadisticas():
     total_estadisticas = Solicitud.objects.count()
 
-    completadas = Solicitud.objects.filter(
-        estado='COMPLETADA'
-    ).count()
-
-    rechazadas = Solicitud.objects.filter(
-        estado='RECHAZADA'
-    ).count()
-
-    aprobadas = Solicitud.objects.filter(
-        estado='APROBADA'
-    ).count()
-
-    pendientes = Solicitud.objects.filter(
-        estado='PENDIENTE'
-    ).count()
-
-    en_espera = Solicitud.objects.filter(
-        estado='EN_ESPERA'
-    ).count()
+    completadas = Solicitud.objects.filter(estado='COMPLETADA').count()
+    rechazadas = Solicitud.objects.filter(estado='RECHAZADA').count()
+    aprobadas = Solicitud.objects.filter(estado='APROBADA').count()
+    pendientes = Solicitud.objects.filter(estado='PENDIENTE').count()
+    en_espera = Solicitud.objects.filter(estado='EN_ESPERA').count()
 
     en_proceso = pendientes + en_espera + aprobadas
 
@@ -81,7 +68,6 @@ def obtener_solicitudes_filtradas(request):
         )
         .prefetch_related('historial')
         .all()
-        .order_by('-fecha_solicitud')
     )
 
     if estado == 'aceptado':
@@ -116,11 +102,23 @@ def obtener_solicitudes_filtradas(request):
             if s.fecha_resolucion and s.fecha_resolucion.year == int(anio)
         ]
 
+    solicitudes.sort(
+        key=lambda s: s.fecha_resolucion or timezone.datetime.min.replace(
+            tzinfo=timezone.get_current_timezone()
+        ),
+        reverse=True
+    )
+
     return solicitudes, estado, mes, anio
 
 
 def reporte_solicitudes(request):
     solicitudes, estado, mes, anio = obtener_solicitudes_filtradas(request)
+
+    paginator = Paginator(solicitudes, 15)  # 15 registros por página
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     meses = [
         (1, 'Enero'), (2, 'Febrero'), (3, 'Marzo'),
@@ -132,17 +130,17 @@ def reporte_solicitudes(request):
     anios = range(2026, timezone.now().year + 5)
 
     context = {
-        'solicitudes': solicitudes,
+        'solicitudes': page_obj,
+        'page_obj': page_obj,
         'estado': estado,
         'mes': mes,
         'anio': anio,
         'meses': meses,
         'anios': anios,
-        'total': len(solicitudes),
+        'total': paginator.count,
     }
 
     return render(request, 'reporte/reporte.html', context)
-
 
 def reporte_solicitudes_pdf(request):
     solicitudes, estado, mes, anio = obtener_solicitudes_filtradas(request)
@@ -165,6 +163,7 @@ def reporte_solicitudes_pdf(request):
     HTML(string=html_string).write_pdf(response)
 
     return response
+
 
 def estadisticas_solicitudes(request):
     mes = request.GET.get('mes', '')
@@ -280,18 +279,6 @@ def estadisticas_solicitudes(request):
     ]
 
     anios = range(2026, timezone.now().year + 5)
-    mes_actual = timezone.now().month
-    mes_anterior = mes_actual - 1 if mes_actual > 1 else 12
-
-    total_mes_actual = conteo_por_mes.get(mes_actual, 0)
-    total_mes_anterior = conteo_por_mes.get(mes_anterior, 0)
-
-    crecimiento_mensual = 0
-    tipo_crecimiento = 'neutral'
-
-    # =========================
-    # CRECIMIENTO MENSUAL
-    # =========================
 
     if mes:
         mes_actual = int(mes)
@@ -303,7 +290,6 @@ def estadisticas_solicitudes(request):
     else:
         anio_actual = timezone.now().year
 
-    # MES ANTERIOR
     if mes_actual == 1:
         mes_anterior = 12
         anio_anterior = anio_actual - 1
@@ -311,40 +297,30 @@ def estadisticas_solicitudes(request):
         mes_anterior = mes_actual - 1
         anio_anterior = anio_actual
 
-    # TOTAL MES ACTUAL
     total_mes_actual = Solicitud.objects.filter(
         fecha_solicitud__month=mes_actual,
         fecha_solicitud__year=anio_actual
     ).count()
 
-    # TOTAL MES ANTERIOR
     total_mes_anterior = Solicitud.objects.filter(
         fecha_solicitud__month=mes_anterior,
         fecha_solicitud__year=anio_anterior
     ).count()
 
-    # CRECIMIENTO
     crecimiento_mensual = 0
     tipo_crecimiento = 'neutral'
 
     if total_mes_anterior > 0:
-
         crecimiento_mensual = round(
-            (
-                (total_mes_actual - total_mes_anterior)
-                / total_mes_anterior
-            ) * 100,
+            ((total_mes_actual - total_mes_anterior) / total_mes_anterior) * 100,
             2
         )
 
         if crecimiento_mensual > 0:
             tipo_crecimiento = 'positivo'
-
         elif crecimiento_mensual < 0:
             tipo_crecimiento = 'negativo'
-
     else:
-
         if total_mes_actual > 0:
             crecimiento_mensual = 100
             tipo_crecimiento = 'positivo'
@@ -393,14 +369,10 @@ def reporte_estadisticas_pdf(request):
     ).all()
 
     if mes:
-        solicitudes = solicitudes.filter(
-            fecha_solicitud__month=int(mes)
-        )
+        solicitudes = solicitudes.filter(fecha_solicitud__month=int(mes))
 
     if anio:
-        solicitudes = solicitudes.filter(
-            fecha_solicitud__year=int(anio)
-        )
+        solicitudes = solicitudes.filter(fecha_solicitud__year=int(anio))
 
     total_estadisticas = solicitudes.count()
 
@@ -408,21 +380,10 @@ def reporte_estadisticas_pdf(request):
         estado__in=['APROBADA', 'COMPLETADA']
     ).count()
 
-    rechazadas = solicitudes.filter(
-        estado='RECHAZADA'
-    ).count()
-
-    completadas = solicitudes.filter(
-        estado='COMPLETADA'
-    ).count()
-
-    pendientes = solicitudes.filter(
-        estado='PENDIENTE'
-    ).count()
-
-    en_espera = solicitudes.filter(
-        estado='EN_ESPERA'
-    ).count()
+    rechazadas = solicitudes.filter(estado='RECHAZADA').count()
+    completadas = solicitudes.filter(estado='COMPLETADA').count()
+    pendientes = solicitudes.filter(estado='PENDIENTE').count()
+    en_espera = solicitudes.filter(estado='EN_ESPERA').count()
 
     en_proceso = pendientes + en_espera
 
