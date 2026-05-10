@@ -55,6 +55,14 @@ El sistema incorpora un mapa visual de la marina que permite:
 - Mejorar la planeación de ocupación
 - Facilitar la toma de decisiones operativas
 
+## 🔒 Seguridad y control
+El sistema contempla:
+
+- Separación entre acceso público y administrativo
+- Gestión de sesiones
+- Validación de formularios
+- Protección de datos mediante variables de entorno
+
 
 ## 📁 Estructura del proyecto
 
@@ -109,15 +117,6 @@ El proyecto fue desarrollado utilizando el modelo en cascada, el cual organiza e
 - Implementación
 
 Este enfoque permite un control estructurado del proyecto y una documentación clara en cada etapa .
-
-
-## 🔒 Seguridad y control
-El sistema contempla:
-
-- Separación entre acceso público y administrativo
-- Gestión de sesiones
-- Validación de formularios
-- Protección de datos mediante variables de entorno
 
 
 ## 🚀 Estado del proyecto
