@@ -224,6 +224,18 @@ def inicio(request):
         estado__in=['PENDIENTE', 'EN_ESPERA']
     ).count()
 
+    # LLEGADAS HOY
+    llegadas_hoy = Solicitud.objects.filter(
+        fecha_llegada=hoy,
+        estado='APROBADA'
+    ).count()
+
+    # SALIDAS HOY
+    salidas_hoy = Solicitud.objects.filter(
+        fecha_salida=hoy,
+        estado='APROBADA'
+    ).count()
+
     if total_espacios > 0:
         porcentaje_ocupacion = round((ocupados / total_espacios) * 100)
     else:
@@ -238,6 +250,11 @@ def inicio(request):
         'total_espacios': total_espacios,
         'porcentaje_ocupacion': porcentaje_ocupacion,
         'clima': clima,
+
+        # NUEVOS DATOS
+        'llegadas_hoy': llegadas_hoy,
+        'salidas_hoy': salidas_hoy,
+
         'fecha_hoy': hoy.strftime('%d/%m/%Y'),
         'fecha_hoy_iso': hoy.strftime('%Y-%m-%d'),
     })

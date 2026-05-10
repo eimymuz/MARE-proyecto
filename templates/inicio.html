@@ -6,13 +6,25 @@
 <style>
 
   /* =========================================
-     GRID PRINCIPAL DE MÉTRICAS SUPERIORES
+     WIDGETS SUPERIORES
+  ========================================= */
+
+  .marine-widgets {
+    display: grid;
+    grid-template-columns: 1fr 2.4fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: stretch;
+  }
+
+  /* =========================================
+     MÉTRICAS INFERIORES
   ========================================= */
 
   .metricas-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: .75rem;
+    grid-template-columns: repeat(4, minmax(190px, 1fr));
+    gap: 1rem;
     margin-bottom: 1.25rem;
   }
 
@@ -20,72 +32,52 @@
      TARJETAS GENERALES
   ========================================= */
 
-  .metrica-card {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border);
-    padding: 1rem;
-    box-shadow: var(--shadow);
-  }
-
-  /* Título pequeño superior */
-  .metrica-title {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-mid);
-    text-transform: uppercase;
-    letter-spacing: .5px;
-    margin-bottom: .4rem;
-  }
-
-  /* Número grande */
-  .metrica-num {
-    font-size: 28px;
-    font-weight: 600;
-  }
-
-  /* Texto inferior */
-  .metrica-desc {
-    font-size: 11px;
-    color: var(--text-light);
-    margin-top: .2rem;
-  }
-
-  /* =========================================
-     GRID DE WIDGETS MARÍTIMOS
-  ========================================= */
-
-  .marine-widgets {
-    display: grid;
-    grid-template-columns: 1fr 2.2fr 2.2fr;
-    gap: .75rem;
-    margin-bottom: 1.25rem;
-  }
-
-  /* =========================================
-     TARJETAS MARINAS
-  ========================================= */
-
+  .metrica-card,
   .marine-card {
     background: var(--surface);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
-    padding: 1rem;
+    padding: 1.1rem 1.25rem;
     box-shadow: var(--shadow);
   }
 
+  .metrica-card {
+    min-height: 105px;
+  }
+
+  .metrica-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-mid);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: .55rem;
+  }
+
+  .metrica-num {
+    font-size: 32px;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .metrica-desc {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-top: .55rem;
+  }
+
   /* =========================================
-     TARJETA DE OCUPACIÓN
+     OCUPACIÓN
   ========================================= */
 
   .ocupacion-card {
     text-align: center;
   }
 
-  /* Círculo del porcentaje */
   .circle {
-    width: 78px;
-    height: 78px;
+    width: 82px;
+    height: 82px;
     border-radius: 50%;
     border: 9px solid var(--mare-mid);
 
@@ -93,41 +85,36 @@
     align-items: center;
     justify-content: center;
 
-    margin: 0 auto .65rem auto;
+    margin: 0 auto .75rem auto;
 
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--text);
   }
 
-  /* Título de ocupación */
   .ocupacion-card h4 {
     margin: 0;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text);
   }
 
-  /* Texto "esta semana" */
   .ocupacion-card p {
-    margin: .15rem 0 .7rem;
+    margin: .2rem 0 .9rem;
     font-size: 11px;
     color: var(--text-light);
   }
 
-  /* Contenedor de libres y ocupados */
   .ocupacion-footer {
     display: flex;
     justify-content: center;
-    gap: 1.5rem;
+    gap: 2rem;
   }
 
-  /* Número inferior */
   .ocupacion-footer strong {
     display: block;
-    font-size: 16px;
+    font-size: 18px;
   }
 
-  /* Texto inferior */
   .ocupacion-footer span {
     display: block;
     font-size: 9px;
@@ -135,70 +122,171 @@
     text-transform: uppercase;
   }
 
-  /* =========================================
-     TARJETA DEL CLIMA
+    /* =========================================
+     CLIMA
+     Tarjeta con efecto dinámico y animación
   ========================================= */
 
   .clima-card {
+
+    /* Fondo degradado elegante */
     background: linear-gradient(135deg, #f8fbff, #eaf3fb);
+
     color: var(--text);
+
     display: flex;
     align-items: center;
-    gap: 1rem;
+    justify-content: center;
+
+    gap: 1.5rem;
+
+    /* Permite efecto glow */
+    position: relative;
+    overflow: hidden;
   }
 
-  /* Ícono del clima */
+  /* =========================================
+     EFECTO BRILLO ANIMADO
+  ========================================= */
+
+  .clima-card::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 220px;
+    height: 220px;
+
+    right: -70px;
+    top: -80px;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.55);
+
+    animation: climaGlow 5s ease-in-out infinite;
+  }
+
+  /* Mantiene el contenido encima del glow */
+  .clima-card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* =========================================
+     ÍCONO DEL CLIMA
+  ========================================= */
+
   .clima-icon {
-    font-size: 30px;
+
+    /* Tamaño más grande */
+    font-size: 50px;
+
+    /* Sombra elegante */
+    filter: drop-shadow(0 8px 10px rgba(0,0,0,.12));
+
+    /* Animación flotante */
+    animation: climaFloat 3s ease-in-out infinite;
   }
 
-  /* Títulos pequeños */
-  .clima-card h5,
-  .mareas-card h5 {
-    margin: 0 0 .35rem;
-    font-size: 11px;
-    letter-spacing: .6px;
-    text-transform: uppercase;
-  }
+  /* =========================================
+     TÍTULO SUPERIOR
+  ========================================= */
 
-  /* Color dorado */
   .clima-card h5 {
+
+    margin: 0 0 .4rem;
+
+    font-size: 11px;
+
+    letter-spacing: .6px;
+
+    text-transform: uppercase;
+
     color: var(--mare-mid);
   }
 
-  /* Temperatura principal */
+  /* =========================================
+     TEMPERATURA PRINCIPAL
+  ========================================= */
+
   .clima-card h3 {
+
     margin: 0;
-    font-size: 15px;
+
+    font-size: 24px;
+
     font-weight: 700;
   }
 
-  /* Contenedor info clima */
+  /* =========================================
+     INFORMACIÓN INFERIOR
+  ========================================= */
+
   .clima-info {
+
     display: flex;
-    gap: 1rem;
-    margin-top: .6rem;
+
+    gap: 1.5rem;
+
+    margin-top: .9rem;
+
     flex-wrap: wrap;
   }
 
-  /* Texto pequeño */
   .clima-info span {
+
     display: block;
+
     font-size: 9px;
+
     opacity: .7;
+
     text-transform: uppercase;
   }
 
-  /* Valor */
   .clima-info strong {
-    font-size: 12px;
+    font-size: 13px;
   }
 
+  /* =========================================
+     ANIMACIÓN DEL ÍCONO
+  ========================================= */
+
+  @keyframes climaFloat {
+
+    0%, 100% {
+      transform: translateY(0) scale(1);
+    }
+
+    50% {
+      transform: translateY(-6px) scale(1.08);
+    }
+  }
+
+  /* =========================================
+     ANIMACIÓN DEL GLOW
+  ========================================= */
+
+  @keyframes climaGlow {
+
+    0%, 100% {
+      transform: scale(1);
+      opacity: .45;
+    }
+
+    50% {
+      transform: scale(1.15);
+      opacity: .75;
+    }
+  }
+  
   /* =========================================
      RESPONSIVE
   ========================================= */
 
-  @media (max-width: 1000px) {
+  @media (max-width: 1100px) {
 
     .metricas-grid {
       grid-template-columns: repeat(2, 1fr);
@@ -209,112 +297,33 @@
     }
   }
 
+  @media (max-width: 700px) {
+
+    .metricas-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
 </style>
 
 
 <!-- =========================================
-     MÉTRICAS SUPERIORES
-========================================= -->
-
-<div class="metricas-grid">
-
-  <!-- TARJETA: OCUPADOS -->
-  <div class="metrica-card">
-
-    <div class="metrica-title">
-      Ocupados hoy
-    </div>
-
-    <div class="metrica-num" style="color:var(--emp-purple)">
-      {{ ocupados }}
-    </div>
-
-    <div class="metrica-desc">
-      espacios con embarcación
-    </div>
-
-  </div>
-
-
-  <!-- TARJETA: LIBRES -->
-  <div class="metrica-card">
-
-    <div class="metrica-title">
-      Libres
-    </div>
-
-    <div class="metrica-num" style="color:var(--success)">
-      {{ libres }}
-    </div>
-
-    <div class="metrica-desc">
-      espacios disponibles
-    </div>
-
-  </div>
-
-
-  <!-- TARJETA: PENDIENTES -->
-  <div class="metrica-card">
-
-    <div class="metrica-title">
-      Pendientes
-    </div>
-
-    <div class="metrica-num" style="color:var(--warning)">
-      {{ pendientes }}
-    </div>
-
-    <div class="metrica-desc">
-      solicitudes sin asignar
-    </div>
-
-  </div>
-
-
-  <!-- TARJETA: TOTAL -->
-  <div class="metrica-card">
-
-    <div class="metrica-title">
-      Total espacios
-    </div>
-
-    <div class="metrica-num" style="color:var(--mare-mid)">
-      {{ total_espacios }}
-    </div>
-
-    <div class="metrica-desc">
-      en toda la marina
-    </div>
-
-  </div>
-
-</div>
-
-
-<!-- =========================================
-     WIDGETS MARÍTIMOS
+     WIDGETS SUPERIORES
 ========================================= -->
 
 <section class="marine-widgets">
 
-  <!-- =====================================
-       OCUPACIÓN SEMANAL
-  ====================================== -->
-
+  <!-- OCUPACIÓN -->
   <div class="marine-card ocupacion-card">
 
-    <!-- Círculo -->
     <div class="circle">
       {{ porcentaje_ocupacion }}%
     </div>
 
-    <!-- Texto -->
     <h4>Ocupación</h4>
 
     <p>esta semana</p>
 
-    <!-- Datos inferiores -->
     <div class="ocupacion-footer">
 
       <div>
@@ -338,63 +347,48 @@
   </div>
 
 
-  <!-- =====================================
-     CONDICIONES ACTUALES
-====================================== -->
+  <!-- CLIMA -->
+  <div class="marine-card clima-card">
 
-<div class="marine-card clima-card">
+    <div class="clima-icon">
+      🌤️
+    </div>
 
-  <!-- Ícono -->
-  <div class="clima-icon">
-    🌤️
-  </div>
+    <div>
 
-  <div>
+      <h5>
+        Condiciones actuales
+      </h5>
 
-    <!-- Título -->
-    <h5>
-      Condiciones actuales
-    </h5>
+      <h3>
+        {{ clima.descripcion }} · {{ clima.temperatura }}°C
+      </h3>
 
-    <!-- Descripción dinámica -->
-    <h3>
-      {{ clima.descripcion }} ·
-      {{ clima.temperatura }}°C
-    </h3>
+      <div class="clima-info">
 
-    <!-- Datos inferiores -->
-    <div class="clima-info">
+        <div>
+          <span>Viento</span>
 
-      <!-- Viento -->
-      <div>
+          <strong>
+            {{ clima.viento }} km/h
+          </strong>
+        </div>
 
-        <span>Viento</span>
+        <div>
+          <span>Dirección</span>
 
-        <strong>
-          {{ clima.viento }} km/h
-        </strong>
+          <strong>
+            {{ clima.direccion_viento }}°
+          </strong>
+        </div>
 
-      </div>
+        <div>
+          <span>Nubosidad</span>
 
-      <!-- Dirección del viento -->
-      <div>
-
-        <span>Dirección</span>
-
-        <strong>
-          {{ clima.direccion_viento }}°
-        </strong>
-
-      </div>
-
-      <!-- Nubosidad -->
-      <div>
-
-        <span>Nubosidad</span>
-
-        <strong>
-          {{ clima.nubosidad }}%
-        </strong>
+          <strong>
+            {{ clima.nubosidad }}%
+          </strong>
+        </div>
 
       </div>
 
@@ -402,9 +396,87 @@
 
   </div>
 
-</div>
-
 </section>
+
+
+<!-- =========================================
+     MÉTRICAS INFERIORES
+========================================= -->
+
+<div class="metricas-grid">
+
+  <!-- LLEGADAS -->
+  <div class="metrica-card">
+
+    <div class="metrica-title">
+      Llegadas hoy
+    </div>
+
+    <div class="metrica-num" style="color:var(--mare-mid)">
+      {{ llegadas_hoy }}
+    </div>
+
+    <div class="metrica-desc">
+      embarcaciones programadas
+    </div>
+
+  </div>
+
+
+  <!-- SALIDAS -->
+  <div class="metrica-card">
+
+    <div class="metrica-title">
+      Salidas hoy
+    </div>
+
+    <div class="metrica-num" style="color:var(--emp-purple)">
+      {{ salidas_hoy }}
+    </div>
+
+    <div class="metrica-desc">
+      salidas programadas
+    </div>
+
+  </div>
+
+
+  <!-- OCUPADOS -->
+  <div class="metrica-card">
+
+    <div class="metrica-title">
+      Ocupados hoy
+    </div>
+
+    <div class="metrica-num" style="color:var(--warning)">
+      {{ ocupados }}
+    </div>
+
+    <div class="metrica-desc">
+      espacios con embarcación
+    </div>
+
+  </div>
+
+
+  <!-- LIBRES -->
+  <div class="metrica-card">
+
+    <div class="metrica-title">
+      Libres
+    </div>
+
+    <div class="metrica-num" style="color:var(--success)">
+      {{ libres }}
+    </div>
+
+    <div class="metrica-desc">
+      espacios disponibles
+    </div>
+
+  </div>
+
+</div>
 
 
 <!-- =========================================
@@ -413,10 +485,8 @@
 
 <div class="card" style="padding:.75rem">
 
-  <!-- ENCABEZADO -->
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
 
-    <!-- Título -->
     <div>
 
       <span style="font-size:14px;font-weight:600;color:var(--text)">
@@ -429,37 +499,23 @@
 
     </div>
 
-    <!-- Leyenda -->
     <div style="display:flex;gap:.75rem;font-size:11px;color:var(--text-mid);align-items:center">
 
-      <!-- Ocupado -->
       <span style="display:flex;align-items:center;gap:4px">
-
         <span style="display:inline-block;width:10px;height:10px;background:#f87171;border-radius:2px"></span>
-
         Ocupado
-
       </span>
 
-      <!-- Libre -->
       <span style="display:flex;align-items:center;gap:4px">
-
         <span style="display:inline-block;width:10px;height:10px;background:#d1d5db;border-radius:2px"></span>
-
         Libre
-
       </span>
 
-      <!-- Pasillo -->
       <span style="display:flex;align-items:center;gap:4px">
-
         <span style="display:inline-block;width:10px;height:10px;background:#c8a87a;border-radius:2px"></span>
-
         Pasillo
-
       </span>
 
-      <!-- Botón -->
       <a href="{% url 'mapa' %}" class="btn btn-default btn-sm">
         Ver mapa completo →
       </a>
@@ -468,12 +524,10 @@
 
   </div>
 
-  <!-- Contexto JS -->
   <script>
     window.MAPA_CTX = {};
   </script>
 
-  <!-- Mapa -->
   {% include 'mapa/mapa_component.html' with mapa_readonly=True %}
 
 </div>
