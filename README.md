@@ -46,6 +46,15 @@ El sistema se basa en una arquitectura cliente-servidor, donde los usuarios inte
 - Visualización de ocupación mediante mapa
 - Filtrado por fechas y características
 
+## 🗺️ Características del mapa interactivo
+El sistema incorpora un mapa visual de la marina que permite:
+
+- Identificar espacios ocupados y disponibles
+- Visualizar asignaciones mediante colores
+- Consultar información rápida de cada espacio
+- Mejorar la planeación de ocupación
+- Facilitar la toma de decisiones operativas
+
 
 ## 📁 Estructura del proyecto
 
@@ -56,6 +65,7 @@ MARE_PROYECTO/
 │   ├── clientes/
 │   ├── embarcaciones/
 │   ├── mapa/
+│   │   └── services/
 │   ├── muelles/
 │   ├── publico/
 │   ├── reportes/
@@ -101,9 +111,17 @@ El proyecto fue desarrollado utilizando el modelo en cascada, el cual organiza e
 Este enfoque permite un control estructurado del proyecto y una documentación clara en cada etapa .
 
 
+## 🔒 Seguridad y control
+El sistema contempla:
+
+- Separación entre acceso público y administrativo
+- Gestión de sesiones
+- Validación de formularios
+- Protección de datos mediante variables de entorno
+
+
 ## 🚀 Estado del proyecto
 En desarrollo.
-Actualmente se trabaja en la implementación del sistema web con la visualización interactiva del mapa.
 
 
 ## 📄 Licencia 
