@@ -12,7 +12,6 @@ import json
 from django.db import transaction
 
 
-
 @login_required
 def mapa_view(request):
     from apps.muelles.models import Muelle
@@ -37,6 +36,7 @@ def mapa_view(request):
             pass
     return render(request, 'mapa/mapa.html', ctx)
 
+
 @login_required
 def disponibilidad_json(request):
     fecha_str    = request.GET.get('fecha')
@@ -55,7 +55,7 @@ def disponibilidad_json(request):
         for a in asignaciones:
             for e in a.espacios.all():
                 ocupados.add(e.id)
-                
+
     tipo_barco_id = request.GET.get('tipo_barco_id')
 
     # espacios ocupados por ese tipo de barco
@@ -112,7 +112,7 @@ def disponibilidad_json(request):
             'rotacion':   float(e.rotacion),
             'es_pasillo': e.es_pasillo,
             'estado':     estado,
-            'resaltado': bool(tipo_barco_id) and (e.id in espacios_tipo),
+            'resaltado':  bool(tipo_barco_id) and (e.id in espacios_tipo),
         })
 
     zonas     = list(ZonaTierra.objects.values('id','puntos','color','nombre'))
@@ -142,14 +142,128 @@ def disponibilidad_json(request):
         except Asignacion.DoesNotExist:
             pass
 
+    # ── GRUPOS CONTIGUOS ──────────────────────────────────────
+    grupos_combinados = []
+    if eslora and manga:
+        from collections import defaultdict
+
+        TOL = 8
+
+        def se_tocan(e1, e2):
+            rot1 = e1.get('rotacion', 0)
+            if rot1 in (90, 270):
+                w1 = float(e1['alto'])
+                h1 = float(e1['ancho'])
+            else:
+                w1 = float(e1['ancho'])
+                h1 = float(e1['alto'])
+
+            rot2 = e2.get('rotacion', 0)
+            if rot2 in (90, 270):
+                w2 = float(e2['alto'])
+                h2 = float(e2['ancho'])
+            else:
+                w2 = float(e2['ancho'])
+                h2 = float(e2['alto'])
+
+            x1, y1 = float(e1['pos_x']), float(e1['pos_y'])
+            x2, y2 = float(e2['pos_x']), float(e2['pos_y'])
+
+            if abs((x1+w1)-x2) < TOL and abs(y1-y2) < TOL: return True
+            if abs((x2+w2)-x1) < TOL and abs(y1-y2) < TOL: return True
+            if abs((y1+h1)-y2) < TOL and abs(x1-x2) < TOL: return True
+            if abs((y2+h2)-y1) < TOL and abs(x1-x2) < TOL: return True
+            return False
+
+        def pasillo_entre(e1, e2, pasillos):
+            mx1 = min(e1['pos_x'], e2['pos_x'])
+            mx2 = max(e1['pos_x'] + e1['ancho'], e2['pos_x'] + e2['ancho'])
+            my1 = min(e1['pos_y'], e2['pos_y'])
+            my2 = max(e1['pos_y'] + e1['alto'], e2['pos_y'] + e2['alto'])
+            for p in pasillos:
+                px1, px2 = p['pos_x'], p['pos_x'] + p['ancho']
+                py1, py2 = p['pos_y'], p['pos_y'] + p['alto']
+                if px1 > mx1 - TOL and px2 < mx2 + TOL and py1 > my1 - TOL and py2 < my2 + TOL:
+                    return True
+            return False
+
+        def calcular_dimensiones_grupo(e1, e2, direccion):
+            alto1  = float(e1['alto'])
+            ancho1 = float(e1['ancho'])
+            alto2  = float(e2['alto'])
+            ancho2 = float(e2['ancho'])
+            rot = e1.get('rotacion', 0)
+
+            if rot == 0:
+                if direccion == 'vertical':
+                    # uno encima del otro → eslora crece
+                    return (alto1 + alto2) / 10, max(ancho1, ancho2) / 10
+                else:
+                    # lado a lado → manga crece
+                    return max(alto1, alto2) / 10, (ancho1 + ancho2) / 10
+            else:  # rot=90 o 270
+                if direccion == 'vertical':
+                    # lado a lado → manga crece
+                    return max(alto1, alto2) / 10, (ancho1 + ancho2) / 10
+                else:
+                    # uno detrás del otro → eslora crece
+                    return (alto1 + alto2) / 10, max(ancho1, ancho2) / 10
+                
+        def detectar_dir(e1, e2):
+            rot1 = e1.get('rotacion', 0)
+            if rot1 in (90, 270):
+                w1 = float(e1['alto']); h1 = float(e1['ancho'])
+            else:
+                w1 = float(e1['ancho']); h1 = float(e1['alto'])
+            x1,y1 = float(e1['pos_x']),float(e1['pos_y'])
+            x2,y2 = float(e2['pos_x']),float(e2['pos_y'])
+            rot2 = e2.get('rotacion', 0)
+            if rot2 in (90, 270):
+                w2 = float(e2['alto'])
+            else:
+                w2 = float(e2['ancho'])
+            if abs((x1+w1)-x2)<TOL or abs((x2+w2)-x1)<TOL: return 'horizontal'
+            return 'vertical'
+
+        por_muelle = defaultdict(list)
+        for e in espacios_data:
+            if not e['es_pasillo'] and e['estado'] != 'ocupado':
+                por_muelle[e['muelle_id']].append(e)
+
+        pasillos_por_muelle = defaultdict(list)
+        for e in Espacio.objects.filter(es_pasillo=True).select_related('muelle'):
+            pasillos_por_muelle[e.muelle_id].append({
+                'pos_x': float(e.pos_x), 'pos_y': float(e.pos_y),
+                'ancho': float(e.ancho), 'alto': float(e.alto),
+                'rotacion': float(e.rotacion),
+            })
+
+        for muelle_id, espacios_muelle in por_muelle.items():
+            pasillos = pasillos_por_muelle[muelle_id]
+            n = len(espacios_muelle)
+            for i in range(n):
+                for j in range(i+1, n):
+                    e1, e2 = espacios_muelle[i], espacios_muelle[j]
+                    if se_tocan(e1, e2) and not pasillo_entre(e1, e2, pasillos):
+                        direccion = detectar_dir(e1, e2)
+                        eslora_g, manga_g = calcular_dimensiones_grupo(e1, e2, direccion)
+                        if eslora_g >= eslora and manga_g >= manga:
+                            sobra = ((eslora_g - eslora) * (manga_g - manga)) / (eslora_g * manga_g) * 100
+                            estado_g = 'ideal' if sobra <= 30 else 'posible'
+                            grupos_combinados.append({
+                                'ids':    [e1['id'], e2['id']],
+                                'estado': estado_g,
+                            })
+
     return JsonResponse({
-        'espacios':         espacios_data,
-        'zonas':            zonas,
-        'etiquetas':        etiquetas,
-        'fecha':            fecha_str,
-        'eslora':           eslora,
-        'manga':            manga,
-        'asignacion_activa':asignacion_activa,
+        'espacios':          espacios_data,
+        'zonas':             zonas,
+        'etiquetas':         etiquetas,
+        'fecha':             fecha_str,
+        'eslora':            eslora,
+        'manga':             manga,
+        'asignacion_activa': asignacion_activa,
+        'grupos_combinados': grupos_combinados,
     })
 
 
@@ -184,7 +298,7 @@ def asignar_espacio(request):
                 fecha_fin__gte=fecha_inicio,
                 activa=True,
             ).exclude(solicitud=solicitud).distinct()
-            
+
             if traslapes.exists():
                 t = traslapes.first()
                 espacio_ocupado = t.espacios.filter(id__in=espacio_ids).first()
@@ -213,7 +327,7 @@ def asignar_espacio(request):
             solicitud.full_clean()
             solicitud.save()
 
-            return JsonResponse({'ok': True, 'asignacion_id': asignacion.pk})  # ← adentro del atomic
+            return JsonResponse({'ok': True, 'asignacion_id': asignacion.pk})
 
     except Exception as e:
         return JsonResponse({'ok': False, 'error': str(e)}, status=400)

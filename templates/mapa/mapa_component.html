@@ -158,6 +158,7 @@ let vx=600, vy=270, vscale=0.36;
 let panning=false, panStart=null, panOrigin=null, spaceDown=false;
 let espaciosData=[], espaciosSeleccionados=new Set(), solicitudActiva=null;
 let filtroMuelle='', filtroTipo='', filtroTamano='';
+let mapaGrupos = {};
 
 // ── ZOOM / PAN ────────────────────────────────────────────
 function applyTransform(){
@@ -228,6 +229,15 @@ const COLORES={
 function render(){
   layerT.innerHTML=''; layerE.innerHTML=''; layerL.innerHTML='';
 
+    // construir mapa de id → mejor grupo
+  (window._mapaGrupos||[]).forEach(g => {
+    g.ids.forEach(id => {
+      if(!mapaGrupos[id] || g.estado === 'ideal') {
+        mapaGrupos[id] = g;
+      }
+    });
+  });
+
   (window._mapaZonas||[]).forEach(z=>{
     if(!z.puntos) return;
     const pts=typeof z.puntos==='string'?JSON.parse(z.puntos):z.puntos;
@@ -247,7 +257,12 @@ function render(){
     const filtradoFuera     = !e.es_pasillo && (!pasaFiltroMuelle || !pasaFiltroTamano);
 
     const estado = sel ? 'seleccionado' : e.es_pasillo ? 'pasillo' : (e.estado||'libre');
-    const col    = filtradoFuera ? COLORES.filtrado : (COLORES[estado]||COLORES.libre);
+    
+    let estadoFinal = estado;
+    if(estado === 'no_cabe' && mapaGrupos[e.id]) {
+      estadoFinal = mapaGrupos[e.id].estado;
+    }
+    const col = filtradoFuera ? COLORES.filtrado : (COLORES[estadoFinal]||COLORES.libre);
 
     const rot=e.rotacion||0, cx=e.pos_x+e.ancho/2, cy=e.pos_y+e.alto/2;
 
@@ -295,6 +310,7 @@ function render(){
     }
   });
 
+
   (window._mapaEtiquetas||[]).forEach(et=>{
     // en modo muelle filtrado, resaltar etiqueta del muelle seleccionado
     const esActivo = !filtroMuelle || String(et.muelle_id)===filtroMuelle;
@@ -329,6 +345,10 @@ function renderStats(){
 
 // ── CLICK ESPACIO ─────────────────────────────────────────
 function clickEspacio(e, ev){
+  const estadoFinal = (e.estado === 'no_cabe' && mapaGrupos[e.id]) 
+    ? mapaGrupos[e.id].estado 
+    : e.estado;
+
   if(!READONLY){
     const largo_m=(e.alto/10).toFixed(1);
     const ancho_m=(e.ancho/10).toFixed(1);
@@ -353,11 +373,19 @@ function clickEspacio(e, ev){
     return;
   }
 
-  if(!READONLY && solicitudActiva && (e.estado==='ideal'||e.estado==='posible'||e.estado==='libre')){
+  if(!READONLY && solicitudActiva && (estadoFinal==='ideal'||estadoFinal==='posible'||estadoFinal==='libre')){
     espaciosSeleccionados.clear();
-    espaciosSeleccionados.add(e.id);
+    // si es parte de un grupo, seleccionar todos
+    const grupo = mapaGrupos[e.id];
+    if(grupo && (e.estado === 'no_cabe')) {
+      grupo.ids.forEach(id => espaciosSeleccionados.add(id));
+    } else {
+      espaciosSeleccionados.add(e.id);
+    }
     render();
-    mostrarPanelAsignar(e);
+    // para panel asignar, pasar todos los espacios seleccionados
+    const espaciosPrimero = espaciosData.find(x => x.id === e.id);
+    mostrarPanelAsignar(espaciosPrimero);
   }
 }
 
@@ -413,11 +441,17 @@ function mostrarPanelAsignar(e){
   const panel    =document.getElementById('mapa-panel-asignar-content');
   panelWrap.style.display='block';
   const sol=solicitudActiva;
+  
+  // info de espacios seleccionados
+  const selIds = [...espaciosSeleccionados];
+  const selEspacios = espaciosData.filter(x => selIds.includes(x.id));
+  const infoEspacios = selEspacios.map(x => `${x.muelle} — Espacio ${x.numero}`).join(' + ');
+
   panel.innerHTML=`
     <div style="line-height:1.9">
       <div style="margin-bottom:.4rem;color:var(--text)">
         <strong>${sol.embarcacion}</strong><br>
-        <span style="color:var(--text-light)">Espacio ${e.numero} — ${e.muelle}</span>
+        <span style="color:var(--text-light);font-size:11px">${infoEspacios}</span>
       </div>
       <label style="font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;color:var(--text-mid)">Fecha inicio</label>
       <input type="date" id="asig-inicio" value="${sol.fecha_llegada}"
@@ -425,10 +459,11 @@ function mostrarPanelAsignar(e){
       <label style="font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;color:var(--text-mid)">Fecha fin</label>
       <input type="date" id="asig-fin" value="${sol.fecha_salida}"
         style="width:100%;padding:.3rem;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;margin-bottom:.6rem">
-      <button class="btn btn-primary btn-sm" onclick="confirmarAsignacion(${e.id})" style="width:100%">Confirmar asignación</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmarAsignacion()" style="width:100%">Confirmar asignación</button>
       <button class="btn btn-default btn-sm" onclick="cancelarAsignacion()" style="width:100%;margin-top:.3rem">Cancelar</button>
     </div>`;
 }
+
 
 window.cancelarAsignacion=function(){
   espaciosSeleccionados.clear();
@@ -437,7 +472,7 @@ window.cancelarAsignacion=function(){
   render();
 };
 
-window.confirmarAsignacion=async function(espacioId){
+window.confirmarAsignacion=async function(){
   const inicio=document.getElementById('asig-inicio').value;
   const fin   =document.getElementById('asig-fin').value;
   if(!inicio||!fin){ alert('Completa las fechas.'); return; }
@@ -447,8 +482,14 @@ window.confirmarAsignacion=async function(espacioId){
     const res=await fetch(API_ASIGNAR,{
       method:'POST',
       headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
-      body:JSON.stringify({solicitud_id:solicitudActiva.id,espacio_ids:[espacioId],fecha_inicio:inicio,fecha_fin:fin})
+      body:JSON.stringify({
+        solicitud_id: solicitudActiva.id,
+        espacio_ids:  [...espaciosSeleccionados],
+        fecha_inicio: inicio,
+        fecha_fin:    fin
+      })
     });
+    
     const data=await res.json();
     if(data.ok){
       alert('¡Asignación creada correctamente!');
@@ -463,10 +504,15 @@ window.confirmarAsignacion=async function(espacioId){
     alert('Error: '+err.message);
     btn.textContent='Confirmar asignación'; btn.disabled=false;
   }
+
+
+
 };
 
 // ── CARGAR MAPA ───────────────────────────────────────────
 async function cargarMapa(){
+  
+
   const fecha       = READONLY
     ? new Date().toISOString().split('T')[0]
     : document.getElementById('mapa-fecha').value;
@@ -489,6 +535,7 @@ async function cargarMapa(){
     espaciosData          = data.espacios;
     window._mapaZonas     = data.zonas;
     window._mapaEtiquetas = data.etiquetas;
+    window._mapaGrupos = data.grupos_combinados || [];
 
     if(!READONLY){
       if(solicitudId){
