@@ -146,6 +146,9 @@
 </div>
 {% endif %}
 
+{% include "components/popup_solicitud.html" %}
+{% include "components/modal_rechazo.html" %}
+
 <!-- ── POPUP ESPACIO OCUPADO ── -->
 <div id="mapa-popup" style="display:none;position:fixed;z-index:400;width:280px;background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);border:1px solid var(--border);overflow:hidden">
   <div style="background:var(--mare-dark);padding:.75rem 1rem;display:flex;justify-content:space-between;align-items:center">
@@ -184,7 +187,7 @@ let filtroMuelle='', filtroTipo='', filtroTamano='';
 let mapaGrupos = {};
 
 
-// ── Alertas ────────────────────────────────────────────
+// ── Alertas────────────────────────────────────────────
 
 
 window.mostrarErrorAsig = function(data){
@@ -503,8 +506,15 @@ async function mostrarPopupOcupado(e, ev){
         <div><span style="color:var(--text-mid)">Cliente:</span> ${asig.cliente}</div>
         <div><span style="color:var(--text-mid)">Llegada:</span> ${asig.fecha_inicio}</div>
         <div><span style="color:var(--text-mid)">Salida:</span> ${asig.fecha_fin}</div>`;
-      document.getElementById('popup-btn-detalle').href = `/solicitudes/aprobadas/`;
-      document.getElementById('popup-btn-detalle').textContent = 'Ver en aprobadas';
+
+
+      document.getElementById('popup-btn-detalle').onclick = (e) => {
+        e.preventDefault();
+        cerrarPopupEspacio();
+        abrirPopupVer(asig.solicitud_id);
+      };
+      document.getElementById('popup-btn-detalle').href = '#';
+      document.getElementById('popup-btn-detalle').textContent = 'Ver';
       document.getElementById('popup-btn-reasignar').href = `/mapa/?solicitud_id=${asig.solicitud_id}`;
     } else {
       document.getElementById('popup-body').innerHTML='<span style="color:var(--text-light)">Sin información disponible</span>';
