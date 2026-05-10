@@ -302,11 +302,20 @@ def asignar_espacio(request):
             if traslapes.exists():
                 t = traslapes.first()
                 espacio_ocupado = t.espacios.filter(id__in=espacio_ids).first()
-                raise Exception(
-                    f'El espacio {espacio_ocupado.numero} del muelle {espacio_ocupado.muelle.nombre} '
-                    f'ya está ocupado por {t.solicitud.embarcacion.nombre_bote} '
-                    f'del {t.fecha_inicio.strftime("%d/%m/%Y")} al {t.fecha_fin.strftime("%d/%m/%Y")}.'
-                )
+                emb = t.solicitud.embarcacion
+                return JsonResponse({
+                    'ok': False,
+                    'error_tipo': 'ocupado',
+                    'espacio':    f'{espacio_ocupado.muelle.nombre}-{espacio_ocupado.numero}',
+                    'embarcacion': emb.nombre_bote,
+                    'cliente':     emb.cliente.fullname,
+                    'tipo':        emb.tipo_barco.tipo_barco,
+                    'eslora':      float(emb.eslora),
+                    'manga':       float(emb.manga),
+                    'calado':      float(emb.calado),
+                    'fecha_inicio': t.fecha_inicio.strftime('%d/%m/%Y'),
+                    'fecha_fin':    t.fecha_fin.strftime('%d/%m/%Y'),
+                }, status=400)
 
             Asignacion.objects.filter(
                 solicitud=solicitud,

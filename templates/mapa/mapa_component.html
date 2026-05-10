@@ -119,6 +119,29 @@
     </div>
   </div>
 
+<!-- Modal error asignación -->
+<div id="modal-error-asig" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+     background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:var(--radius-lg);padding:1.5rem;
+              width:440px;max-width:95%;box-shadow:var(--shadow-md);
+              border-top:4px solid var(--danger)">
+    <div id="modal-error-asig-msg"></div>
+    <div style="display:flex;justify-content:center;margin-top:1rem">
+      <button onclick="cerrarErrorAsig()" class="btn btn-danger">Entendido</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Toast éxito -->
+<div id="toast-exito" style="display:none;position:fixed;top:1.5rem;left:50%;
+     transform:translateX(-50%);z-index:600;background:var(--success);color:#fff;
+     padding:.65rem 1.5rem;border-radius:var(--radius-lg);font-size:14px;font-weight:500;
+     box-shadow:var(--shadow-md);transition:opacity .3s ease">
+  ✓ Asignación creada correctamente
+</div>
+
+
 {% if not mapa_readonly %}
 </div>
 {% endif %}
@@ -159,6 +182,70 @@ let panning=false, panStart=null, panOrigin=null, spaceDown=false;
 let espaciosData=[], espaciosSeleccionados=new Set(), solicitudActiva=null;
 let filtroMuelle='', filtroTipo='', filtroTamano='';
 let mapaGrupos = {};
+
+
+// ── Alertas ────────────────────────────────────────────
+
+
+window.mostrarErrorAsig = function(data){
+  const modal = document.getElementById('modal-error-asig');
+  const msg   = document.getElementById('modal-error-asig-msg');
+
+  if(data.error_tipo === 'ocupado'){
+    msg.innerHTML = `
+      <div style="text-align:center;margin-bottom:1rem">
+        <div style="font-size:20px;font-weight:600;color:var(--danger);margin-bottom:.25rem">
+          Espacio ${data.espacio} Ocupado
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem .75rem;font-size:16px">
+        <div>
+          <div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Embarcación</div>
+          <div style="font-weight:500;color:var(--text)">${data.embarcacion}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Cliente</div>
+          <div style="font-weight:500;color:var(--text)">${data.cliente}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Tipo</div>
+          <div style="font-weight:500;color:var(--text)">${data.tipo}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Medidas</div>
+          <div style="font-weight:500;color:var(--text)">${data.eslora}m × ${data.manga}m × ${data.calado}m</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Desde</div>
+          <div style="font-weight:500;color:var(--text)">${data.fecha_inicio}</div>
+        </div>
+        <div>
+          <div style="font-size:13px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Hasta</div>
+          <div style="font-weight:500;color:var(--text)">${data.fecha_fin}</div>
+        </div>
+      </div>`;
+  } else {
+    msg.innerHTML = `<div style="font-size:14px;color:var(--text)">${data.mensaje || data.error || 'Error desconocido'}</div>`;
+  }
+
+  modal.style.display = 'flex';
+}
+
+window.cerrarErrorAsig = function(){
+  document.getElementById('modal-error-asig').style.display = 'none';
+}
+
+
+window.mostrarToast = function(msg){
+  const toast = document.getElementById('toast-exito');
+  toast.textContent = '✓ ' + msg;
+  toast.style.display = 'block';
+  toast.style.opacity = '1';
+  setTimeout(()=>{
+    toast.style.opacity = '0';
+    setTimeout(()=>{ toast.style.display = 'none'; }, 300);
+  }, 3000);
+}
 
 // ── ZOOM / PAN ────────────────────────────────────────────
 function applyTransform(){
@@ -416,7 +503,8 @@ async function mostrarPopupOcupado(e, ev){
         <div><span style="color:var(--text-mid)">Cliente:</span> ${asig.cliente}</div>
         <div><span style="color:var(--text-mid)">Llegada:</span> ${asig.fecha_inicio}</div>
         <div><span style="color:var(--text-mid)">Salida:</span> ${asig.fecha_fin}</div>`;
-      document.getElementById('popup-btn-detalle').href   = `/solicitudes/${asig.solicitud_id}/`;
+      document.getElementById('popup-btn-detalle').href = `/solicitudes/aprobadas/`;
+      document.getElementById('popup-btn-detalle').textContent = 'Ver en aprobadas';
       document.getElementById('popup-btn-reasignar').href = `/mapa/?solicitud_id=${asig.solicitud_id}`;
     } else {
       document.getElementById('popup-body').innerHTML='<span style="color:var(--text-light)">Sin información disponible</span>';
@@ -492,17 +580,22 @@ window.confirmarAsignacion=async function(){
     
     const data=await res.json();
     if(data.ok){
-      alert('¡Asignación creada correctamente!');
+      cerrarErrorAsig();
+      mostrarToast('¡Asignación creada correctamente!');
       cancelarAsignacion();
       cargarMapa();
       if(MAPA_CTX.onAsignado) MAPA_CTX.onAsignado(data);
     } else {
-      alert('Error: '+data.error);
+      if(data.error_tipo === 'ocupado'){
+        mostrarErrorAsig(data);
+      } else {
+        mostrarErrorAsig({error_tipo: 'generico', mensaje: data.error});
+      }
       btn.textContent='Confirmar asignación'; btn.disabled=false;
     }
   } catch(err){
-    alert('Error: '+err.message);
-    btn.textContent='Confirmar asignación'; btn.disabled=false;
+      mostrarErrorAsig('Error de conexión: ' + err.message);
+      btn.textContent='Confirmar asignación'; btn.disabled=false;
   }
 
 
