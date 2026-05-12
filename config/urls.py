@@ -5,6 +5,9 @@ urlpatterns = [
     # Admin Django
     path('admin/', admin.site.urls),
 
+    # Usuarios
+    path('', include('apps.usuarios.urls')),
+
     # Área pública (cliente)
     path('', include('apps.publico.urls')),
 

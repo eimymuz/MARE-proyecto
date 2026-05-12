@@ -73,6 +73,7 @@
         </div>
         <span>{{ user.get_short_name|default:user.username }}</span>
       </div>
+      <a href="{% url 'logout' %}" class="logout-link">Cerrar sesión</a>
       {% endif %}
     </div>
 
