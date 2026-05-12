@@ -80,13 +80,10 @@
     height: 82px;
     border-radius: 50%;
     border: 9px solid var(--mare-mid);
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     margin: 0 auto .75rem auto;
-
     font-size: 18px;
     font-weight: 700;
     color: var(--text);
@@ -122,127 +119,74 @@
     text-transform: uppercase;
   }
 
-    /* =========================================
+  /* =========================================
      CLIMA
-     Tarjeta con efecto dinámico y animación
   ========================================= */
 
   .clima-card {
-
-    /* Fondo degradado elegante */
     background: linear-gradient(135deg, #f8fbff, #eaf3fb);
-
     color: var(--text);
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     gap: 1.5rem;
-
-    /* Permite efecto glow */
     position: relative;
     overflow: hidden;
   }
 
-  /* =========================================
-     EFECTO BRILLO ANIMADO
-  ========================================= */
-
   .clima-card::before {
-
     content: "";
-
     position: absolute;
-
     width: 220px;
     height: 220px;
-
     right: -70px;
     top: -80px;
-
     border-radius: 50%;
-
     background: rgba(255,255,255,.55);
-
     animation: climaGlow 5s ease-in-out infinite;
   }
 
-  /* Mantiene el contenido encima del glow */
   .clima-card > * {
     position: relative;
     z-index: 1;
   }
 
-  /* =========================================
-     ÍCONO DEL CLIMA
-  ========================================= */
-
   .clima-icon {
-
-    /* Tamaño más grande */
-    font-size: 50px;
-
-    /* Sombra elegante */
+    font-size: 54px;
     filter: drop-shadow(0 8px 10px rgba(0,0,0,.12));
-
-    /* Animación flotante */
     animation: climaFloat 3s ease-in-out infinite;
   }
 
-  /* =========================================
-     TÍTULO SUPERIOR
-  ========================================= */
+  .clima-content {
+    width: 100%;
+    max-width: 520px;
+  }
 
   .clima-card h5 {
-
     margin: 0 0 .4rem;
-
     font-size: 11px;
-
     letter-spacing: .6px;
-
     text-transform: uppercase;
-
     color: var(--mare-mid);
   }
 
-  /* =========================================
-     TEMPERATURA PRINCIPAL
-  ========================================= */
-
   .clima-card h3 {
-
     margin: 0;
-
     font-size: 24px;
-
     font-weight: 700;
   }
 
-  /* =========================================
-     INFORMACIÓN INFERIOR
-  ========================================= */
-
   .clima-info {
-
     display: flex;
-
     gap: 1.5rem;
-
     margin-top: .9rem;
-
     flex-wrap: wrap;
   }
 
   .clima-info span {
-
     display: block;
-
     font-size: 9px;
-
     opacity: .7;
-
     text-transform: uppercase;
   }
 
@@ -251,11 +195,49 @@
   }
 
   /* =========================================
-     ANIMACIÓN DEL ÍCONO
+     ALERTA DE VIENTO
   ========================================= */
 
-  @keyframes climaFloat {
+  .clima-alerta {
+    margin-top: 1rem;
+    padding: .65rem .85rem;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid transparent;
+  }
 
+  .clima-alerta-normal {
+    background: #e8f7ef;
+    color: #167047;
+    border-color: #bfe8d0;
+  }
+
+  .clima-alerta-moderado {
+    background: #eaf3ff;
+    color: #1b4f80;
+    border-color: #c8def7;
+  }
+
+  .clima-alerta-precaucion {
+    background: #fff4d8;
+    color: #9a6500;
+    border-color: #f3d58c;
+  }
+
+  .clima-alerta-peligro {
+    background: #ffe3e3;
+    color: #a12222;
+    border-color: #f3b5b5;
+  }
+
+  .clima-alerta-sin-datos {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #dbe3ec;
+  }
+
+  @keyframes climaFloat {
     0%, 100% {
       transform: translateY(0) scale(1);
     }
@@ -265,12 +247,7 @@
     }
   }
 
-  /* =========================================
-     ANIMACIÓN DEL GLOW
-  ========================================= */
-
   @keyframes climaGlow {
-
     0%, 100% {
       transform: scale(1);
       opacity: .45;
@@ -281,13 +258,12 @@
       opacity: .75;
     }
   }
-  
+
   /* =========================================
      RESPONSIVE
   ========================================= */
 
   @media (max-width: 1100px) {
-
     .metricas-grid {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -298,18 +274,22 @@
   }
 
   @media (max-width: 700px) {
-
     .metricas-grid {
       grid-template-columns: 1fr;
+    }
+
+    .clima-card {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .clima-info {
+      justify-content: center;
     }
   }
 
 </style>
 
-
-<!-- =========================================
-     WIDGETS SUPERIORES
-========================================= -->
 
 <section class="marine-widgets">
 
@@ -330,7 +310,6 @@
         <strong style="color:var(--success)">
           {{ libres }}
         </strong>
-
         <span>Libres</span>
       </div>
 
@@ -338,7 +317,6 @@
         <strong style="color:var(--mare-mid)">
           {{ ocupados }}
         </strong>
-
         <span>Ocupados</span>
       </div>
 
@@ -351,14 +329,12 @@
   <div class="marine-card clima-card">
 
     <div class="clima-icon">
-      🌤️
+      {{ clima.icono }}
     </div>
 
-    <div>
+    <div class="clima-content">
 
-      <h5>
-        Condiciones actuales
-      </h5>
+      <h5>Condiciones actuales</h5>
 
       <h3>
         {{ clima.descripcion }} · {{ clima.temperatura }}°C
@@ -368,28 +344,23 @@
 
         <div>
           <span>Viento</span>
-
-          <strong>
-            {{ clima.viento }} km/h
-          </strong>
+          <strong>{{ clima.viento }} km/h</strong>
         </div>
 
         <div>
           <span>Dirección</span>
-
-          <strong>
-            {{ clima.direccion_viento }}°
-          </strong>
+          <strong>{{ clima.direccion_viento }}°</strong>
         </div>
 
         <div>
           <span>Nubosidad</span>
-
-          <strong>
-            {{ clima.nubosidad }}%
-          </strong>
+          <strong>{{ clima.nubosidad }}%</strong>
         </div>
 
+      </div>
+
+      <div class="clima-alerta clima-alerta-{{ clima.alerta_viento.nivel }}">
+        {{ clima.alerta_viento.texto }}
       </div>
 
     </div>
@@ -399,96 +370,48 @@
 </section>
 
 
-<!-- =========================================
-     MÉTRICAS INFERIORES
-========================================= -->
-
 <div class="metricas-grid">
 
-  <!-- LLEGADAS -->
   <div class="metrica-card">
-
-    <div class="metrica-title">
-      Llegadas hoy
-    </div>
-
+    <div class="metrica-title">Llegadas hoy</div>
     <div class="metrica-num" style="color:var(--mare-mid)">
       {{ llegadas_hoy }}
     </div>
-
-    <div class="metrica-desc">
-      embarcaciones programadas
-    </div>
-
+    <div class="metrica-desc">embarcaciones programadas</div>
   </div>
 
-
-  <!-- SALIDAS -->
   <div class="metrica-card">
-
-    <div class="metrica-title">
-      Salidas hoy
-    </div>
-
+    <div class="metrica-title">Salidas hoy</div>
     <div class="metrica-num" style="color:var(--emp-purple)">
       {{ salidas_hoy }}
     </div>
-
-    <div class="metrica-desc">
-      salidas programadas
-    </div>
-
+    <div class="metrica-desc">salidas programadas</div>
   </div>
 
-
-  <!-- OCUPADOS -->
   <div class="metrica-card">
-
-    <div class="metrica-title">
-      Ocupados hoy
-    </div>
-
+    <div class="metrica-title">Ocupados hoy</div>
     <div class="metrica-num" style="color:var(--warning)">
       {{ ocupados }}
     </div>
-
-    <div class="metrica-desc">
-      espacios con embarcación
-    </div>
-
+    <div class="metrica-desc">espacios con embarcación</div>
   </div>
 
-
-  <!-- LIBRES -->
   <div class="metrica-card">
-
-    <div class="metrica-title">
-      Libres
-    </div>
-
+    <div class="metrica-title">Libres</div>
     <div class="metrica-num" style="color:var(--success)">
       {{ libres }}
     </div>
-
-    <div class="metrica-desc">
-      espacios disponibles
-    </div>
-
+    <div class="metrica-desc">espacios disponibles</div>
   </div>
 
 </div>
 
-
-<!-- =========================================
-     MAPA GENERAL
-========================================= -->
 
 <div class="card" style="padding:.75rem">
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
 
     <div>
-
       <span style="font-size:14px;font-weight:600;color:var(--text)">
         Vista general de la marina
       </span>
@@ -496,7 +419,6 @@
       <span style="font-size:11px;color:var(--text-light);margin-left:.5rem">
         {{ fecha_hoy }}
       </span>
-
     </div>
 
     <div style="display:flex;gap:.75rem;font-size:11px;color:var(--text-mid);align-items:center">
