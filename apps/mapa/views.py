@@ -375,6 +375,25 @@ def inicio(request):
         estado='APROBADA'
     ).count()
 
+    # LLEGADAS EMBARCACIONES (para popup)
+    llegadas_embarcaciones = Solicitud.objects.filter(
+        fecha_llegada=hoy,
+        estado='APROBADA'
+    ).select_related('embarcacion__cliente', 'embarcacion__tipo_barco')
+
+    # SALIDAS EMBARCACIONES (para popup)
+    salidas_embarcaciones = Solicitud.objects.filter(
+        fecha_salida=hoy,
+        estado='APROBADA'
+    ).select_related('embarcacion__cliente', 'embarcacion__tipo_barco')
+
+    # ASIGNACIONES ACTIVAS (para popup)
+    asignaciones_activas = Asignacion.objects.filter(
+        fecha_inicio__lte=hoy,
+        fecha_fin__gte=hoy,
+        activa=True
+    ).select_related('solicitud__embarcacion__cliente', 'muelle')
+
     if total_espacios > 0:
         porcentaje_ocupacion = round((ocupados / total_espacios) * 100)
     else:
@@ -393,6 +412,9 @@ def inicio(request):
         # NUEVOS DATOS
         'llegadas_hoy': llegadas_hoy,
         'salidas_hoy': salidas_hoy,
+        'llegadas_embarcaciones': llegadas_embarcaciones,
+        'salidas_embarcaciones': salidas_embarcaciones,
+        'asignaciones_activas': asignaciones_activas,
 
         'fecha_hoy': hoy.strftime('%d/%m/%Y'),
         'fecha_hoy_iso': hoy.strftime('%Y-%m-%d'),

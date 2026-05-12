@@ -68,6 +68,22 @@
   }
 
   /* =========================================
+     CLICK MÉTRICAS
+  ========================================= */
+
+  .metrica-click {
+    cursor: pointer;
+    transition:
+      transform .2s ease,
+      box-shadow .2s ease;
+  }
+
+  .metrica-click:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0,0,0,.12);
+  }
+
+  /* =========================================
      OCUPACIÓN
   ========================================= */
 
@@ -195,7 +211,7 @@
   }
 
   /* =========================================
-     ALERTA DE VIENTO
+     ALERTAS
   ========================================= */
 
   .clima-alerta {
@@ -231,11 +247,122 @@
     border-color: #f3b5b5;
   }
 
-  .clima-alerta-sin-datos {
-    background: #f1f5f9;
-    color: #64748b;
-    border-color: #dbe3ec;
+  /* =========================================
+     POPUPS
+  ========================================= */
+
+  .popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 9999;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    padding: 1rem;
   }
+
+  .popup-overlay.active {
+    display: flex;
+  }
+
+  .popup-box {
+    width: 650px;
+    max-width: 95%;
+    max-height: 85vh;
+    overflow-y: auto;
+
+    background: white;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+
+    box-shadow:
+      0 20px 40px rgba(0,0,0,.2);
+
+    animation: popupIn .22s ease;
+  }
+
+  @keyframes popupIn {
+    from {
+      opacity: 0;
+      transform: scale(.96) translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .popup-header {
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .popup-header h3 {
+    margin: 0;
+    color: var(--text);
+    font-size: 18px;
+  }
+
+  .popup-close {
+    border: none;
+    background: #eef2f7;
+
+    width: 36px;
+    height: 36px;
+
+    border-radius: 50%;
+    cursor: pointer;
+
+    font-size: 22px;
+    color: var(--text);
+  }
+
+  .popup-body {
+    padding: 1rem;
+  }
+
+  .popup-item {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem;
+    margin-bottom: .8rem;
+
+    background: #f8fafc;
+  }
+
+  .popup-item h4 {
+    margin: 0 0 .8rem;
+    color: var(--mare-dark);
+  }
+
+  .popup-grid {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    gap: .8rem;
+  }
+
+  .popup-grid div {
+    font-size: 13px;
+    color: var(--text-mid);
+  }
+
+  .popup-empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-light);
+  }
+
+  /* =========================================
+     ANIMACIONES
+  ========================================= */
 
   @keyframes climaFloat {
     0%, 100% {
@@ -264,6 +391,7 @@
   ========================================= */
 
   @media (max-width: 1100px) {
+
     .metricas-grid {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -271,9 +399,11 @@
     .marine-widgets {
       grid-template-columns: 1fr;
     }
+
   }
 
   @media (max-width: 700px) {
+
     .metricas-grid {
       grid-template-columns: 1fr;
     }
@@ -286,10 +416,19 @@
     .clima-info {
       justify-content: center;
     }
+
+    .popup-grid {
+      grid-template-columns: 1fr;
+    }
+
   }
 
 </style>
 
+
+<!-- =========================================
+     WIDGETS SUPERIORES
+========================================= -->
 
 <section class="marine-widgets">
 
@@ -310,6 +449,7 @@
         <strong style="color:var(--success)">
           {{ libres }}
         </strong>
+
         <span>Libres</span>
       </div>
 
@@ -317,6 +457,7 @@
         <strong style="color:var(--mare-mid)">
           {{ ocupados }}
         </strong>
+
         <span>Ocupados</span>
       </div>
 
@@ -370,48 +511,117 @@
 </section>
 
 
+<!-- =========================================
+     MÉTRICAS
+========================================= -->
+
 <div class="metricas-grid">
 
-  <div class="metrica-card">
-    <div class="metrica-title">Llegadas hoy</div>
-    <div class="metrica-num" style="color:var(--mare-mid)">
+  <!-- LLEGADAS -->
+  <div
+    class="metrica-card metrica-click"
+    onclick="abrirPopup('popup-llegadas')"
+  >
+
+    <div class="metrica-title">
+      Llegadas hoy
+    </div>
+
+    <div
+      class="metrica-num"
+      style="color:var(--mare-mid)"
+    >
       {{ llegadas_hoy }}
     </div>
-    <div class="metrica-desc">embarcaciones programadas</div>
+
+    <div class="metrica-desc">
+      embarcaciones programadas
+    </div>
+
   </div>
 
-  <div class="metrica-card">
-    <div class="metrica-title">Salidas hoy</div>
-    <div class="metrica-num" style="color:var(--emp-purple)">
+
+  <!-- SALIDAS -->
+  <div
+    class="metrica-card metrica-click"
+    onclick="abrirPopup('popup-salidas')"
+  >
+
+    <div class="metrica-title">
+      Salidas hoy
+    </div>
+
+    <div
+      class="metrica-num"
+      style="color:var(--emp-purple)"
+    >
       {{ salidas_hoy }}
     </div>
-    <div class="metrica-desc">salidas programadas</div>
+
+    <div class="metrica-desc">
+      salidas programadas
+    </div>
+
   </div>
 
-  <div class="metrica-card">
-    <div class="metrica-title">Ocupados hoy</div>
-    <div class="metrica-num" style="color:var(--warning)">
+
+  <!-- OCUPADOS -->
+  <div
+    class="metrica-card metrica-click"
+    onclick="abrirPopup('popup-ocupados')"
+  >
+
+    <div class="metrica-title">
+      Ocupados hoy
+    </div>
+
+    <div
+      class="metrica-num"
+      style="color:var(--warning)"
+    >
       {{ ocupados }}
     </div>
-    <div class="metrica-desc">espacios con embarcación</div>
+
+    <div class="metrica-desc">
+      espacios con embarcación
+    </div>
+
   </div>
 
+
+  <!-- LIBRES -->
   <div class="metrica-card">
-    <div class="metrica-title">Libres</div>
-    <div class="metrica-num" style="color:var(--success)">
+
+    <div class="metrica-title">
+      Libres
+    </div>
+
+    <div
+      class="metrica-num"
+      style="color:var(--success)"
+    >
       {{ libres }}
     </div>
-    <div class="metrica-desc">espacios disponibles</div>
+
+    <div class="metrica-desc">
+      espacios disponibles
+    </div>
+
   </div>
 
 </div>
 
+
+<!-- =========================================
+     MAPA
+========================================= -->
 
 <div class="card" style="padding:.75rem">
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
 
     <div>
+
       <span style="font-size:14px;font-weight:600;color:var(--text)">
         Vista general de la marina
       </span>
@@ -419,6 +629,7 @@
       <span style="font-size:11px;color:var(--text-light);margin-left:.5rem">
         {{ fecha_hoy }}
       </span>
+
     </div>
 
     <div style="display:flex;gap:.75rem;font-size:11px;color:var(--text-mid);align-items:center">
@@ -447,11 +658,280 @@
   </div>
 
   <script>
-    window.MAPA_CTX = {};
+    window.MAPA_CTX = {
+      fecha: '{{ fecha_hoy_iso }}'
+    };
   </script>
 
   {% include 'mapa/mapa_component.html' with mapa_readonly=True %}
 
 </div>
+
+
+
+<!-- =========================================
+     POPUP LLEGADAS
+========================================= -->
+
+<div class="popup-overlay" id="popup-llegadas">
+
+  <div class="popup-box">
+
+    <div class="popup-header">
+
+      <h3>
+        Llegadas de hoy
+      </h3>
+
+      <button
+        class="popup-close"
+        onclick="cerrarPopup('popup-llegadas')"
+      >
+        ×
+      </button>
+
+    </div>
+
+    <div class="popup-body">
+
+      {% for s in llegadas_embarcaciones %}
+
+        <div class="popup-item">
+
+          <h4>
+            {{ s.embarcacion.nombre_bote }}
+          </h4>
+
+          <div class="popup-grid">
+
+            <div>
+              <strong>Cliente:</strong><br>
+              {{ s.embarcacion.cliente.fullname }}
+            </div>
+
+            <div>
+              <strong>Tipo:</strong><br>
+              {{ s.embarcacion.tipo_barco.tipo_barco }}
+            </div>
+
+            <div>
+              <strong>Llegada:</strong><br>
+              {{ s.fecha_llegada }}
+            </div>
+
+            <div>
+              <strong>Salida:</strong><br>
+              {{ s.fecha_salida }}
+            </div>
+
+          </div>
+
+        </div>
+
+      {% empty %}
+
+        <div class="popup-empty">
+          No hay llegadas programadas.
+        </div>
+
+      {% endfor %}
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =========================================
+     POPUP SALIDAS
+========================================= -->
+
+<div class="popup-overlay" id="popup-salidas">
+
+  <div class="popup-box">
+
+    <div class="popup-header">
+
+      <h3>
+        Salidas de hoy
+      </h3>
+
+      <button
+        class="popup-close"
+        onclick="cerrarPopup('popup-salidas')"
+      >
+        ×
+      </button>
+
+    </div>
+
+    <div class="popup-body">
+
+      {% for s in salidas_embarcaciones %}
+
+        <div class="popup-item">
+
+          <h4>
+            {{ s.embarcacion.nombre_bote }}
+          </h4>
+
+          <div class="popup-grid">
+
+            <div>
+              <strong>Cliente:</strong><br>
+              {{ s.embarcacion.cliente.fullname }}
+            </div>
+
+            <div>
+              <strong>Tipo:</strong><br>
+              {{ s.embarcacion.tipo_barco.tipo_barco }}
+            </div>
+
+            <div>
+              <strong>Llegada:</strong><br>
+              {{ s.fecha_llegada }}
+            </div>
+
+            <div>
+              <strong>Salida:</strong><br>
+              {{ s.fecha_salida }}
+            </div>
+
+          </div>
+
+        </div>
+
+      {% empty %}
+
+        <div class="popup-empty">
+          No hay salidas programadas.
+        </div>
+
+      {% endfor %}
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =========================================
+     POPUP OCUPADOS
+========================================= -->
+
+<div class="popup-overlay" id="popup-ocupados">
+
+  <div class="popup-box">
+
+    <div class="popup-header">
+
+      <h3>
+        Espacios ocupados
+      </h3>
+
+      <button
+        class="popup-close"
+        onclick="cerrarPopup('popup-ocupados')"
+      >
+        ×
+      </button>
+
+    </div>
+
+    <div class="popup-body">
+
+      {% for a in asignaciones_activas %}
+
+        <div class="popup-item">
+
+          <h4>
+            {{ a.solicitud.embarcacion.nombre_bote }}
+          </h4>
+
+          <div class="popup-grid">
+
+            <div>
+              <strong>Cliente:</strong><br>
+              {{ a.solicitud.embarcacion.cliente.fullname }}
+            </div>
+
+            <div>
+              <strong>Muelle:</strong><br>
+              {{ a.muelle.nombre }}
+            </div>
+
+            <div>
+              <strong>Inicio:</strong><br>
+              {{ a.fecha_inicio }}
+            </div>
+
+            <div>
+              <strong>Fin:</strong><br>
+              {{ a.fecha_fin }}
+            </div>
+
+          </div>
+
+        </div>
+
+      {% empty %}
+
+        <div class="popup-empty">
+          No hay espacios ocupados.
+        </div>
+
+      {% endfor %}
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =========================================
+     SCRIPTS
+========================================= -->
+
+<script>
+
+  function abrirPopup(id) {
+
+    document
+      .getElementById(id)
+      .classList
+      .add('active')
+
+  }
+
+  function cerrarPopup(id) {
+
+    document
+      .getElementById(id)
+      .classList
+      .remove('active')
+
+  }
+
+  window.addEventListener('click', function(e) {
+
+    document
+      .querySelectorAll('.popup-overlay')
+      .forEach(function(popup) {
+
+        if (e.target === popup) {
+          popup.classList.remove('active')
+        }
+
+      })
+
+  })
+
+</script>
 
 {% endblock %}
