@@ -6,11 +6,24 @@ from apps.muelles.models import Muelle, Espacio
 
 
 class Administrador(models.Model):
+    ROL_GERENTE  = 'gerente'
+    ROL_EMPLEADO = 'empleado'
+    ROLES = [
+        (ROL_GERENTE,  'Gerente'),
+        (ROL_EMPLEADO, 'Empleado'),
+    ]
+    
+    activo = models.BooleanField(default=True)
+
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
         related_name='administrador'
     )
+    rol = models.CharField(max_length=20, choices=ROLES, default=ROL_EMPLEADO)
+
+    def es_gerente(self):
+        return self.rol == self.ROL_GERENTE
 
     class Meta:
         db_table            = 'administrador'

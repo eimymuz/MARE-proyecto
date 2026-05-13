@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% block title %}Usuarios — MARE{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h2>Usuarios del sistema</h2>
+  <button class="btn btn-primary" onclick="abrirModalUsuario()">+ Nuevo usuario</button>
+</div>
+
+<!-- Filtro rápido por rol -->
+<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem">
+  <button onclick="filtrarRol('')"     id="tab-todos"     class="btn btn-default btn-sm" style="background:var(--navy);color:#fff">Todos</button>
+  <button onclick="filtrarRol('gerente')"  id="tab-gerente"  class="btn btn-default btn-sm">Gerentes</button>
+  <button onclick="filtrarRol('empleado')" id="tab-empleado" class="btn btn-default btn-sm">Empleados</button>
+  <input type="text" id="inp-buscar" placeholder="Buscar por nombre o usuario..."
+    oninput="filtrarTabla()"
+    style="margin-left:auto;font-size:12px;padding:.35rem .6rem;border:1px solid var(--border);
+           border-radius:var(--radius);background:var(--surface);color:var(--text);width:220px">
+</div>
+
+<div class="table-wrap">
+  <table id="tabla-usuarios">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Usuario</th>
+        <th>Email</th>
+        <th>Rol</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for admin in administradores %}
+      <tr data-rol="{{ admin.rol }}"
+          data-nombre="{{ admin.user.get_full_name|lower }}"
+          data-username="{{ admin.user.username|lower }}">
+        <td style="font-weight:500">{{ admin.user.get_full_name|default:admin.user.username }}</td>
+        <td style="color:var(--text-light)">{{ admin.user.username }}</td>
+        <td style="color:var(--text-light)">{{ admin.user.email|default:"—" }}</td>
+        <td>
+            {% if not admin.activo %}
+            <span class="badge badge-danger">Inactivo</span>
+            {% elif admin.es_gerente %}
+            <span class="badge badge-warning">Gerente</span>
+            {% else %}
+            <span class="badge badge-info">Empleado</span>
+            {% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:.3rem">
+            <button class="btn btn-default btn-sm"
+              onclick="abrirModalEditar(
+                {{ admin.pk }},
+                '{{ admin.user.first_name }}',
+                '{{ admin.user.last_name }}',
+                '{{ admin.user.username }}',
+                '{{ admin.user.email }}',
+                '{{ admin.rol }}'
+              )">Editar</button>
+            {% if admin.user != request.user %}
+            {% if admin.activo %}
+            <form method="post" action="{% url 'usuario_eliminar' admin.pk %}"
+                    onsubmit="return confirm('¿Desactivar a {{ admin.user.get_full_name }}?')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-sm">Desactivar</button>
+            </form>
+            {% else %}
+            <form method="post" action="{% url 'usuario_reactivar' admin.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">Reactivar</button>
+            </form>
+            {% endif %}
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" style="text-align:center;color:var(--text-light);padding:2rem">
+          No hay usuarios registrados.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ── MODAL CREAR/EDITAR USUARIO ── -->
+<div id="modal-usuario" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+     background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;
+     opacity:0;transition:opacity .2s ease">
+  <div style="background:var(--surface);border-radius:var(--radius-lg);width:480px;max-width:95%;
+       box-shadow:var(--shadow-md);transform:scale(0.95);
+       transition:transform .25s cubic-bezier(.34,1.56,.64,1)">
+
+    <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);
+         display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:16px;font-weight:600;color:var(--text)" id="modal-usuario-titulo">
+        Nuevo usuario
+      </div>
+      <button onclick="cerrarModalUsuario()"
+        style="background:none;border:none;cursor:pointer;color:var(--text-light);font-size:20px;line-height:1">✕</button>
+    </div>
+
+    <form id="form-usuario" method="post" action="{% url 'usuario_crear' %}">
+      {% csrf_token %}
+
+      <div style="padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.85rem">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+          <div>
+            <label>Nombre</label>
+            <input type="text" name="first_name" id="modal-first-name" required placeholder="Juan">
+          </div>
+          <div>
+            <label>Apellido</label>
+            <input type="text" name="last_name" id="modal-last-name" required placeholder="Pérez">
+          </div>
+        </div>
+
+        <div>
+          <label>Usuario</label>
+          <input type="text" name="username" id="modal-username" required placeholder="juanperez">
+        </div>
+
+        <div>
+          <label>Email</label>
+          <input type="email" name="email" id="modal-email" placeholder="juan@marina.com">
+        </div>
+
+        <div>
+          <label id="modal-pass-label">Contraseña</label>
+          <input type="password" name="password" id="modal-password" placeholder="Mínimo 8 caracteres">
+          <span id="modal-pass-hint" style="font-size:11px;color:var(--text-light);display:none">
+            Deja vacío para mantener la contraseña actual
+          </span>
+        </div>
+
+        <div>
+          <label>Rol</label>
+          <select name="rol" id="modal-rol">
+            <option value="empleado">Empleado</option>
+            <option value="gerente">Gerente</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);
+           display:flex;justify-content:flex-end;gap:.5rem">
+        <button type="button" onclick="cerrarModalUsuario()" class="btn btn-default">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="modal-btn-guardar">Crear usuario</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+
+<script>
+let _rolActivo = '';
+
+// Filtro por rol — resalta tab activo
+function filtrarRol(rol){
+  _rolActivo = rol;
+  ['todos','gerente','empleado'].forEach(t=>{
+    const btn = document.getElementById('tab-'+t);
+    const activo = (rol==='' && t==='todos') || rol===t;
+    btn.style.background = activo ? 'var(--navy)' : '';
+    btn.style.color      = activo ? '#000' : '';
+  });
+  filtrarTabla();
+}
+
+// Filtro por texto + rol combinados
+function filtrarTabla(){
+  const q   = document.getElementById('inp-buscar').value.toLowerCase();
+  const rows = document.querySelectorAll('#tabla-usuarios tbody tr[data-rol]');
+  rows.forEach(row=>{
+    const nombre   = row.dataset.nombre   || '';
+    const username = row.dataset.username || '';
+    const rol      = row.dataset.rol      || '';
+    const pasaRol  = !_rolActivo || rol === _rolActivo;
+    const pasaQ    = !q || nombre.includes(q) || username.includes(q);
+    row.style.display = (pasaRol && pasaQ) ? '' : 'none';
+  });
+}
+
+// Modal crear
+function abrirModalUsuario(){
+  document.getElementById('modal-usuario-titulo').textContent = 'Nuevo usuario';
+  document.getElementById('modal-btn-guardar').textContent    = 'Crear usuario';
+  document.getElementById('form-usuario').action              = "{% url 'usuario_crear' %}";
+  document.getElementById('modal-pass-label').textContent     = 'Contraseña';
+  document.getElementById('modal-pass-hint').style.display    = 'none';
+  document.getElementById('modal-password').required          = true;
+  ['modal-first-name','modal-last-name','modal-username','modal-email','modal-password'].forEach(id=>{
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('modal-rol').value = 'empleado';
+  mostrarModal();
+}
+
+// Modal editar
+function abrirModalEditar(pk, firstName, lastName, username, email, rol){
+  document.getElementById('modal-usuario-titulo').textContent = 'Editar usuario';
+  document.getElementById('modal-btn-guardar').textContent    = 'Guardar cambios';
+  document.getElementById('form-usuario').action              = `/usuarios/${pk}/editar/`;
+  document.getElementById('modal-pass-label').textContent     = 'Nueva contraseña';
+  document.getElementById('modal-pass-hint').style.display    = 'inline';
+  document.getElementById('modal-password').required          = false;
+  document.getElementById('modal-first-name').value = firstName;
+  document.getElementById('modal-last-name').value  = lastName;
+  document.getElementById('modal-username').value   = username;
+  document.getElementById('modal-email').value      = email;
+  document.getElementById('modal-password').value   = '';
+  document.getElementById('modal-rol').value        = rol;
+  mostrarModal();
+}
+
+function mostrarModal(){
+  const modal = document.getElementById('modal-usuario');
+  const card  = modal.querySelector('div');
+  modal.style.display = 'flex';
+  requestAnimationFrame(()=>{
+    modal.style.opacity  = '1';
+    card.style.transform = 'scale(1)';
+  });
+}
+
+function cerrarModalUsuario(){
+  const modal = document.getElementById('modal-usuario');
+  const card  = modal.querySelector('div');
+  modal.style.opacity  = '0';
+  card.style.transform = 'scale(0.95)';
+  setTimeout(()=>{ modal.style.display='none'; }, 200);
+}
+
+document.getElementById('modal-usuario').addEventListener('click', function(ev){
+  if(ev.target === this) cerrarModalUsuario();
+});
+</script>
+
+{% endblock %}
