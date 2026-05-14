@@ -1,207 +1,516 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Marina</title>
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Marina Puerto de la Navidad</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <style>
-    :root{
-      --purple:#534781;
-      --purple-dark:#3d3460;
-      --gold:#c9b157;
-      --gold-light:#dcc97a;
-      --white:#ffffff;
-      --light:#ecf0f3;
-      --radius:8px;--radius-lg:12px;
-      --shadow:0 4px 24px rgba(83,71,129,0.15);
-      --text:#1a1a2e;--text-mid:#4a4a6a;--text-light:#8a8aaa;
-      --border:#dde0ea;
-      --danger:#c0392b;--danger-bg:#fdf0ee;
-      --success:#1a7a4a;--success-bg:#e6f4ec;
-    }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);min-height:100vh;background:var(--light)}
-
-    /* ── PÁGINA EN BLANCO ── */
-    main{min-height:100vh;background:var(--light)}
-
-    /* ── BOTÓN FLOTANTE DERECHA ── */
-    .fab{
-      position:fixed;
-      right:1.5rem;
-      top:50%;
-      transform:translateY(-50%);
-      z-index:200;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:.5rem;
-    }
-    .fab-btn{
-      width:56px;height:56px;
-      border-radius:50%;
-      background:var(--purple);
-      color:var(--white);
-      border:none;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;
-      box-shadow:0 4px 20px rgba(83,71,129,0.4);
-      transition:all .2s;
-    }
-    .fab-btn:hover{background:var(--purple-dark);transform:scale(1.08)}
-    .fab-btn svg{width:22px;height:22px}
-    .fab-label{
-      background:var(--purple);
-      color:var(--gold);
-      font-size:10px;font-weight:600;
-      letter-spacing:.5px;
-      padding:.3rem .7rem;
-      border-radius:20px;
-      white-space:nowrap;
-      border:1px solid rgba(201,177,87,0.3);
-    }
-
-    /* ── POPUP ── */
-    .popup-overlay{
-      display:none;position:fixed;inset:0;
-      background:rgba(0,0,0,0.55);
-      z-index:300;
-      align-items:center;
-      justify-content:flex-end;
-      padding:1rem 5rem 1rem 1rem;
-    }
-    .popup-overlay.active{display:flex}
-
-    .popup{
-      background:var(--white);
-      border-radius:var(--radius-lg);
-      width:460px;max-width:95vw;
-      max-height:90vh;overflow-y:auto;
-      box-shadow:var(--shadow);
-      display:flex;flex-direction:column;
-    }
-
-    .popup-header{
-      background:var(--purple);
-      padding:1.25rem 1.5rem;
-      display:flex;align-items:center;justify-content:space-between;
-      border-radius:var(--radius-lg) var(--radius-lg) 0 0;
-      flex-shrink:0;
-    }
-    .popup-header h2{font-size:15px;font-weight:600;color:var(--white)}
-    .popup-header p{font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px}
-    .popup-close{background:none;border:none;color:rgba(255,255,255,0.6);cursor:pointer;font-size:20px;padding:.25rem;line-height:1}
-    .popup-close:hover{color:var(--white)}
-
-    .popup-body{padding:1.25rem 1.5rem;flex:1}
-    .popup-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);flex-shrink:0}
-
-    .section-label{
-      font-size:11px;font-weight:600;color:var(--text-mid);
-      text-transform:uppercase;letter-spacing:.5px;
-      margin:1rem 0 .6rem;padding-bottom:.4rem;
-      border-bottom:2px solid var(--gold);
-      display:flex;align-items:center;gap:6px;
-    }
-    .section-label:first-child{margin-top:0}
-    .section-label::before{
-      content:'';display:inline-block;
-      width:3px;height:14px;
-      background:var(--purple);border-radius:2px;
-    }
-
-    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem}
-    .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:.75rem}
-    .form-group{margin-bottom:.75rem}
-    .form-group:last-child{margin-bottom:0}
-
-    label{display:block;font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.4px;margin-bottom:.3rem}
-    input,select,textarea{
-      width:100%;padding:.5rem .75rem;
-      border:1px solid var(--border);border-radius:var(--radius);
-      font-family:'DM Sans',sans-serif;font-size:13px;
-      color:var(--text);background:var(--white);
-      outline:none;transition:border-color .15s,box-shadow .15s;
-    }
-    input:focus,select:focus,textarea:focus{
-      border-color:var(--purple);
-      box-shadow:0 0 0 3px rgba(83,71,129,0.12);
-    }
-    textarea{resize:vertical;min-height:60px}
-    .hint{font-size:11px;color:var(--text-light);margin-top:.2rem}
-    .required{color:var(--gold)}
-
-    .checkbox-row{
-      display:flex;align-items:flex-start;gap:.6rem;
-      padding:.65rem .75rem;
-      background:var(--light);border-radius:var(--radius);
-      border:1px solid var(--border);margin-bottom:.75rem;
-    }
-    .checkbox-row input[type=checkbox]{width:16px;height:16px;margin-top:2px;flex-shrink:0;accent-color:var(--purple);cursor:pointer}
-    .checkbox-text{font-size:12px;color:var(--text);line-height:1.5}
-    .checkbox-text small{color:var(--text-light);display:block;font-size:11px;margin-top:1px}
-
-    .btn-submit{
-      width:100%;padding:.65rem;
-      background:var(--purple);color:var(--white);
-      border:none;border-radius:var(--radius);
-      font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;
-      cursor:pointer;transition:background .15s;
-    }
-    .btn-submit:hover{background:var(--purple-dark)}
-    .btn-submit:disabled{opacity:.6;cursor:not-allowed}
-
-    .errors-box{
-      background:var(--danger-bg);color:var(--danger);
-      padding:.6rem .75rem;border-radius:var(--radius);
-      border-left:3px solid var(--danger);
-      margin-bottom:.75rem;font-size:12px;
-    }
-
-    .success-box{text-align:center;padding:2rem 1rem}
-    .success-icon{
-      width:56px;height:56px;
-      background:var(--success-bg);border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      margin:0 auto 1rem;
-    }
-    .success-icon svg{width:28px;height:28px;stroke:var(--success)}
-    .success-box h3{font-size:17px;font-weight:600;color:var(--text);margin-bottom:.5rem}
-    .success-box p{font-size:13px;color:var(--text-mid);line-height:1.6}
-    .success-num{
-      font-size:22px;font-weight:600;
-      color:var(--purple);margin:.75rem 0;
-      background:var(--light);padding:.5rem 1rem;
-      border-radius:var(--radius);display:inline-block;
-    }
-
-    @media(max-width:500px){
-      .form-row,.form-row-3{grid-template-columns:1fr}
-      .popup-overlay{padding:.5rem}
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+  <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
 </head>
 <body>
 
-<!-- Página en blanco — la empresa pone su contenido aquí -->
-<main></main>
-
-<!-- BOTÓN FLOTANTE -->
-<div class="fab">
-  <button class="fab-btn" onclick="abrirPopup()" title="Solicitar espacio">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M3 17l2-8h14l2 8M12 3v6M8 9h8"/>
-      <path d="M2 20s3-2 10-2 10 2 10 2"/>
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-mark">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M12 2L12 6M12 6L8 6M12 6L16 6M12 6L12 22M5 14a7 7 0 0 0 14 0M7 18L17 18"/>
+      <circle cx="12" cy="3.5" r="1" fill="currentColor" stroke="none"/>
     </svg>
-  </button>
-  <span class="fab-label">Reservar</span>
+  </div>
 </div>
 
-<!-- POPUP -->
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <span class="topbar-item">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        <span data-i18n="topbar.location">Isla Navidad, Colima, México</span>
+      </span>
+      <span class="topbar-item">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>
+        <span data-i18n="topbar.hours">Lun–Vie · 9:00 – 18:00</span>
+      </span>
+    </div>
+    <div class="topbar-right">
+      <a href="tel:+523143379014" class="topbar-item">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        +52 (314) 337 9014
+      </a>
+      <a href="mailto:marina@grandbaysort.com" class="topbar-item">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        marina@grandbaysort.com
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="main">
+  <div class="nav-inner">
+    <a class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2L12 6M12 6L8 6M12 6L16 6M12 6L12 22M5 14a7 7 0 0 0 14 0M7 18L17 18"/>
+          <circle cx="12" cy="3.5" r="1" fill="currentColor" stroke="none"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">Puerto de la Navidad</div>
+        <div class="brand-sub">Isla Navidad · Marina</div>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#marina" data-i18n="nav.marina">La Marina</a></li>
+      <li><a href="#amenities" data-i18n="nav.amenities">Amenidades</a></li>
+      <li><a href="#rates" data-i18n="nav.rates">Tarifas</a></li>
+      <li><a href="#gallery" data-i18n="nav.gallery">Galería</a></li>
+      <li><a href="#croquis" data-i18n="nav.croquis">Croquis</a></li>
+      <li><a href="#contact" data-i18n="nav.contact">Contacto</a></li>
+    </ul>
+    <div class="nav-right">
+      <div class="lang-toggle">
+        <button class="lang-btn active" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+      <button class="btn-cta" onclick="abrirPopup()">
+        <span data-i18n="nav.reserve">Reservar</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow"><span data-i18n="hero.eyebrow">Costa Pacífico · Marina Privada</span></div>
+    <h1 class="hero-title">
+      <span data-i18n-html="hero.title">
+        <span class="word" style="animation-delay:.6s">Donde</span>
+        <span class="word" style="animation-delay:.7s">el</span>
+        <span class="word italic" style="animation-delay:.8s">océano</span><br>
+        <span class="word" style="animation-delay:.9s">encuentra</span>
+        <span class="word" style="animation-delay:1.0s">su</span>
+        <span class="word italic" style="animation-delay:1.1s">refugio.</span>
+      </span>
+    </h1>
+    <p class="hero-sub" data-i18n="hero.sub"></p>
+    <div class="hero-ctas">
+      <button class="btn-cta large" onclick="abrirPopup()">
+        <span data-i18n="hero.cta1">Solicitar reservación</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+      <a href="#marina" class="btn-ghost" data-i18n="hero.cta2">Explorar la marina</a>
+    </div>
+  </div>
+  <div class="hero-foot">
+    <div class="hero-coords">19°11.77'N · 104°40.96'W</div>
+    <div class="scroll-cue">
+      <span data-i18n="hero.scroll">Descubrir</span>
+      <div class="line"></div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats"><div class="stats-track" id="statsTrack"></div></div>
+
+<!-- ABOUT -->
+<section class="about" id="marina">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-img-stack reveal">
+        <div class="img img-1"></div>
+        <div class="img img-2"></div>
+        <div class="about-badge">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="text">
+            <div class="num">AAA <span data-i18n="badge.diamond">Cuatro Diamantes</span></div>
+            <div class="lbl" data-i18n="badge.sub">Reconocimiento Internacional</div>
+          </div>
+        </div>
+      </div>
+      <div class="about-text reveal delay-2">
+        <div class="eyebrow dark" data-i18n="about.eyebrow">Marina Puerto de la Navidad</div>
+        <h2><span data-i18n="about.title1">Un puerto seguro,</span><br><span class="it" data-i18n="about.title2">una experiencia íntima.</span></h2>
+        <p class="lead" data-i18n="about.lead"></p>
+        <p data-i18n="about.p1"></p>
+        <p data-i18n="about.p2"></p>
+        <div class="about-cred">
+          <div class="about-cred-item"><div class="v">200</div><div class="l" data-i18n="about.cred1">Embarcaciones</div></div>
+          <div class="about-cred-item"><div class="v">250<span style="font-size:18px">ft</span></div><div class="l" data-i18n="about.cred2">Eslora máxima</div></div>
+          <div class="about-cred-item"><div class="v">24<span style="font-size:18px">/7</span></div><div class="l" data-i18n="about.cred3">Seguridad</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AMENITIES -->
+<section class="amenities" id="amenities">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" data-i18n="amen.eyebrow">Servicios e instalaciones</div>
+      <h2><span data-i18n="amen.title1">Todo lo necesario,</span><br><span class="it" data-i18n="amen.title2">nada superfluo.</span></h2>
+      <p data-i18n="amen.sub"></p>
+    </div>
+    <div class="amen-grid reveal delay-1" id="amenGrid"></div>
+  </div>
+</section>
+
+<!-- RATES -->
+<section class="rates" id="rates">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" data-i18n="rates.eyebrow">Tarifas Verano 2026</div>
+      <h2><span data-i18n="rates.title1">Calcula tu</span> <span class="it" data-i18n="rates.title2">estadía.</span></h2>
+      <p data-i18n="rates.sub"></p>
+    </div>
+
+    <!-- Rate sheet -->
+    <div class="ratesheet reveal delay-1">
+      <div class="ratesheet-head">
+        <div class="ratesheet-eyebrow" data-i18n="sheet.eyebrow">Slip Rates</div>
+        <div class="ratesheet-title" data-i18n="sheet.title">Verano 2026</div>
+        <div class="ratesheet-validity" data-i18n="sheet.validity"></div>
+      </div>
+      <div class="ratesheet-body">
+        <div class="ratesheet-col">
+          <div class="ratesheet-col-head">
+            <span class="ratesheet-col-title" data-i18n="sheet.dailyTitle">Tarifas diarias</span>
+            <span class="ratesheet-col-unit" data-i18n="sheet.dailyUnit">USD / pie / día</span>
+          </div>
+          <div class="ratesheet-rows">
+            <div class="sheet-row"><div class="sheet-row-l"><div class="sheet-row-amt">$2.30</div><div class="sheet-row-tag" data-i18n="sheet.d1">1 – 2 días</div></div><div class="sheet-row-r" data-i18n="sheet.d1n">Tránsito o paradas breves</div></div>
+            <div class="sheet-row"><div class="sheet-row-l"><div class="sheet-row-amt">$1.89</div><div class="sheet-row-tag" data-i18n="sheet.d2">3 – 4 días</div></div><div class="sheet-row-r" data-i18n="sheet.d2n">Estadía media · acceso al resort</div></div>
+            <div class="sheet-row"><div class="sheet-row-l"><div class="sheet-row-amt">$1.54</div><div class="sheet-row-tag" data-i18n="sheet.d3">5+ días</div></div><div class="sheet-row-r" data-i18n="sheet.d3n">Mejor tarifa diaria</div></div>
+          </div>
+          <div class="ratesheet-power">
+            <div class="ratesheet-power-head" data-i18n="sheet.dailyPower">Servicio eléctrico (medido)</div>
+            <div class="ratesheet-power-row"><span>kWh</span><span class="mono">$7.20 MXN</span></div>
+          </div>
+        </div>
+        <div class="ratesheet-divider"></div>
+        <div class="ratesheet-col">
+          <div class="ratesheet-col-head">
+            <span class="ratesheet-col-title" data-i18n="sheet.monthlyTitle">Tarifas mensuales</span>
+            <span class="ratesheet-col-unit" data-i18n="sheet.monthlyUnit">USD / pie / mes</span>
+          </div>
+          <div class="ratesheet-rows">
+            <div class="sheet-row"><div class="sheet-row-l"><div class="sheet-row-amt">$18.38</div><div class="sheet-row-tag" data-i18n="sheet.m1">1 – 2 meses</div></div><div class="sheet-row-r" data-i18n="sheet.m1n">Tarifa base mensual</div></div>
+            <div class="sheet-row"><div class="sheet-row-l"><div class="sheet-row-amt">$17.00</div><div class="sheet-row-tag" data-i18n="sheet.m2">3 meses</div></div><div class="sheet-row-r" data-i18n="sheet.m2n">Green fee de cortesía · Country Club</div></div>
+            <div class="sheet-row"><div class="sheet-row-l"><div class="sheet-row-amt">$16.20</div><div class="sheet-row-tag" data-i18n="sheet.m3">6 meses</div></div><div class="sheet-row-r" data-i18n="sheet.m3n">Green fees bimestrales o cena para dos</div></div>
+          </div>
+          <div class="ratesheet-power">
+            <div class="ratesheet-power-head" data-i18n="sheet.monthlyPower">Servicio eléctrico adicional</div>
+            <div class="ratesheet-power-row"><span>30 A</span><span class="mono">$4.87 USD/ft/mes</span></div>
+            <div class="ratesheet-power-row"><span>50 A</span><span class="mono">$7.04 USD/ft/mes</span></div>
+            <div class="ratesheet-power-row"><span>100 A</span><span class="mono">$10.28 USD/ft/mes</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="ratesheet-foot">
+        <div class="ratesheet-disclaimer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div>
+            <strong data-i18n="sheet.disclaimerTitle">Cotización aproximada</strong>
+            <p data-i18n="sheet.disclaimer"></p>
+          </div>
+        </div>
+        <div class="ratesheet-payment">
+          <div class="ratesheet-payment-row">
+            <span class="ratesheet-payment-lbl" data-i18n="sheet.payment">Pago anticipado · no reembolsable</span>
+            <div class="ratesheet-payment-methods">
+              <span>AMEX</span><span>VISA</span><span>MASTERCARD</span>
+              <span data-i18n="sheet.cash">EFECTIVO</span><span data-i18n="sheet.wire">TRANSFERENCIA</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toggle calculadora -->
+    <div class="calc-toggle-wrap reveal" id="calcToggleWrap">
+      <button type="button" class="calc-toggle-btn" id="calcToggleBtn" aria-expanded="false">
+        <span class="calc-toggle-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="14" y2="14"/></svg></span>
+        <span data-i18n="sheet.jump">Calcular aproximado</span>
+        <span class="calc-toggle-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></span>
+      </button>
+      <div class="calc-toggle-hint" data-i18n="calc.hint"></div>
+    </div>
+
+    <!-- Calculadora colapsable -->
+    <div class="calc-collapsible" id="calcCollapsible">
+      <div class="calc-wrap reveal">
+        <div class="calc-head">
+          <div><div class="calc-eyebrow" data-i18n="calc.eyebrow">Estimador</div><div class="calc-title" data-i18n="calc.title">Configura tu embarcación</div></div>
+          <div class="calc-mode-tabs">
+            <button class="calc-mode active" data-mode="daily" data-i18n="rates.daily">Diario</button>
+            <button class="calc-mode" data-mode="monthly" data-i18n="rates.monthly">Mensual</button>
+          </div>
+        </div>
+        <div class="calc-body">
+          <div class="calc-controls">
+            <div class="calc-field">
+              <div class="calc-field-head">
+                <label data-i18n="calc.length">Eslora</label>
+                <div class="calc-value"><span id="calcLengthVal">45</span><span class="calc-unit">ft</span></div>
+              </div>
+              <input type="range" id="calcLength" min="20" max="250" value="45" step="1" class="calc-slider">
+              <div class="calc-scale"><span>20 ft</span><span>100 ft</span><span>250 ft</span></div>
+            </div>
+            <div class="calc-field">
+              <div class="calc-field-head">
+                <label data-i18n="calc.duration">Duración</label>
+                <div class="calc-value"><span id="calcDurationVal">3</span><span class="calc-unit" id="calcDurationUnit">días</span></div>
+              </div>
+              <input type="range" id="calcDuration" min="1" max="30" value="3" step="1" class="calc-slider">
+              <div class="calc-scale"><span id="calcScale1">1 día</span><span id="calcScale2">15 días</span><span id="calcScale3">30 días</span></div>
+            </div>
+            <div class="calc-field">
+              <div class="calc-field-head"><label data-i18n="calc.power">Servicio eléctrico</label></div>
+              <div class="calc-pills">
+                <button class="calc-pill active" data-power="0" data-i18n="calc.power.none">Sin servicio</button>
+                <button class="calc-pill" data-power="30">30 A</button>
+                <button class="calc-pill" data-power="50">50 A</button>
+                <button class="calc-pill" data-power="100">100 A</button>
+              </div>
+            </div>
+          </div>
+          <div class="calc-result">
+            <div class="calc-result-label" data-i18n="calc.estimate">Estimación total</div>
+            <div class="calc-total"><span class="calc-currency">USD</span><span class="calc-amount" id="calcTotal">311</span></div>
+            <div class="calc-breakdown" id="calcBreakdown"></div>
+            <div class="calc-foot">
+              <div class="calc-foot-note" data-i18n="calc.note"></div>
+              <a href="#contact" class="calc-cta">
+                <span data-i18n="calc.cta">Solicitar esta estadía</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rates-foot reveal delay-2">
+      <div class="rates-foot-item"><h4 data-i18n="rates.includes">Incluye</h4><p data-i18n="rates.includesText"></p></div>
+      <div class="rates-foot-item"><h4 data-i18n="rates.power">Servicio eléctrico</h4><p data-i18n="rates.powerText"></p></div>
+      <div class="rates-foot-item"><h4 data-i18n="rates.payment">Pago</h4><p data-i18n="rates.paymentText"></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="gallery" id="gallery">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" data-i18n="gal.eyebrow">Galería</div>
+      <h2><span data-i18n="gal.title1">Postales</span> <span class="it" data-i18n="gal.title2">de Isla Navidad.</span></h2>
+    </div>
+    <div class="gal-grid reveal delay-1">
+      <div class="gal-item g1"><div class="gal-cap"><div class="ey">01</div><div class="ti" data-i18n="gal.1">Atardecer en la bahía</div></div></div>
+      <div class="gal-item g2"><div class="gal-cap"><div class="ey">02</div><div class="ti" data-i18n="gal.2">Resort Grand Isla</div></div></div>
+      <div class="gal-item g3"><div class="gal-cap"><div class="ey">03</div><div class="ti" data-i18n="gal.3">Slips privados</div></div></div>
+      <div class="gal-item g4"><div class="gal-cap"><div class="ey">04</div><div class="ti" data-i18n="gal.4">Yates de paso</div></div></div>
+      <div class="gal-item g5"><div class="gal-cap"><div class="ey">05</div><div class="ti" data-i18n="gal.5">Country Club</div></div></div>
+      <div class="gal-item g6"><div class="gal-cap"><div class="ey">06</div><div class="ti" data-i18n="gal.6">Playa privada</div></div></div>
+      <div class="gal-item g7"><div class="gal-cap"><div class="ey">07</div><div class="ti" data-i18n="gal.7">Cocina del Pacífico</div></div></div>
+      <div class="gal-item g8"><div class="gal-cap"><div class="ey">08</div><div class="ti" data-i18n="gal.8">Vida silvestre</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CROQUIS MARINA -->
+<section id="croquis" style="background:#fff;padding:80px 0">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" data-i18n="croquis.eyebrow">Distribución</div> 
+      <h2><span data-i18n="croquis.title">Croquis de</span> <span class="it" data-i18n="croquis.it">la marina.</span></h2>
+      <p data-i18n="croquis.sub"></p>
+    </div>
+    <div class="reveal delay-1" style="text-align:center">
+      <img src="{% static 'img/croquis.png' %}"
+           alt="Croquis Marina Puerto de la Navidad"
+           style="max-width:100%;height:auto;border-radius:6px;
+                  box-shadow:0 20px 60px rgba(61,43,107,0.15);
+                  border:1px solid #e8e2d1">
+    </div>
+  </div>
+</section>
+
+<!-- DOCS -->
+<section class="docs compact">
+  <div class="container">
+    <div class="section-head reveal">
+      <div class="eyebrow" data-i18n="docs.eyebrow">Documentación</div>
+      <h2><span data-i18n="docs.title1">Requisitos de</span> <span class="it" data-i18n="docs.title2">entrada.</span></h2>
+      <p data-i18n="docs.sub"></p>
+    </div>
+    <div class="docs-grid reveal delay-1">
+      <div class="docs-list">
+        <h3 data-i18n="docs.vesselsTitle">Embarcación</h3>
+        <ul>
+          <li><div class="num">01</div><span data-i18n="docs.v1"></span></li>
+          <li><div class="num">02</div><span data-i18n="docs.v2"></span></li>
+          <li><div class="num">03</div><span data-i18n="docs.v3"></span></li>
+          <li><div class="num">04</div><span data-i18n="docs.v4"></span></li>
+        </ul>
+      </div>
+      <div class="docs-list">
+        <h3 data-i18n="docs.crewTitle">Capitán & tripulación</h3>
+        <ul>
+          <li><div class="num">01</div><span data-i18n="docs.c1"></span></li>
+          <li><div class="num">02</div><span data-i18n="docs.c2"></span></li>
+          <li><div class="num">03</div><span data-i18n="docs.c3"></span></li>
+          <li><div class="num">04</div><span data-i18n="docs.c4"></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PERKS -->
+<section class="perks-band">
+  <div class="container">
+    <div class="perks-band-head reveal">
+      <div class="eyebrow" data-i18n="perks.eyebrow">Al reservar con nosotros</div>
+      <h3><span data-i18n="perks.title1">Atención personal,</span> <span class="it" data-i18n="perks.title2">de capitán a capitán.</span></h3>
+    </div>
+    <div class="perks-band-grid reveal delay-1">
+      <div class="perks-band-item">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="title" data-i18n="perks.p1.t">Confirmación en 24 hrs</div>
+        <div class="desc" data-i18n="perks.p1.d"></div>
+      </div>
+      <div class="perks-band-item">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg></div>
+        <div class="title" data-i18n="perks.p2.t">Atención bilingüe</div>
+        <div class="desc" data-i18n="perks.p2.d"></div>
+      </div>
+      <div class="perks-band-item">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div class="title" data-i18n="perks.p3.t">Apoyo migratorio</div>
+        <div class="desc" data-i18n="perks.p3.d"></div>
+      </div>
+      <div class="perks-band-item">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V11l7-7 7 7v10M9 21v-6h6v6"/></svg></div>
+        <div class="title" data-i18n="perks.p4.t">Acceso al resort</div>
+        <div class="desc" data-i18n="perks.p4.d"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact" id="contact">
+  <div class="container">
+    <div class="contact-grid">
+      <div class="contact-left reveal">
+        <div class="eyebrow" data-i18n="contact.eyebrow">Visítanos</div>
+        <h2><span data-i18n="contact.title1">Encuéntranos</span><br><span class="it" data-i18n="contact.title2">en la Costa Alegre.</span></h2>
+        <p data-i18n="contact.p"></p>
+        <div class="contact-info">
+          <div class="contact-info-item"><div class="lbl" data-i18n="contact.coords">Coordenadas</div><div class="val mono">19°11.77'N<br>104°40.96'W</div></div>
+          <div class="contact-info-item"><div class="lbl" data-i18n="contact.vhf">Canal VHF</div><div class="val mono">Channel 16</div></div>
+          <div class="contact-info-item"><div class="lbl" data-i18n="contact.depth">Profundidad</div><div class="val mono">12 ft @ marea baja</div></div>
+          <div class="contact-info-item"><div class="lbl" data-i18n="contact.harbor">Harbormaster</div><div class="val">Juan Hernández </div></div>
+        </div>
+        <button class="btn-cta" onclick="abrirPopup()">
+          <span data-i18n="contact.cta">Iniciar reservación</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+        <div class="map-wrap reveal delay-1">
+          <iframe
+            loading="lazy"
+            allowfullscreen
+            referrerpolicy="no-referrer-when-downgrade"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3763.5!2d-104.6833!3d19.196!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTnCsDExLjc3J04gMTA0wrA0MC45NidX!5e0!3m2!1ses!2smx!4v1620000000000!5m2!1ses!2smx">
+          </iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="foot-grid">
+      <div>
+        <div class="foot-brand">
+          <div class="brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L12 6M12 6L8 6M12 6L16 6M12 6L12 22M5 14a7 7 0 0 0 14 0M7 18L17 18"/></svg>
+          </div>
+          <div class="brand-text">
+            <div class="brand-name">Puerto de la Navidad</div>
+            <div class="brand-sub">Isla Navidad · Marina</div>
+          </div>
+        </div>
+        <p data-i18n="foot.about"></p>
+      </div>
+      <div>
+        <h4 data-i18n="foot.explore">Explorar</h4>
+        <ul>
+          <li><a href="#marina" data-i18n="nav.marina">La Marina</a></li>
+          <li><a href="#amenities" data-i18n="nav.amenities">Amenidades</a></li>
+          <li><a href="#rates" data-i18n="nav.rates">Tarifas</a></li>
+          <li><a href="#gallery" data-i18n="nav.gallery">Galería</a></li>
+          <li><a href="#croquis" data-i18n="nav.croquis">Croquis</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 data-i18n="foot.contact">Contacto</h4>
+        <ul>
+          <li><a href="tel:+523143379014">+52 (314) 337 9014</a></li>
+          <li><a href="mailto:marina@grandbaysort.com">marina@grandbaysort.com</a></li>
+          <li><a href="#contact" data-i18n="foot.directions">Cómo llegar</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 data-i18n="foot.creds">Reconocimientos</h4>
+        <div class="foot-cred-pill">AAA · Four Diamond</div>
+        <div class="foot-cred-pill" style="margin-top:8px">Marinas of México</div>
+        <div class="foot-cred-pill" style="margin-top:8px">TripAdvisor</div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div>© 2026 Grand Isla Navidad Resort. <span data-i18n="foot.rights">Todos los derechos reservados.</span></div>
+      <div class="foot-creds">
+        <a href="#" data-i18n="foot.privacy">Aviso de privacidad</a>
+        <a href="#" data-i18n="foot.terms">Términos</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- POPUP SOLICITUD -->
+ 
+<!-- BOTÓN FLOTANTE -->
+<div style="position:fixed;right:1.5rem;top:50%;transform:translateY(-50%);z-index:200;display:flex;flex-direction:column;align-items:center;gap:.5rem">
+<button onclick="abrirPopup()" title="Reservar"
+  style="width:56px;height:56px;border-radius:50%;background:#0a2540;color:#c9a84c;border:1.5px solid #c9a84c;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(10,37,64,0.4);transition:all .2s"
+  onmouseover="this.style.background='#c9a84c';this.style.color='#0a2540'"
+  onmouseout="this.style.background='#0a2540';this.style.color='#c9a84c'">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path d="M12 2L12 6M12 6L8 6M12 6L16 6M12 6L12 22M5 14a7 7 0 0 0 14 0M7 18L17 18"/>
+    <circle cx="12" cy="3.5" r="1" fill="currentColor" stroke="none"/>
+  </svg>
+</button> 
+  <span style="background:#0a2540;color:#c9a84c;font-size:10px;font-weight:600;letter-spacing:.5px;padding:.3rem .7rem;border-radius:20px;white-space:nowrap;border:1px solid rgba(201,168,76,0.4)">Reservar</span>
+</div>
+
 <div class="popup-overlay" id="popup-overlay">
   <div class="popup">
-
     <div class="popup-header">
       <div>
         <h2>Solicitud de ingreso a marina</h2>
@@ -209,38 +518,22 @@
       </div>
       <button class="popup-close" onclick="cerrarPopup()">✕</button>
     </div>
-
     <div class="popup-body" id="popup-body">
-      <div id="form-error" class="errors-box" style="display:none"></div>
-
+      <div id="form-error" style="display:none;background:#fdf0ee;color:#c0392b;padding:.6rem .75rem;border-radius:8px;border-left:3px solid #c0392b;margin-bottom:.75rem;font-size:12px"></div>
       <form id="form-solicitud">
         {% csrf_token %}
-
-        <div class="section-label">Solicitante</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nombre completo <span class="required">*</span></label>
-            <input type="text" name="fullname" placeholder="Juan García" required>
-          </div>
-          <div class="form-group">
-            <label>Teléfono <span class="required">*</span></label>
-            <input type="tel" name="telefono" placeholder="+52 312 000 0000" required>
-          </div>
+        <div style="font-size:11px;font-weight:600;color:#4a6080;text-transform:uppercase;letter-spacing:.5px;margin:1rem 0 .6rem;padding-bottom:.4rem;border-bottom:2px solid #c9a84c">Solicitante</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+          <div><label>Nombre completo <span style="color:#c9a84c">*</span></label><input type="text" name="fullname" placeholder="Juan García" required></div>
+          <div><label>Teléfono <span style="color:#c9a84c">*</span></label><input type="tel" name="telefono" placeholder="+52 312 000 0000" required></div>
         </div>
-        <div class="form-group">
-          <label>Correo electrónico <span class="required">*</span></label>
-          <input type="email" name="email" placeholder="correo@ejemplo.com" required>
-          <p class="hint">Recibirá la confirmación en este correo</p>
-        </div>
+        <div style="margin-bottom:.75rem"><label>Correo electrónico <span style="color:#c9a84c">*</span></label><input type="email" name="email" placeholder="correo@ejemplo.com" required></div>
 
-        <div class="section-label">Embarcación</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Nombre <span class="required">*</span></label>
-            <input type="text" name="nombre_bote" placeholder="Marea Alta" required>
-          </div>
-          <div class="form-group">
-            <label>Tipo <span class="required">*</span></label>
+        <div style="font-size:11px;font-weight:600;color:#4a6080;text-transform:uppercase;letter-spacing:.5px;margin:1rem 0 .6rem;padding-bottom:.4rem;border-bottom:2px solid #c9a84c">Embarcación</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+          <div><label>Nombre <span style="color:#c9a84c">*</span></label><input type="text" name="nombre_bote" placeholder="Marea Alta" required></div>
+          <div>
+            <label>Tipo <span style="color:#c9a84c">*</span></label>
             <select name="tipo_barco" required>
               <option value="">Seleccione</option>
               {% for tipo in tipos_barco %}
@@ -249,146 +542,63 @@
             </select>
           </div>
         </div>
-        <div class="form-row-3">
-          <div class="form-group">
-            <label>Eslora (m) <span class="required">*</span></label>
-            <input type="number" name="eslora" step="0.01" min="0.01" placeholder="12.50" required>
-            <p class="hint">Length</p>
-          </div>
-          <div class="form-group">
-            <label>Manga (m) <span class="required">*</span></label>
-            <input type="number" name="manga" step="0.01" min="0.01" placeholder="4.20" required>
-            <p class="hint">Beam</p>
-          </div>
-          <div class="form-group">
-            <label>Calado (m) <span class="required">*</span></label>
-            <input type="number" name="calado" step="0.01" min="0.01" placeholder="1.80" required>
-            <p class="hint">Draft</p>
-          </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+          <div><label>Eslora (m) <span style="color:#c9a84c">*</span></label><input type="number" name="eslora" step="0.01" min="0.01" placeholder="12.50" required></div>
+          <div><label>Manga (m) <span style="color:#c9a84c">*</span></label><input type="number" name="manga" step="0.01" min="0.01" placeholder="4.20" required></div>
+          <div><label>Calado (m) <span style="color:#c9a84c">*</span></label><input type="number" name="calado" step="0.01" min="0.01" placeholder="1.80" required></div>
         </div>
 
-        <div class="section-label">Estancia</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Llegada / Arrival <span class="required">*</span></label>
-            <input type="date" name="fecha_llegada" required>
-          </div>
-          <div class="form-group">
-            <label>Salida / Departure <span class="required">*</span></label>
-            <input type="date" name="fecha_salida" required>
-          </div>
+        <div style="font-size:11px;font-weight:600;color:#4a6080;text-transform:uppercase;letter-spacing:.5px;margin:1rem 0 .6rem;padding-bottom:.4rem;border-bottom:2px solid #c9a84c">Estancia</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+          <div><label>Llegada <span style="color:#c9a84c">*</span></label><input type="date" name="fecha_llegada" required></div>
+          <div><label>Salida <span style="color:#c9a84c">*</span></label><input type="date" name="fecha_salida" required></div>
         </div>
-
-        <div class="checkbox-row">
-          <input type="checkbox" name="primera_entrada_mexico" id="primera_entrada">
-          <div class="checkbox-text">
+        <div style="display:flex;align-items:flex-start;gap:.6rem;padding:.65rem .75rem;background:#f6f1e3;border-radius:8px;border:1px solid #e8e2d1;margin-bottom:.75rem">
+          <input type="checkbox" name="primera_entrada_mexico" id="primera_entrada" style="width:16px;height:16px;margin-top:2px;flex-shrink:0;accent-color:#534781">
+          <div style="font-size:12px;color:#1a2a3a;line-height:1.5">
             Primera entrada a México / First entry to Mexico
-            <small>Marque si es la primera vez que su embarcación ingresa a aguas mexicanas</small>
+            <small style="color:#8a9ab0;display:block;font-size:11px;margin-top:1px">Marque si es la primera vez que su embarcación ingresa a aguas mexicanas</small>
           </div>
         </div>
 
-        <div class="section-label">Información adicional</div>
-        <div class="form-group">
-          <label>Solicitudes especiales / Special requests</label>
-          <textarea name="comentario" placeholder="Requerimientos especiales, servicios adicionales..."></textarea>
-        </div>
+        <div style="font-size:11px;font-weight:600;color:#4a6080;text-transform:uppercase;letter-spacing:.5px;margin:1rem 0 .6rem;padding-bottom:.4rem;border-bottom:2px solid #c9a84c">Información adicional</div>
+        <div><label>Solicitudes especiales</label><textarea name="comentario" placeholder="Requerimientos especiales, servicios adicionales..." style="width:100%;padding:.5rem .75rem;border:1px solid #e8e2d1;border-radius:8px;font-family:inherit;font-size:13px;resize:vertical;min-height:60px;outline:none"></textarea></div>
 
-        <!-- =========================================
-              CAPTCHA SIMPLE
-          ========================================= -->
+      <div style="font-size:11px;font-weight:600;color:#4a6080;text-transform:uppercase;letter-spacing:.5px;margin:1rem 0 .6rem;padding-bottom:.4rem;border-bottom:2px solid #c9a84c">
+        Verificación de seguridad
+      </div>
+      <div style="margin-bottom:.75rem">
+        <label>¿Cuánto es {{ captcha_pregunta }}? <span style="color:#c9a84c">*</span></label>
+        <input type="number" name="captcha" placeholder="Escribe el resultado" required>
+        <p style="font-size:11px;color:#8a9ab0;margin-top:.2rem">Esta verificación evita envíos automáticos.</p>
+      </div>
 
-          <div class="section-label">
-            Verificación de seguridad
-          </div>
-
-          <div class="form-group">
-
-            <label>
-              ¿Cuánto es {{ captcha_pregunta }}?
-              <span class="required">*</span>
-            </label>
-
-            <input
-              type="number"
-              name="captcha"
-              placeholder="Escribe el resultado"
-              required>
-
-            <p class="hint">
-              Esta verificación evita envíos automáticos.
-            </p>
-
-          </div>
       </form>
     </div>
-
     <div class="popup-footer" id="popup-footer">
-      <button class="btn-submit" id="btn-submit" onclick="enviarSolicitud()">
+      <button id="btn-submit" onclick="enviarSolicitud()" style="width:100%;padding:.65rem;background:#534781;color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer">
         Enviar solicitud
       </button>
     </div>
-
   </div>
 </div>
 
-<script>
-const CSRF = "{{ csrf_token }}"; //Token de seguridad
+<!-- Estilos del popup de solicitud -->
+<style>
+.popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:center;justify-content:flex-end;padding:1rem 5rem 1rem 1rem}
+.popup-overlay.active{display:flex}
+.popup{background:#fff;border-radius:12px;width:460px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 4px 24px rgba(83,71,129,0.15);display:flex;flex-direction:column}
+.popup-header{background:#534781;padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;border-radius:12px 12px 0 0;flex-shrink:0}
+.popup-header h2{font-size:15px;font-weight:600;color:#fff;font-family:'Inter',sans-serif}
+.popup-header p{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px;font-family:'Inter',sans-serif}
+.popup-close{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:20px;padding:.25rem;line-height:1}
+.popup-body{padding:1.25rem 1.5rem;flex:1}
+.popup-footer{padding:1rem 1.5rem;border-top:1px solid #e8e2d1;flex-shrink:0}
+.popup-body label{display:block;font-size:10px;font-weight:600;color:#4a6080;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.3rem}
+.popup-body input,.popup-body select{width:100%;padding:.5rem .75rem;border:1px solid #e8e2d1;border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;color:#1a2a3a;background:#fff;outline:none;transition:border-color .15s}
+.popup-body input:focus,.popup-body select:focus{border-color:#534781;box-shadow:0 0 0 3px rgba(83,71,129,0.12)}
+</style>
 
-function abrirPopup(){
-  document.getElementById('popup-overlay').classList.add('active');
-  document.body.style.overflow='hidden';
-}
-function cerrarPopup(){
-  document.getElementById('popup-overlay').classList.remove('active');
-  document.body.style.overflow='';
-}
-document.getElementById('popup-overlay').addEventListener('click',ev=>{ //cerrar el formulario si se presionar fuera de el
-  if(ev.target===document.getElementById('popup-overlay')) cerrarPopup();
-});
-
-// validar fechas
-document.querySelector('[name=fecha_salida]').addEventListener('change',function(){
-  const llegada=document.querySelector('[name=fecha_llegada]').value;
-  if(llegada&&this.value&&this.value<=llegada){
-    this.setCustomValidity('La fecha de salida debe ser posterior a la llegada.');
-  } else { this.setCustomValidity(''); }
-});
-
-async function enviarSolicitud(){
-  const form=document.getElementById('form-solicitud');
-  const errEl=document.getElementById('form-error');
-  errEl.style.display='none';
-  if(!form.checkValidity()){ form.reportValidity(); return; }
-  const btn=document.getElementById('btn-submit');
-  btn.disabled=true; btn.textContent='Enviando...';
-  const data=new FormData(form);
-  data.append('csrfmiddlewaretoken',CSRF);
-  try{
-    const res=await fetch('/solicitar/',{method:'POST',body:data});
-    const json=await res.json();
-    if(json.ok){
-      document.getElementById('popup-body').innerHTML=`
-        <div class="success-box">
-          <div class="success-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <h3>¡Solicitud enviada!</h3>
-          <p>Hemos recibido su solicitud.<br>Le contactaremos al correo <strong>${json.email}</strong></p>
-          <div class="success-num">#${json.solicitud_id}</div>
-          <p style="font-size:11px;color:var(--text-light)">Guarde este número de referencia</p>
-        </div>`;
-      document.getElementById('popup-footer').innerHTML=`
-        <button class="btn-submit" onclick="cerrarPopup()" style="background:var(--success)">Cerrar</button>`;
-    } else {
-      errEl.textContent=json.error; errEl.style.display='block';
-      btn.disabled=false; btn.textContent='Enviar solicitud';
-    }
-  } catch(err){
-    errEl.textContent='Error de conexión. Intente de nuevo.';
-    errEl.style.display='block';
-    btn.disabled=false; btn.textContent='Enviar solicitud';
-  }
-}
-</script>
+<script src="{% static 'js/landing.js' %}"></script>
 </body>
 </html>

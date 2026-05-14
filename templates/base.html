@@ -7,7 +7,9 @@
   <title>{% block title %}MARE{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
+  {% load static %}
+  <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">  
+<style>
     :root {
       /* MARE */
       --mare-dark:   #0a2540;
