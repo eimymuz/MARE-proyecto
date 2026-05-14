@@ -8,11 +8,20 @@
   <button class="btn btn-primary" onclick="abrirModalUsuario()">+ Nuevo usuario</button>
 </div>
 
-<!-- Filtro rápido por rol -->
-<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem">
-  <button onclick="filtrarRol('')"     id="tab-todos"     class="btn btn-default btn-sm" style="background:var(--navy);color:#fff">Todos</button>
-  <button onclick="filtrarRol('gerente')"  id="tab-gerente"  class="btn btn-default btn-sm">Gerentes</button>
-  <button onclick="filtrarRol('empleado')" id="tab-empleado" class="btn btn-default btn-sm">Empleados</button>
+<!-- Filtros rápidos -->
+<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
+  <button onclick="filtrarRol('')" id="tab-todos" class="btn btn-default btn-sm">
+    Todos
+  </button>
+  <button onclick="filtrarRol('gerente')" id="tab-gerente" class="btn btn-default btn-sm">
+    Gerentes
+  </button>
+  <button onclick="filtrarRol('empleado')" id="tab-empleado" class="btn btn-default btn-sm">
+    Empleados
+  </button>
+  <button onclick="filtrarRol('inactivo')" id="tab-inactivo" class="btn btn-default btn-sm">
+    Inactivos
+  </button>
   <input type="text" id="inp-buscar" placeholder="Buscar por nombre o usuario..."
     oninput="filtrarTabla()"
     style="margin-left:auto;font-size:12px;padding:.35rem .6rem;border:1px solid var(--border);
@@ -33,19 +42,29 @@
     <tbody>
       {% for admin in administradores %}
       <tr data-rol="{{ admin.rol }}"
+          data-activo="{{ admin.activo|yesno:'si,no' }}"
           data-nombre="{{ admin.user.get_full_name|lower }}"
           data-username="{{ admin.user.username|lower }}">
-        <td style="font-weight:500">{{ admin.user.get_full_name|default:admin.user.username }}</td>
-        <td style="color:var(--text-light)">{{ admin.user.username }}</td>
-        <td style="color:var(--text-light)">{{ admin.user.email|default:"—" }}</td>
+        <td style="font-weight:500;{% if not admin.activo %}opacity:.5{% endif %}">
+          {{ admin.user.get_full_name|default:admin.user.username }}
+        </td>
+        <td style="color:var(--text-light);{% if not admin.activo %}opacity:.5{% endif %}">
+          {{ admin.user.username }}
+        </td>
+        <td style="color:var(--text-light);{% if not admin.activo %}opacity:.5{% endif %}">
+          {{ admin.user.email|default:"—" }}
+        </td>
         <td>
-            {% if not admin.activo %}
-            <span class="badge badge-danger">Inactivo</span>
-            {% elif admin.es_gerente %}
-            <span class="badge badge-warning">Gerente</span>
-            {% else %}
-            <span class="badge badge-info">Empleado</span>
-            {% endif %}
+          {% if not admin.activo %}
+            <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;
+                  background:#f0f0f0;color:#888;border:1px solid #ccc">Inactivo</span>
+          {% elif admin.es_gerente %}
+            <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;
+                  background:#fef3d0;color:#8a6000;border:1px solid var(--accent)">Gerente</span>
+          {% else %}
+            <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;
+                  background:var(--info-bg);color:var(--info);border:1px solid var(--info)">Empleado</span>
+          {% endif %}
         </td>
         <td>
           <div style="display:flex;gap:.3rem">
@@ -59,18 +78,21 @@
                 '{{ admin.rol }}'
               )">Editar</button>
             {% if admin.user != request.user %}
-            {% if admin.activo %}
-            <form method="post" action="{% url 'usuario_eliminar' admin.pk %}"
-                    onsubmit="return confirm('¿Desactivar a {{ admin.user.get_full_name }}?')">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger btn-sm">Desactivar</button>
-            </form>
-            {% else %}
-            <form method="post" action="{% url 'usuario_reactivar' admin.pk %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-success btn-sm">Reactivar</button>
-            </form>
-            {% endif %}
+              {% if admin.activo %}
+                <button type="button" class="btn btn-danger btn-sm"
+                  onclick="confirmarCambioEstado(
+                    '{% url 'usuario_eliminar' admin.pk %}',
+                    '{{ admin.user.get_full_name|default:admin.user.username }}',
+                    'desactivar'
+                  )">Desactivar</button>
+              {% else %}
+                <button type="button" class="btn btn-success btn-sm"
+                  onclick="confirmarCambioEstado(
+                    '{% url 'usuario_reactivar' admin.pk %}',
+                    '{{ admin.user.get_full_name|default:admin.user.username }}',
+                    'reactivar'
+                  )">Reactivar</button>
+              {% endif %}
             {% endif %}
           </div>
         </td>
@@ -106,9 +128,7 @@
 
     <form id="form-usuario" method="post" action="{% url 'usuario_crear' %}">
       {% csrf_token %}
-
       <div style="padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.85rem">
-
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
           <div>
             <label>Nombre</label>
@@ -119,17 +139,14 @@
             <input type="text" name="last_name" id="modal-last-name" required placeholder="Pérez">
           </div>
         </div>
-
         <div>
           <label>Usuario</label>
           <input type="text" name="username" id="modal-username" required placeholder="juanperez">
         </div>
-
         <div>
           <label>Email</label>
           <input type="email" name="email" id="modal-email" placeholder="juan@marina.com">
         </div>
-
         <div>
           <label id="modal-pass-label">Contraseña</label>
           <input type="password" name="password" id="modal-password" placeholder="Mínimo 8 caracteres">
@@ -137,7 +154,6 @@
             Deja vacío para mantener la contraseña actual
           </span>
         </div>
-
         <div>
           <label>Rol</label>
           <select name="rol" id="modal-rol">
@@ -145,16 +161,47 @@
             <option value="gerente">Gerente</option>
           </select>
         </div>
-
       </div>
-
       <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);
            display:flex;justify-content:flex-end;gap:.5rem">
         <button type="button" onclick="cerrarModalUsuario()" class="btn btn-default">Cancelar</button>
         <button type="submit" class="btn btn-primary" id="modal-btn-guardar">Crear usuario</button>
       </div>
-
     </form>
+  </div>
+</div>
+
+
+<!-- ── MODAL CONFIRMAR DESACTIVAR/REACTIVAR ── -->
+<div id="modal-confirmar" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+     background:rgba(0,0,0,0.5);z-index:1100;align-items:center;justify-content:center;
+     opacity:0;transition:opacity .2s ease">
+  <div style="background:var(--surface);border-radius:var(--radius-lg);width:400px;max-width:95%;
+       box-shadow:var(--shadow-md);transform:scale(0.95);
+       transition:transform .25s cubic-bezier(.34,1.56,.64,1)">
+
+    <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);
+         display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:15px;font-weight:600;color:var(--text)" id="confirmar-titulo">
+        Confirmar acción
+      </div>
+      <button onclick="cerrarModalConfirmar()"
+        style="background:none;border:none;cursor:pointer;color:var(--text-light);font-size:20px;line-height:1">✕</button>
+    </div>
+
+    <div style="padding:1.25rem 1.5rem">
+      <p id="confirmar-mensaje" style="font-size:14px;color:var(--text);margin:0"></p>
+    </div>
+
+    <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);
+         display:flex;justify-content:flex-end;gap:.5rem">
+      <button type="button" onclick="cerrarModalConfirmar()" class="btn btn-default">Cancelar</button>
+      <form id="form-confirmar" method="post" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" id="confirmar-btn" class="btn btn-danger">Confirmar</button>
+      </form>
+    </div>
+
   </div>
 </div>
 
@@ -162,33 +209,77 @@
 <script>
 let _rolActivo = '';
 
-// Filtro por rol — resalta tab activo
+// ── Filtro por rol ──
 function filtrarRol(rol){
   _rolActivo = rol;
-  ['todos','gerente','empleado'].forEach(t=>{
+  ['todos','gerente','empleado','inactivo'].forEach(t=>{
     const btn = document.getElementById('tab-'+t);
+    if(!btn) return;
     const activo = (rol==='' && t==='todos') || rol===t;
-    btn.style.background = activo ? 'var(--navy)' : '';
-    btn.style.color      = activo ? '#000' : '';
+    btn.style.background = activo ? 'var(--accent)' : '';
+    btn.style.color      = activo ? 'var(--navy)'   : '';
+    btn.style.fontWeight = activo ? '600'            : '';
+    btn.style.border     = activo ? '1px solid var(--accent)' : '';
   });
   filtrarTabla();
 }
 
-// Filtro por texto + rol combinados
+// ── Filtro combinado rol + texto ──
 function filtrarTabla(){
-  const q   = document.getElementById('inp-buscar').value.toLowerCase();
+  const q    = document.getElementById('inp-buscar').value.toLowerCase();
   const rows = document.querySelectorAll('#tabla-usuarios tbody tr[data-rol]');
   rows.forEach(row=>{
     const nombre   = row.dataset.nombre   || '';
     const username = row.dataset.username || '';
     const rol      = row.dataset.rol      || '';
-    const pasaRol  = !_rolActivo || rol === _rolActivo;
-    const pasaQ    = !q || nombre.includes(q) || username.includes(q);
+    const activo   = row.dataset.activo   || 'si';
+
+    let pasaRol;
+    if(_rolActivo === '')         pasaRol = true;
+    else if(_rolActivo === 'inactivo') pasaRol = activo === 'no';
+    else                          pasaRol = rol === _rolActivo && activo === 'si';
+
+    const pasaQ = !q || nombre.includes(q) || username.includes(q);
     row.style.display = (pasaRol && pasaQ) ? '' : 'none';
   });
 }
 
-// Modal crear
+// ── Modal confirmar desactivar/reactivar ──
+function confirmarCambioEstado(url, nombre, accion){
+  const esDesactivar = accion === 'desactivar';
+  document.getElementById('confirmar-titulo').textContent  = esDesactivar ? 'Desactivar usuario' : 'Reactivar usuario';
+  document.getElementById('confirmar-mensaje').textContent =
+    esDesactivar
+      ? `¿Estás seguro que deseas desactivar a ${nombre}? No podrá iniciar sesión.`
+      : `¿Estás seguro que deseas reactivar a ${nombre}? Podrá volver a iniciar sesión.`;
+
+  const btn = document.getElementById('confirmar-btn');
+  btn.textContent       = esDesactivar ? 'Desactivar' : 'Reactivar';
+  btn.className         = esDesactivar ? 'btn btn-danger' : 'btn btn-success';
+  document.getElementById('form-confirmar').action = url;
+
+  const modal = document.getElementById('modal-confirmar');
+  const card  = modal.querySelector('div');
+  modal.style.display = 'flex';
+  requestAnimationFrame(()=>{
+    modal.style.opacity  = '1';
+    card.style.transform = 'scale(1)';
+  });
+}
+
+function cerrarModalConfirmar(){
+  const modal = document.getElementById('modal-confirmar');
+  const card  = modal.querySelector('div');
+  modal.style.opacity  = '0';
+  card.style.transform = 'scale(0.95)';
+  setTimeout(()=>{ modal.style.display='none'; }, 200);
+}
+
+document.getElementById('modal-confirmar').addEventListener('click', function(ev){
+  if(ev.target === this) cerrarModalConfirmar();
+});
+
+// ── Modal crear usuario ──
 function abrirModalUsuario(){
   document.getElementById('modal-usuario-titulo').textContent = 'Nuevo usuario';
   document.getElementById('modal-btn-guardar').textContent    = 'Crear usuario';
@@ -200,10 +291,10 @@ function abrirModalUsuario(){
     document.getElementById(id).value = '';
   });
   document.getElementById('modal-rol').value = 'empleado';
-  mostrarModal();
+  mostrarModalUsuario();
 }
 
-// Modal editar
+// ── Modal editar usuario ──
 function abrirModalEditar(pk, firstName, lastName, username, email, rol){
   document.getElementById('modal-usuario-titulo').textContent = 'Editar usuario';
   document.getElementById('modal-btn-guardar').textContent    = 'Guardar cambios';
@@ -217,10 +308,10 @@ function abrirModalEditar(pk, firstName, lastName, username, email, rol){
   document.getElementById('modal-email').value      = email;
   document.getElementById('modal-password').value   = '';
   document.getElementById('modal-rol').value        = rol;
-  mostrarModal();
+  mostrarModalUsuario();
 }
 
-function mostrarModal(){
+function mostrarModalUsuario(){
   const modal = document.getElementById('modal-usuario');
   const card  = modal.querySelector('div');
   modal.style.display = 'flex';
