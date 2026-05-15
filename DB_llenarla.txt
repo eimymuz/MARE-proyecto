@@ -1,0 +1,4 @@
+
+--ejecutar este comnado en la termnial:
+
+docker compose exec web python manage.py shell -c "exec(open('seed_600.py').read())"

@@ -1,0 +1,17 @@
+---------------------------------- vaciar base de datos
+
+
+docker compose exec web python manage.py shell -c "
+from apps.asignaciones.models import Asignacion
+from apps.solicitudes.models import Solicitud, SolicitudHistorial
+from apps.embarcaciones.models import Embarcacion
+from apps.clientes.models import Cliente
+
+Asignacion.objects.all().delete()
+SolicitudHistorial.objects.all().delete()
+Solicitud.objects.all().delete()
+Embarcacion.objects.all().delete()
+Cliente.objects.all().delete()
+
+print('Listo — solicitudes, historial, asignaciones, embarcaciones y clientes eliminados.')
+"

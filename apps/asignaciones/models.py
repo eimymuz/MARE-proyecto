@@ -24,6 +24,15 @@ class Administrador(models.Model):
 
     def es_gerente(self):
         return self.rol == self.ROL_GERENTE
+    
+    def save(self, *args, **kwargs):
+        if self.user:
+            self.user.first_name = self.user.first_name.upper()
+            self.user.last_name  = self.user.last_name.upper()
+            self.user.username   = self.user.username.upper()
+            self.user.email      = self.user.email.lower()  # por convención email siempre va en minúsculas
+            self.user.save()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table            = 'administrador'
