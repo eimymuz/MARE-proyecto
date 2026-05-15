@@ -7,9 +7,7 @@ from apps.solicitudes.models import Solicitud, SolicitudHistorial
 from apps.asignaciones.models import Administrador, Asignacion
 from apps.muelles.models import Muelle, Espacio
 
-FECHA_INICIO = date(2026, 1, 1)
-FECHA_FIN    = date(2026, 5, 14)
-TOTAL        = 600
+FECHA_FIN = date(2026, 5, 14)
 
 ESPACIOS = {
     'A': [5030,5031,5032,5033,5034,5035,5036,5037,5038,5039,5040,5041,5042,5043,5044,5045],
@@ -36,56 +34,56 @@ MOTIVOS_RECHAZO = [
 ]
 
 CLIENTES_DATA = [
-    ('JAMES MORRISON',      '+12125550011', 'james.morrison@seed.com'),
-    ('LUCIA FERNANDEZ',     '+52312100021', 'lucia.fernandez@seed.com'),
-    ('ROBERT KLEIN',        '+49301234567', 'robert.klein@seed.com'),
-    ('SOFIA REYES',         '+52312100031', 'sofia.reyes@seed.com'),
-    ('PIERRE DUPONT',       '+33123456789', 'pierre.dupont@seed.com'),
-    ('YUKI TANAKA',         '+81312345678', 'yuki.tanaka@seed.com'),
-    ('CARLOS MENDEZ',       '+52312100041', 'carlos.mendez@seed.com'),
-    ('ANNE LARSEN',         '+4523456789',  'anne.larsen@seed.com'),
-    ('MICHAEL TORRES',      '+12125550022', 'michael.torres@seed.com'),
-    ('VALENTINA CRUZ',      '+52312100051', 'valentina.cruz@seed.com'),
-    ('HANS MUELLER',        '+49301234568', 'hans.mueller@seed.com'),
-    ('ISABELLA ROSSI',      '+39023456789', 'isabella.rossi@seed.com'),
-    ('DEREK WASHINGTON',    '+12125550033', 'derek.washington@seed.com'),
-    ('CAMILA VARGAS',       '+52312100061', 'camila.vargas@seed.com'),
-    ('ERIK JOHANSSON',      '+46701234567', 'erik.johansson@seed.com'),
-    ('MARIA SANTOS',        '+55112345678', 'maria.santos@seed.com'),
-    ('THOMAS WEBER',        '+49301234569', 'thomas.weber@seed.com'),
-    ('ELENA PETROVA',       '+79161234567', 'elena.petrova@seed.com'),
-    ('JUAN CASTILLO',       '+52312100071', 'juan.castillo@seed.com'),
-    ('SARAH CONNORS',       '+12125550044', 'sarah.connors@seed.com'),
-    ('LUCA FERRARI',        '+39023456790', 'luca.ferrari@seed.com'),
-    ('AMARA DIALLO',        '+22112345678', 'amara.diallo@seed.com'),
-    ('KEVIN ODUYA',         '+23412345678', 'kevin.oduya@seed.com'),
-    ('NATALIA ROMERO',      '+52312100081', 'natalia.romero@seed.com'),
-    ('PATRICK OBRIEN',      '+35312345678', 'patrick.obrien@seed.com'),
-    ('HIROSHI YAMAMOTO',    '+81312345679', 'hiroshi.yamamoto@seed.com'),
-    ('CLAUDIA MORETTI',     '+39023456791', 'claudia.moretti@seed.com'),
-    ('WILLIAM BANKS',       '+12125550055', 'william.banks@seed.com'),
-    ('ALEJANDRA NUNEZ',     '+52312100091', 'alejandra.nunez@seed.com'),
-    ('FREDRIK LINDQVIST',   '+46701234568', 'fredrik.lindqvist@seed.com'),
-    ('DIANA POPESCU',       '+40712345678', 'diana.popescu@seed.com'),
-    ('MARCO GUTIERREZ',     '+52312100101', 'marco.gutierrez@seed.com'),
-    ('FATIMA AL-RASHID',    '+97112345678', 'fatima.alrashid@seed.com'),
-    ('CHEN WEI',            '+86212345678', 'chen.wei@seed.com'),
-    ('PABLO ACOSTA',        '+52312100111', 'pablo.acosta@seed.com'),
-    ('ANNIKA BERGSTROM',    '+46701234569', 'annika.bergstrom@seed.com'),
-    ('DMITRI VOLKOV',       '+79161234568', 'dmitri.volkov@seed.com'),
-    ('GRACE OKONKWO',       '+23412345679', 'grace.okonkwo@seed.com'),
-    ('RODRIGO PEREIRA',     '+55112345679', 'rodrigo.pereira@seed.com'),
-    ('LISA ANDERSON',       '+12125550066', 'lisa.anderson@seed.com'),
-    ('OMAR HASSAN',         '+97112345679', 'omar.hassan@seed.com'),
-    ('INGRID HAUGEN',       '+4723456789',  'ingrid.haugen@seed.com'),
-    ('FELIPE SOTO',         '+52312100121', 'felipe.soto@seed.com'),
-    ('PRIYA SHARMA',        '+91112345678', 'priya.sharma@seed.com'),
-    ('NICOLAS BERNARD',     '+33123456790', 'nicolas.bernard@seed.com'),
-    ('AKOSUA MENSAH',       '+23312345678', 'akosua.mensah@seed.com'),
-    ('JORGE IBARRA',        '+52312100131', 'jorge.ibarra@seed.com'),
-    ('KATARINA NOVAK',      '+38512345678', 'katarina.novak@seed.com'),
-    ('BRENDAN MCCARTHY',    '+35312345679', 'brendan.mccarthy@seed.com'),
-    ('YOLANDA HERRERA',     '+52312100141', 'yolanda.herrera@seed.com'),
+    ('JAMES MORRISON',    '+12125550011', 'james.morrison@seed.com'),
+    ('LUCIA FERNANDEZ',   '+52312100021', 'lucia.fernandez@seed.com'),
+    ('ROBERT KLEIN',      '+49301234567', 'robert.klein@seed.com'),
+    ('SOFIA REYES',       '+52312100031', 'sofia.reyes@seed.com'),
+    ('PIERRE DUPONT',     '+33123456789', 'pierre.dupont@seed.com'),
+    ('YUKI TANAKA',       '+81312345678', 'yuki.tanaka@seed.com'),
+    ('CARLOS MENDEZ',     '+52312100041', 'carlos.mendez@seed.com'),
+    ('ANNE LARSEN',       '+4523456789',  'anne.larsen@seed.com'),
+    ('MICHAEL TORRES',    '+12125550022', 'michael.torres@seed.com'),
+    ('VALENTINA CRUZ',    '+52312100051', 'valentina.cruz@seed.com'),
+    ('HANS MUELLER',      '+49301234568', 'hans.mueller@seed.com'),
+    ('ISABELLA ROSSI',    '+39023456789', 'isabella.rossi@seed.com'),
+    ('DEREK WASHINGTON',  '+12125550033', 'derek.washington@seed.com'),
+    ('CAMILA VARGAS',     '+52312100061', 'camila.vargas@seed.com'),
+    ('ERIK JOHANSSON',    '+46701234567', 'erik.johansson@seed.com'),
+    ('MARIA SANTOS',      '+55112345678', 'maria.santos@seed.com'),
+    ('THOMAS WEBER',      '+49301234569', 'thomas.weber@seed.com'),
+    ('ELENA PETROVA',     '+79161234567', 'elena.petrova@seed.com'),
+    ('JUAN CASTILLO',     '+52312100071', 'juan.castillo@seed.com'),
+    ('SARAH CONNORS',     '+12125550044', 'sarah.connors@seed.com'),
+    ('LUCA FERRARI',      '+39023456790', 'luca.ferrari@seed.com'),
+    ('AMARA DIALLO',      '+22112345678', 'amara.diallo@seed.com'),
+    ('KEVIN ODUYA',       '+23412345678', 'kevin.oduya@seed.com'),
+    ('NATALIA ROMERO',    '+52312100081', 'natalia.romero@seed.com'),
+    ('PATRICK OBRIEN',    '+35312345678', 'patrick.obrien@seed.com'),
+    ('HIROSHI YAMAMOTO',  '+81312345679', 'hiroshi.yamamoto@seed.com'),
+    ('CLAUDIA MORETTI',   '+39023456791', 'claudia.moretti@seed.com'),
+    ('WILLIAM BANKS',     '+12125550055', 'william.banks@seed.com'),
+    ('ALEJANDRA NUNEZ',   '+52312100091', 'alejandra.nunez@seed.com'),
+    ('FREDRIK LINDQVIST', '+46701234568', 'fredrik.lindqvist@seed.com'),
+    ('DIANA POPESCU',     '+40712345678', 'diana.popescu@seed.com'),
+    ('MARCO GUTIERREZ',   '+52312100101', 'marco.gutierrez@seed.com'),
+    ('FATIMA AL-RASHID',  '+97112345678', 'fatima.alrashid@seed.com'),
+    ('CHEN WEI',          '+86212345678', 'chen.wei@seed.com'),
+    ('PABLO ACOSTA',      '+52312100111', 'pablo.acosta@seed.com'),
+    ('ANNIKA BERGSTROM',  '+46701234569', 'annika.bergstrom@seed.com'),
+    ('DMITRI VOLKOV',     '+79161234568', 'dmitri.volkov@seed.com'),
+    ('GRACE OKONKWO',     '+23412345679', 'grace.okonkwo@seed.com'),
+    ('RODRIGO PEREIRA',   '+55112345679', 'rodrigo.pereira@seed.com'),
+    ('LISA ANDERSON',     '+12125550066', 'lisa.anderson@seed.com'),
+    ('OMAR HASSAN',       '+97112345679', 'omar.hassan@seed.com'),
+    ('INGRID HAUGEN',     '+4723456789',  'ingrid.haugen@seed.com'),
+    ('FELIPE SOTO',       '+52312100121', 'felipe.soto@seed.com'),
+    ('PRIYA SHARMA',      '+91112345678', 'priya.sharma@seed.com'),
+    ('NICOLAS BERNARD',   '+33123456790', 'nicolas.bernard@seed.com'),
+    ('AKOSUA MENSAH',     '+23312345678', 'akosua.mensah@seed.com'),
+    ('JORGE IBARRA',      '+52312100131', 'jorge.ibarra@seed.com'),
+    ('KATARINA NOVAK',    '+38512345678', 'katarina.novak@seed.com'),
+    ('BRENDAN MCCARTHY',  '+35312345679', 'brendan.mccarthy@seed.com'),
+    ('YOLANDA HERRERA',   '+52312100141', 'yolanda.herrera@seed.com'),
 ]
 
 BARCOS_DATA = [
@@ -93,50 +91,50 @@ BARCOS_DATA = [
     ('PACIFICO',         'CATAMARÁN', 15.0, 7.0, 1.5),
     ('NORDIC STAR',      'VELERO',    9.0,  3.5, 1.2),
     ('BELLA VITA',       'YATE',      18.0, 5.5, 2.0),
-    ('CORAL DREAM',      'VELERO',    11.0, 4.2, 1.4),
+    ('CORAL DREAM',      'LANCHA',    7.0,  2.5, 0.8),
     ('BRISE DE MER',     'YATE',      22.0, 6.8, 2.3),
-    ('SAKURA MARU',      'VELERO',    8.0,  3.0, 1.1),
+    ('SAKURA MARU',      'MOTONAVE',  35.0, 8.5, 3.2),
     ('OCEAN SPIRIT',     'CATAMARÁN', 14.0, 5.0, 1.8),
     ('VIENTO SUR',       'VELERO',    10.0, 3.8, 1.3),
     ('GRAND BLEU',       'YATE',      25.0, 7.5, 2.5),
     ('ESTRELLA MAR',     'CATAMARÁN', 16.0, 5.2, 1.9),
-    ('WHITE DOLPHIN',    'VELERO',    13.0, 4.5, 1.6),
+    ('WHITE DOLPHIN',    'LANCHA',    6.5,  2.3, 0.7),
     ('SIRENA NEGRA',     'VELERO',    20.0, 6.0, 2.1),
     ('TEQUILA SUNSET',   'CATAMARÁN', 17.0, 5.8, 2.0),
     ('AURORA BOREALIS',  'YATE',      30.0, 8.0, 3.0),
-    ('PLAYA AZUL',       'VELERO',    7.5,  2.8, 1.0),
+    ('PLAYA AZUL',       'LANCHA',    5.5,  2.0, 0.6),
     ('MARLIN AZUL',      'CATAMARÁN', 12.5, 4.3, 1.6),
     ('COSTA ALEGRE',     'VELERO',    9.5,  3.6, 1.3),
     ('LA NAVIDAD',       'YATE',      19.0, 6.2, 2.2),
-    ('BAHIA GRANDE',     'CATAMARÁN', 11.5, 4.0, 1.5),
+    ('BAHIA GRANDE',     'MOTONAVE',  28.0, 7.8, 2.9),
     ('LUNA LLENA',       'VELERO',    8.5,  3.2, 1.1),
     ('AGUA MARINA',      'YATE',      21.0, 6.5, 2.4),
     ('SOL Y MAR',        'CATAMARÁN', 13.5, 4.8, 1.7),
-    ('BRISA TROPICAL',   'VELERO',    10.5, 3.9, 1.4),
+    ('BRISA TROPICAL',   'LANCHA',    8.0,  2.8, 0.9),
     ('HORIZONTE',        'YATE',      24.0, 7.2, 2.6),
     ('PERLA DEL MAR',    'VELERO',    11.0, 4.0, 1.5),
     ('AVENTURA',         'CATAMARÁN', 16.5, 5.5, 2.0),
-    ('ESPERANZA',        'VELERO',    9.0,  3.4, 1.2),
+    ('ESPERANZA',        'MOTONAVE',  32.0, 8.2, 3.1),
     ('LIBERTAD',         'YATE',      20.5, 6.3, 2.3),
     ('ISLA BONITA',      'CATAMARÁN', 14.5, 5.2, 1.8),
     ('MAR ABIERTO',      'VELERO',    12.0, 4.1, 1.5),
     ('OCEANO AZUL',      'YATE',      23.0, 7.0, 2.5),
-    ('VELA BLANCA',      'VELERO',    8.0,  3.1, 1.0),
+    ('VELA BLANCA',      'LANCHA',    6.0,  2.2, 0.7),
     ('RAYO DE SOL',      'CATAMARÁN', 15.5, 5.3, 1.9),
     ('NOCHE ESTRELLADA', 'YATE',      27.0, 7.8, 2.8),
     ('DELFIN AZUL',      'VELERO',    10.0, 3.7, 1.3),
-    ('CAPITAN MORGAN',   'YATE',      18.5, 5.8, 2.1),
+    ('CAPITAN MORGAN',   'MOTONAVE',  40.0, 9.0, 3.5),
     ('CALYPSO',          'CATAMARÁN', 13.0, 4.6, 1.7),
     ('POSEIDON',         'YATE',      26.0, 7.5, 2.7),
-    ('TRITÓN',           'VELERO',    11.5, 4.2, 1.5),
-    ('NEPTUNO',          'CATAMARÁN', 14.0, 5.0, 1.8),
+    ('TRITON',           'VELERO',    11.5, 4.2, 1.5),
+    ('NEPTUNO',          'LANCHA',    7.5,  2.6, 0.8),
     ('SIRENA',           'VELERO',    9.5,  3.5, 1.2),
     ('ATLAS',            'YATE',      22.5, 6.7, 2.4),
-    ('CRONOS',           'VELERO',    10.5, 3.9, 1.4),
+    ('CRONOS',           'MOTONAVE',  38.0, 8.8, 3.4),
     ('ZEUS',             'YATE',      28.0, 8.0, 3.0),
     ('HERMES',           'CATAMARÁN', 12.0, 4.3, 1.6),
     ('APOLO',            'VELERO',    8.5,  3.2, 1.1),
-    ('ARES',             'YATE',      19.5, 6.0, 2.2),
+    ('ARES',             'LANCHA',    6.5,  2.3, 0.7),
     ('ARTEMISA',         'VELERO',    11.0, 4.0, 1.4),
     ('AFRODITA',         'CATAMARÁN', 15.0, 5.4, 1.9),
 ]
@@ -150,14 +148,16 @@ COMENTARIOS = [
     'EMBARCACION CON MASCOTA A BORDO',
     'REQUIERE CONEXION DE AGUA POTABLE',
     'TRIPULACION DE 4 PERSONAS',
+    'SOLICITA SERVICIO DE COMBUSTIBLE',
+    'REQUIERE ASISTENCIA CON TRAMITES MIGRATORIOS',
 ]
 
 def fecha_rand(inicio, fin):
-    return inicio + timedelta(days=random.randint(0, (fin - inicio).days))
+    return inicio + timedelta(days=random.randint(0, (fin-inicio).days))
 
 def dt_rand(fecha):
     dt = datetime.combine(fecha, datetime.min.time()).replace(
-        hour=random.randint(8, 18), minute=random.randint(0, 59))
+        hour=random.randint(8,18), minute=random.randint(0,59))
     return timezone.make_aware(dt)
 
 def crear_historial(sol, estados, fecha_base):
@@ -172,23 +172,52 @@ def crear_historial(sol, estados, fecha_base):
         SolicitudHistorial.objects.filter(pk=h.pk).update(fecha_cambio=dt_rand(fecha))
         ant = estado
 
-# Cargar objetos
-admins    = {pk: Administrador.objects.get(pk=pk) for pk in [2,4,5,6,7]}
+# Cargar admins por username
+admins_qs = Administrador.objects.select_related('user').filter(
+    user__username__in=['SANTIAGO','SOFIA','REGINA','EIMY'])
+admins    = {a.pk: a for a in admins_qs}
+admin_pks = list(admins.keys())
+
+if not admin_pks:
+    print('ERROR: No se encontraron admins.')
+    exit()
+print(f'Admins: {[admins[pk].user.username for pk in admin_pks]}')
+
 tipos_map = {t.tipo_barco: t for t in TipoBarco.objects.all()}
 muelles   = {m.nombre: m for m in Muelle.objects.all()}
-
 for nombre in ['VELERO','CATAMARÁN','YATE','LANCHA','MOTONAVE']:
     if nombre not in tipos_map:
         t, _ = TipoBarco.objects.get_or_create(tipo_barco=nombre)
         tipos_map[nombre] = t
 
-# Distribución: 70% COMPLETADA, 15% APROBADA, 10% RECHAZADA, 5% otros
+# Temporada alta Pacífico mexicano: ene > feb > mar > abr > may (bajando)
+# Enero: 140, Febrero: 130, Marzo: 120, Abril: 100, Mayo 1-14: 70 = 560
+meses_config = [
+    (date(2026,1,1),  date(2026,1,31),  140),
+    (date(2026,2,1),  date(2026,2,28),  130),
+    (date(2026,3,1),  date(2026,3,31),  120),
+    (date(2026,4,1),  date(2026,4,30),  100),
+    (date(2026,5,1),  date(2026,5,14),   70),
+]
+
+fechas_pool = []
+for inicio, fin, cantidad in meses_config:
+    for _ in range(cantidad):
+        fechas_pool.append(fecha_rand(inicio, fin))
+random.shuffle(fechas_pool)
+
+TOTAL = len(fechas_pool)
+print(f'Total a crear: {TOTAL}')
+
+# Estados con lógica de temporada:
+# Temporada alta (ene-feb) más aprobadas/completadas, menos rechazos
+# Temporada baja (abr-may) más rechazos y pendientes
 estados_pool = (
-    ['COMPLETADA'] * 420 +
-    ['APROBADA']   * 90  +
-    ['RECHAZADA']  * 60  +
-    ['EN_ESPERA']  * 18  +
-    ['PENDIENTE']  * 12
+    ['COMPLETADA'] * 392 +  # 70%
+    ['APROBADA']   * 84  +  # 15%
+    ['RECHAZADA']  * 56  +  # 10%
+    ['EN_ESPERA']  * 17  +  # 3%
+    ['PENDIENTE']  * 11     # 2%
 )
 random.shuffle(estados_pool)
 
@@ -207,21 +236,21 @@ pesos_muelles = ['B']*9 + ['C']*9 + ['D']*9 + ['G']*9 + ['E']*6 + ['F']*5 + ['A'
 
 creadas = 0
 for i in range(TOTAL):
-    cd  = CLIENTES_DATA[i % len(CLIENTES_DATA)]
+    cd = CLIENTES_DATA[i % len(CLIENTES_DATA)]
     cliente, _ = Cliente.objects.get_or_create(
         email=cd[2], defaults={'fullname': cd[0], 'telefono': cd[1]})
 
-    bd  = BARCOS_DATA[i % len(BARCOS_DATA)]
+    bd   = BARCOS_DATA[i % len(BARCOS_DATA)]
     tipo = tipos_map.get(bd[1], list(tipos_map.values())[0])
     emb, _ = Embarcacion.objects.get_or_create(
         cliente=cliente, nombre_bote=bd[0],
         defaults={'tipo_barco': tipo, 'eslora': bd[2], 'manga': bd[3], 'calado': bd[4]})
 
     estado_final = estados_pool[i]
-    fecha_sol = fecha_rand(FECHA_INICIO, FECHA_FIN - timedelta(days=12))
-    duracion  = random.randint(3, 28)
-    fecha_ll  = fecha_sol + timedelta(days=random.randint(2, 8))
-    fecha_sa  = fecha_ll  + timedelta(days=duracion)
+    fecha_sol    = fechas_pool[i]
+    duracion     = random.randint(3, 28)
+    fecha_ll     = fecha_sol + timedelta(days=random.randint(2, 8))
+    fecha_sa     = fecha_ll  + timedelta(days=duracion)
 
     sol = Solicitud(
         embarcacion=emb,
@@ -253,7 +282,6 @@ for i in range(TOTAL):
         nombre_m = random.choice(pesos_muelles)
         esp_pks  = list(ESPACIOS[nombre_m])
         random.shuffle(esp_pks)
-
         esp_pk = next((pk for pk in esp_pks if espacio_libre(pk, fecha_ll, fecha_sa)), None)
         if esp_pk is None:
             nombre_m = 'F'
@@ -262,25 +290,23 @@ for i in range(TOTAL):
         reservar(esp_pk, fecha_ll, fecha_sa)
         esp_obj    = Espacio.objects.get(pk=esp_pk)
         muelle_obj = muelles[nombre_m]
-        admin1     = admins[random.choice([5, 6, 7])]
+        admin1     = admins[random.choice(admin_pks)]
 
         asig = Asignacion.objects.create(
             solicitud=sol, muelle=muelle_obj, administrador=admin1,
             fecha_inicio=fecha_ll, fecha_fin=fecha_sa, activa=True)
         asig.espacios.set([esp_obj])
 
-        # reasignación ~25%
         if random.random() < 0.25:
             asig.activa = False
             asig.save()
-
             nombre_m2 = random.choice(['B','C','D','G','E','F'])
             esp_pks2  = list(ESPACIOS[nombre_m2])
             random.shuffle(esp_pks2)
-            esp2_pk = esp_pks2[0]
+            esp2_pk   = esp_pks2[0]
             reservar(esp2_pk, fecha_ll, fecha_sa)
-
-            admin2 = admins[random.choice([pk for pk in [5,6,7] if admins[pk] != admin1])]
+            otros = [pk for pk in admin_pks if admins[pk] != admin1]
+            admin2 = admins[random.choice(otros if otros else admin_pks)]
             asig2  = Asignacion.objects.create(
                 solicitud=sol, muelle=muelles[nombre_m2], administrador=admin2,
                 fecha_inicio=fecha_ll, fecha_fin=fecha_sa, activa=True)
@@ -291,3 +317,4 @@ for i in range(TOTAL):
         print(f'  {creadas}/{TOTAL} completadas...')
 
 print(f'\nListo — {creadas} solicitudes creadas.')
+print(f'Distribución: Ene:140 Feb:130 Mar:120 Abr:100 May:70')

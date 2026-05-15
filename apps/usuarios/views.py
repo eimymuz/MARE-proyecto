@@ -79,6 +79,7 @@ def usuario_crear(request):
             first_name=first_name, last_name=last_name, email=email
         )
         user.is_staff = rol == 'gerente'
+        user.is_superuser = rol == 'gerente'
         user.save()
         Administrador.objects.create(user=user, rol=rol)
         messages.success(request, f'Usuario {first_name} {last_name} creado correctamente.')
@@ -105,6 +106,7 @@ def usuario_editar(request, pk):
             admin.user.set_password(nueva_pass)
             
         admin.user.is_staff = admin.rol == 'gerente'
+        admin.user.is_superuser = admin.rol == 'gerente'
         admin.user.save()
         admin.save()
         messages.success(request, 'Usuario actualizado correctamente.')
