@@ -341,15 +341,21 @@ async function enviarSolicitud(){
       document.getElementById('popup-body').innerHTML=`
         <div class="success-box">
           <div class="success-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#1a7a4a" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
           </div>
           <h3>${lang==='es'?'¡Solicitud enviada!':'Request sent!'}</h3>
           <p>${lang==='es'?'Hemos recibido su solicitud. Le contactaremos al correo':'We received your request. We will contact you at'} <strong>${json.email}</strong></p>
           <div class="success-num">#${json.solicitud_id}</div>
           <p style="font-size:11px;color:var(--text-light)">${lang==='es'?'Guarde este número de referencia':'Save this reference number'}</p>
         </div>`;
-      document.getElementById('popup-footer').innerHTML=`
-        <button class="btn-submit" onclick="cerrarPopup()" style="background:var(--success)">${lang==='es'?'Cerrar':'Close'}</button>`;
+        document.getElementById('popup-footer').innerHTML=`
+          <button class="btn-submit" onclick="cerrarPopup()" 
+            style="width:100%;padding:.65rem;background:#1a7a4a;color:#fff;border:none;
+                  border-radius:8px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer">
+            ${lang==='es'?'Cerrar':'Close'}
+          </button>`;
     } else {
       errEl.textContent=json.error; errEl.style.display='block';
       btn.disabled=false; btn.textContent=lang==='es'?'Enviar solicitud':'Submit request';

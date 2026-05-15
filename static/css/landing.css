@@ -336,6 +336,14 @@ footer a:hover{color:var(--gold)}
 .reveal.delay-3{transition-delay:.3s}
 .reveal.delay-4{transition-delay:.4s}
 
+/* Pop up */
+.success-box{text-align:center;padding:2rem 1rem}
+.success-icon{width:56px;height:56px;background:#e6f4ec;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;color:#1a7a4a}
+.success-icon svg{width:28px;height:28px;stroke:currentColor}
+.success-box h3{font-size:17px;font-weight:600;color:#1a2a3a;margin-bottom:.5rem;font-family:'Inter',sans-serif}
+.success-box p{font-size:13px;color:#4a6080;line-height:1.6;font-family:'Inter',sans-serif}
+.success-num{font-size:22px;font-weight:600;color:#534781;margin:.75rem 0;background:#f6f1e3;padding:.5rem 1rem;border-radius:8px;display:inline-block;font-family:'DM Mono',monospace}
+
 /* Responsive */
 @media(max-width:1024px){.about-grid,.contact-grid,.docs-grid{grid-template-columns:1fr;gap:48px}.amen-grid{grid-template-columns:repeat(2,1fr)}.foot-grid{grid-template-columns:1fr 1fr;gap:32px}.gal-grid{grid-auto-rows:90px;gap:8px}}
 @media(max-width:860px){.calc-body{grid-template-columns:1fr}.calc-controls{border-right:none;border-bottom:1px solid rgba(255,255,255,.08)}.calc-head{flex-direction:column;align-items:flex-start;gap:14px}.ratesheet-body{grid-template-columns:1fr;padding:24px 0}.ratesheet-divider{display:none}.ratesheet-col{padding:24px 28px;border-bottom:1px dashed var(--line-2)}.ratesheet-col:last-child{border-bottom:none}.ratesheet-head,.ratesheet-foot{padding-left:28px;padding-right:28px}.perks-band-grid{grid-template-columns:1fr 1fr}.rates-foot{grid-template-columns:1fr;gap:20px}}
