@@ -1,8 +1,11 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Reportes{% endblock %}
 
 {% block content %}
+
+<link rel="stylesheet" href="{% static 'css/reporte/reporte.css' %}">
 
 <div class="page-header"
      style="
@@ -300,90 +303,6 @@
 
 </div>
 {% endfor %}
-
-<style>
-  .mare-modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 37, 64, 0.45);
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-
-  .mare-modal {
-    width: 100%;
-    max-width: 760px;
-    max-height: 90vh;
-    overflow-y: auto;
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
-    border: 1px solid var(--border);
-  }
-
-  .mare-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: #fff;
-    z-index: 2;
-  }
-
-  .mare-modal-header h3 {
-    margin: 0;
-  }
-
-  .mare-modal-body {
-    padding: 18px;
-  }
-
-  .mare-close-btn {
-    border: none;
-    background: transparent;
-    font-size: 28px;
-    cursor: pointer;
-    color: var(--text-mid);
-    line-height: 1;
-  }
-
-  .mare-close-btn:hover {
-    color: var(--danger);
-  }
-
-  .pagination{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:16px;
-  margin-top:24px;
-}
-
-.pagination a{
-  padding:10px 18px;
-  border-radius:10px;
-  background:#eef4ff;
-  color:#2457a7;
-  text-decoration:none;
-  font-weight:600;
-  transition:.2s;
-}
-
-.pagination a:hover{
-  background:#dbe9ff;
-}
-
-.pagination span{
-  font-weight:600;
-  color:#24344d;
-}
-</style>
 
 <script>
   function abrirModal(id) {

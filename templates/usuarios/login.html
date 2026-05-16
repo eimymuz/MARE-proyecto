@@ -1,106 +1,13 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>Login | MARE</title>
 
-  <style>
+  <link rel="stylesheet" href="{% static 'css/usuarios/login.css' %}">
 
-    body{
-      margin:0;
-      font-family:Arial, sans-serif;
-      background:#f0f4f8;
-
-      display:flex;
-      justify-content:center;
-      align-items:center;
-
-      height:100vh;
-    }
-
-    .login-box{
-      width:380px;
-
-      background:white;
-
-      border-radius:18px;
-
-      padding:40px;
-
-      box-shadow:0 10px 30px rgba(0,0,0,.1);
-
-      border-top:6px solid #c9ab47;
-    }
-
-    h1{
-      margin:0 0 10px;
-      text-align:center;
-      color:#08213d;
-    }
-
-    p{
-      text-align:center;
-      color:#476180;
-      margin-bottom:28px;
-    }
-
-    label{
-      display:block;
-      margin-bottom:8px;
-      font-size:13px;
-      font-weight:bold;
-      color:#08213d;
-    }
-
-    input{
-      width:100%;
-      padding:12px;
-
-      border:1px solid #dbe3ec;
-
-      border-radius:10px;
-
-      margin-bottom:20px;
-
-      box-sizing:border-box;
-    }
-
-    button{
-      width:100%;
-      padding:14px;
-
-      border:none;
-
-      border-radius:12px;
-
-      background:#08213d;
-
-      color:white;
-
-      font-size:15px;
-      font-weight:bold;
-
-      cursor:pointer;
-    }
-
-    button:hover{
-      background:#12385f;
-    }
-
-    .error{
-      background:#ffe7e7;
-      color:#a32020;
-
-      padding:10px;
-
-      border-radius:10px;
-
-      margin-bottom:18px;
-
-      text-align:center;
-    }
-
-  </style>
 </head>
 
 <body>
