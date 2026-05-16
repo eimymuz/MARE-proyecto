@@ -7,7 +7,6 @@
   <title>Reporte Estadístico MARE</title>
 
   <link rel="stylesheet" href="{% static 'css/reporte/reporte_estadisticas.css' %}">
-
 </head>
 
 <body>
@@ -83,44 +82,61 @@
   <div class="layout">
 
     <div class="col col-left">
+      
+      <!-- GRÁFICA DONA: DISTRIBUCIÓN POR ESTADO -->
+      <div class="panel panel-estados">
 
-      <div class="panel">
         <div class="panel-title">Distribución por estado</div>
+
         <div class="panel-desc">
-          Representación porcentual del avance de solicitudes.
+          Comportamiento general del flujo de solicitudes.
         </div>
 
-        <div class="bar-row">
-          <div class="bar-head">
-            <div class="bar-name">Completadas</div>
-            <div class="bar-value">{{ completadas }} · {{ porcentaje_completadas }}%</div>
-          </div>
-          <div class="bar-track">
-            <div class="bar-fill green" style="width: {{ porcentaje_completadas }}%;"></div>
-          </div>
+        <div class="chart-container donut-chart">
+          <img
+            src="data:image/png;base64,{{ grafica_estados }}"
+            alt="Gráfica de distribución por estado">
         </div>
 
-        <div class="bar-row">
-          <div class="bar-head">
-            <div class="bar-name">En seguimiento</div>
-            <div class="bar-value">{{ en_proceso }} · {{ porcentaje_proceso }}%</div>
+        <div class="estado-list-pdf">
+
+          <div class="estado-item-pdf">
+            <span class="dot-pdf verde-pdf"></span>
+            <span>Completadas</span>
+            <strong>{{ completadas }}</strong>
           </div>
-          <div class="bar-track">
-            <div class="bar-fill yellow" style="width: {{ porcentaje_proceso }}%;"></div>
+
+          <div class="estado-item-pdf">
+            <span class="dot-pdf amarillo-pdf"></span>
+            <span>En seguimiento</span>
+            <strong>{{ en_proceso }}</strong>
           </div>
+
+          <div class="estado-item-pdf">
+            <span class="dot-pdf rojo-pdf"></span>
+            <span>Rechazadas</span>
+            <strong>{{ rechazadas }}</strong>
+          </div>
+
         </div>
 
-        <div class="bar-row">
-          <div class="bar-head">
-            <div class="bar-name">Rechazadas</div>
-            <div class="bar-value">{{ rechazadas }} · {{ porcentaje_rechazadas }}%</div>
-          </div>
-          <div class="bar-track">
-            <div class="bar-fill red" style="width: {{ porcentaje_rechazadas }}%;"></div>
-          </div>
+      </div>
+
+      <!-- GRÁFICA DE BARRAS: SOLICITUDES POR MES -->
+      <div class="panel">
+        <div class="panel-title">Solicitudes por mes</div>
+        <div class="panel-desc">
+          Evolución mensual de solicitudes registradas.
+        </div>
+
+        <div class="chart-container">
+          <img
+            src="data:image/png;base64,{{ grafica_mensual }}"
+            alt="Gráfica de solicitudes por mes">
         </div>
       </div>
 
+      <!-- BARRAS POR TIPO DE EMBARCACIÓN -->
       <div class="panel">
         <div class="panel-title">Estancias por tipo de embarcación</div>
         <div class="panel-desc">
@@ -133,6 +149,7 @@
             <div class="bar-name">{{ item.tipo }}</div>
             <div class="bar-value">{{ item.total }} · {{ item.porcentaje }}%</div>
           </div>
+
           <div class="bar-track">
             <div class="bar-fill blue" style="width: {{ item.porcentaje }}%;"></div>
           </div>
@@ -166,12 +183,17 @@
             {% for item in top_embarcaciones %}
             <tr>
               <td>{{ forloop.counter }}</td>
-              <td>{{ item.embarcacion__nombre_bote|default:"Sin nombre" }}</td>
+
+              <td>
+                {{ item.embarcacion__nombre_bote|default:"Sin nombre" }}
+              </td>
+
               <td>
                 <span class="badge badge-blue">
                   {{ item.embarcacion__tipo_barco__tipo_barco|default:"Sin tipo" }}
                 </span>
               </td>
+
               <td>{{ item.total }}</td>
             </tr>
             {% empty %}

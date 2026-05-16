@@ -1,3 +1,11 @@
+import io
+import base64
+import matplotlib
+
+matplotlib.use('Agg')
+
+import matplotlib.pyplot as plt
+
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.template.loader import render_to_string
@@ -7,6 +15,186 @@ from django.core.paginator import Paginator
 from weasyprint import HTML
 
 from apps.solicitudes.models import Solicitud
+
+
+# ==========================================
+# GRÁFICA: SOLICITUDES POR MES
+# ==========================================
+
+def generar_grafica_mensual(solicitudes):
+    solicitudes_mes = (
+        solicitudes
+        .values('fecha_solicitud__month')
+        .annotate(total=Count('id'))
+        .order_by('fecha_solicitud__month')
+    )
+
+    meses = [
+        'Ene', 'Feb', 'Mar', 'Abr',
+        'May', 'Jun', 'Jul', 'Ago',
+        'Sep', 'Oct', 'Nov', 'Dic'
+    ]
+
+    conteos = [0] * 12
+
+    for item in solicitudes_mes:
+        mes = item['fecha_solicitud__month']
+
+        if mes:
+            conteos[mes - 1] = item['total']
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+
+    barras = ax.bar(
+        meses,
+        conteos,
+        color='#08213d',
+        width=0.55
+    )
+
+    fig.patch.set_facecolor('#ffffff')
+    ax.set_facecolor('#ffffff')
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    ax.spines['left'].set_color('#d1d5db')
+    ax.spines['bottom'].set_color('#d1d5db')
+
+    ax.tick_params(colors='#475569')
+    ax.set_ylabel('Solicitudes', color='#475569')
+
+    maximo = max(conteos) if conteos else 0
+    ax.set_ylim(0, maximo + 1 if maximo > 0 else 1)
+
+    for barra in barras:
+        altura = barra.get_height()
+
+        ax.text(
+            barra.get_x() + barra.get_width() / 2,
+            altura + 0.05,
+            str(int(altura)),
+            ha='center',
+            va='bottom',
+            fontsize=9,
+            color='#08213d'
+        )
+
+    plt.tight_layout()
+
+    buffer = io.BytesIO()
+
+    plt.savefig(
+        buffer,
+        format='png',
+        dpi=200,
+        bbox_inches='tight'
+    )
+
+    buffer.seek(0)
+
+    grafica = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+    buffer.close()
+    plt.close(fig)
+
+    return grafica
+
+
+# ==========================================
+# GRÁFICA: DISTRIBUCIÓN POR ESTADO
+# ==========================================
+
+def generar_grafica_estados(completadas, en_proceso, rechazadas):
+    valores = [
+        completadas,
+        en_proceso,
+        rechazadas
+    ]
+
+    colores = [
+        '#22c55e',
+        '#eab308',
+        '#ef4444'
+    ]
+
+    total = sum(valores)
+
+    if total == 0:
+        valores = [1]
+        colores = ['#cbd5e1']
+
+    fig, ax = plt.subplots(figsize=(4.2, 4.2))
+
+    ax.pie(
+        valores,
+        labels=None,
+        colors=colores,
+        startangle=90,
+        counterclock=False,
+        wedgeprops={
+            'width': 0.36,
+            'edgecolor': 'white',
+            'linewidth': 3
+        }
+    )
+
+    if total > 0:
+        ax.text(
+            0,
+            0.08,
+            str(total),
+            ha='center',
+            va='center',
+            fontsize=24,
+            fontweight='bold',
+            color='#08213d'
+        )
+
+        ax.text(
+            0,
+            -0.15,
+            'Total',
+            ha='center',
+            va='center',
+            fontsize=11,
+            fontweight='bold',
+            color='#475569'
+        )
+    else:
+        ax.text(
+            0,
+            -1.15,
+            'Sin datos',
+            ha='center',
+            va='center',
+            fontsize=10,
+            color='#475569'
+        )
+
+    ax.set(aspect='equal')
+    ax.axis('off')
+
+    plt.tight_layout(pad=0.2)
+
+    buffer = io.BytesIO()
+
+    plt.savefig(
+        buffer,
+        format='png',
+        dpi=200,
+        bbox_inches='tight',
+        transparent=False
+    )
+
+    buffer.seek(0)
+
+    grafica = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+    buffer.close()
+    plt.close(fig)
+
+    return grafica
 
 
 def calcular_fecha_resolucion(solicitud):
@@ -115,7 +303,7 @@ def obtener_solicitudes_filtradas(request):
 def reporte_solicitudes(request):
     solicitudes, estado, mes, anio = obtener_solicitudes_filtradas(request)
 
-    paginator = Paginator(solicitudes, 15)  # 15 registros por página
+    paginator = Paginator(solicitudes, 15)
 
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -141,6 +329,7 @@ def reporte_solicitudes(request):
     }
 
     return render(request, 'reporte/reporte.html', context)
+
 
 def reporte_solicitudes_pdf(request):
     solicitudes, estado, mes, anio = obtener_solicitudes_filtradas(request)
@@ -217,6 +406,7 @@ def estadisticas_solicitudes(request):
 
     for item in solicitudes_mes:
         mes_num = item['fecha_solicitud__month']
+
         if mes_num:
             conteo_por_mes[mes_num] = item['total']
 
@@ -228,6 +418,7 @@ def estadisticas_solicitudes(request):
         total_mes = conteo_por_mes[numero_mes]
 
         porcentaje = 0
+
         if maximo_mes > 0:
             porcentaje = round((total_mes / maximo_mes) * 100, 2)
 
@@ -380,12 +571,15 @@ def reporte_estadisticas_pdf(request):
         estado__in=['APROBADA', 'COMPLETADA']
     ).count()
 
-    rechazadas = solicitudes.filter(estado='RECHAZADA').count()
+    aprobadas_directas = solicitudes.filter(estado='APROBADA').count()
     completadas = solicitudes.filter(estado='COMPLETADA').count()
+    rechazadas = solicitudes.filter(estado='RECHAZADA').count()
     pendientes = solicitudes.filter(estado='PENDIENTE').count()
     en_espera = solicitudes.filter(estado='EN_ESPERA').count()
 
-    en_proceso = pendientes + en_espera
+    aprobadas = aprobadas_directas + completadas
+
+    en_proceso = pendientes + en_espera + aprobadas_directas
 
     if total_estadisticas > 0:
         porcentaje_completadas = round((completadas / total_estadisticas) * 100, 2)
@@ -431,6 +625,14 @@ def reporte_estadisticas_pdf(request):
             'porcentaje': porcentaje,
         })
 
+    grafica_mensual = generar_grafica_mensual(solicitudes)
+
+    grafica_estados = generar_grafica_estados(
+        completadas,
+        en_proceso,
+        rechazadas
+    )
+
     meses_dict = {
         '1': 'Enero',
         '2': 'Febrero',
@@ -454,12 +656,18 @@ def reporte_estadisticas_pdf(request):
         'pendientes': pendientes,
         'en_espera': en_espera,
         'en_proceso': en_proceso,
+
         'porcentaje_completadas': porcentaje_completadas,
         'porcentaje_proceso': porcentaje_proceso,
         'porcentaje_rechazadas': porcentaje_rechazadas,
         'tasa_aprobacion': tasa_aprobacion,
+
         'top_embarcaciones': top_embarcaciones,
         'estancias_tipo_data': estancias_tipo_data,
+
+        'grafica_mensual': grafica_mensual,
+        'grafica_estados': grafica_estados,
+
         'mes': meses_dict.get(mes, 'Todos'),
         'anio': anio if anio else 'Todos',
         'fecha_descarga': timezone.localtime(),

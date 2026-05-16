@@ -1,314 +1,439 @@
 @page {
-      size: letter landscape;
-      margin: 1.1cm;
-    }
+  size: letter landscape;
+  margin: 1.1cm;
+}
 
-    body {
-      font-family: Arial, sans-serif;
-      color: #0f172a;
-      font-size: 11px;
-      background: white;
-    }
+body {
+  font-family: Arial, sans-serif;
+  color: #0f172a;
+  font-size: 11px;
+  background: white;
+}
 
-    .header {
-      display: table;
-      width: 100%;
-      border-bottom: 4px solid #c9ab47;
-      padding-bottom: 12px;
-      margin-bottom: 14px;
-    }
+/* =========================================
+   HEADER
+========================================= */
 
-    .header-left,
-    .header-right {
-      display: table-cell;
-      vertical-align: top;
-      width: 50%;
-    }
+.header {
+  display: table;
+  width: 100%;
+  border-bottom: 4px solid #c9ab47;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
 
-    .header-right {
-      text-align: right;
-    }
+.header-left,
+.header-right {
+  display: table-cell;
+  vertical-align: top;
+  width: 50%;
+}
 
-    .marca {
-      font-size: 24px;
-      font-weight: bold;
-      color: #08213d;
-      letter-spacing: 1px;
-    }
+.header-right {
+  text-align: right;
+}
 
-    .submarca {
-      font-size: 10px;
-      color: #475569;
-      margin-top: 3px;
-    }
+.marca {
+  font-size: 24px;
+  font-weight: bold;
+  color: #08213d;
+  letter-spacing: 1px;
+}
 
-    .titulo {
-      font-size: 25px;
-      font-weight: bold;
-      color: #08213d;
-      margin: 0;
-    }
+.submarca {
+  font-size: 10px;
+  color: #475569;
+  margin-top: 3px;
+}
 
-    .subtitulo {
-      color: #64748b;
-      font-size: 11px;
-      margin-top: 4px;
-    }
+.titulo {
+  font-size: 25px;
+  font-weight: bold;
+  color: #08213d;
+  margin: 0;
+}
 
-    .info-box {
-      background: #f8fafc;
-      border: 1px solid #dbe3ec;
-      border-left: 5px solid #08213d;
-      padding: 10px 12px;
-      margin-bottom: 14px;
-    }
+.subtitulo {
+  color: #64748b;
+  font-size: 11px;
+  margin-top: 4px;
+}
 
-    .info-row {
-      display: table;
-      width: 100%;
-    }
+/* =========================================
+   INFO SUPERIOR
+========================================= */
 
-    .info-item {
-      display: table-cell;
-      width: 25%;
-    }
+.info-box {
+  background: #f8fafc;
+  border: 1px solid #dbe3ec;
+  border-left: 5px solid #08213d;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
 
-    .info-label {
-      color: #64748b;
-      font-size: 10px;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
+.info-row {
+  display: table;
+  width: 100%;
+}
 
-    .info-value {
-      color: #08213d;
-      font-weight: bold;
-      margin-top: 3px;
-    }
+.info-item {
+  display: table-cell;
+  width: 25%;
+}
 
-    .kpi-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 8px;
-      margin-bottom: 12px;
-    }
+.info-label {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
 
-    .kpi-table td {
-      background: #ffffff;
-      border: 1px solid #dbe3ec;
-      border-radius: 8px;
-      padding: 11px;
-      vertical-align: top;
-    }
+.info-value {
+  color: #08213d;
+  font-weight: bold;
+  margin-top: 3px;
+}
 
-    .kpi-total {
-      border-left: 5px solid #08213d !important;
-    }
+/* =========================================
+   KPIS
+========================================= */
 
-    .kpi-aprobadas {
-      border-left: 5px solid #16a34a !important;
-    }
+.kpi-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 8px;
+  margin-bottom: 12px;
+}
 
-    .kpi-rechazadas {
-      border-left: 5px solid #dc2626 !important;
-    }
+.kpi-table td {
+  background: #ffffff;
+  border: 1px solid #dbe3ec;
+  border-radius: 8px;
+  padding: 11px;
+  vertical-align: top;
+}
 
-    .kpi-tasa {
-      border-left: 5px solid #c9ab47 !important;
-    }
+.kpi-total {
+  border-left: 5px solid #08213d !important;
+}
 
-    .kpi-label {
-      color: #64748b;
-      font-size: 10px;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
+.kpi-aprobadas {
+  border-left: 5px solid #16a34a !important;
+}
 
-    .kpi-value {
-      color: #08213d;
-      font-size: 27px;
-      font-weight: bold;
-      margin-top: 5px;
-    }
+.kpi-rechazadas {
+  border-left: 5px solid #dc2626 !important;
+}
 
-    .kpi-note {
-      color: #64748b;
-      font-size: 9px;
-      margin-top: 3px;
-    }
+.kpi-tasa {
+  border-left: 5px solid #c9ab47 !important;
+}
 
-    .layout {
-      display: table;
-      width: 100%;
-      table-layout: fixed;
-    }
+.kpi-label {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
 
-    .col {
-      display: table-cell;
-      vertical-align: top;
-      width: 50%;
-    }
+.kpi-value {
+  color: #08213d;
+  font-size: 27px;
+  font-weight: bold;
+  margin-top: 5px;
+}
 
-    .col-left {
-      padding-right: 8px;
-    }
+.kpi-note {
+  color: #64748b;
+  font-size: 9px;
+  margin-top: 3px;
+}
 
-    .col-right {
-      padding-left: 8px;
-    }
+/* =========================================
+   LAYOUT
+========================================= */
 
-    .panel {
-      border: 1px solid #dbe3ec;
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 12px;
-      page-break-inside: avoid;
-    }
+.layout {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
 
-    .panel-title {
-      font-size: 15px;
-      font-weight: bold;
-      color: #08213d;
-      margin-bottom: 3px;
-    }
+.col {
+  display: table-cell;
+  vertical-align: top;
+  width: 50%;
+}
 
-    .panel-desc {
-      font-size: 10px;
-      color: #64748b;
-      margin-bottom: 12px;
-    }
+.col-left {
+  padding-right: 8px;
+}
 
-    .bar-row {
-      margin-bottom: 11px;
-    }
+.col-right {
+  padding-left: 8px;
+}
 
-    .bar-head {
-      display: table;
-      width: 100%;
-      margin-bottom: 5px;
-    }
+/* =========================================
+   PANELES
+========================================= */
 
-    .bar-name {
-      display: table-cell;
-      color: #334155;
-      font-weight: bold;
-    }
+.panel {
+  border: 1px solid #dbe3ec;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  page-break-inside: avoid;
+  background: white;
+}
 
-    .bar-value {
-      display: table-cell;
-      text-align: right;
-      color: #08213d;
-      font-weight: bold;
-    }
+.panel-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #08213d;
+  margin-bottom: 3px;
+}
 
-    .bar-track {
-      height: 11px;
-      background: #eef3f8;
-      border-radius: 50px;
-      overflow: hidden;
-    }
+.panel-desc {
+  font-size: 10px;
+  color: #64748b;
+  margin-bottom: 12px;
+}
 
-    .bar-fill {
-      height: 11px;
-      border-radius: 50px;
-    }
+/* =========================================
+   GRÁFICAS
+========================================= */
 
-    .green {
-      background: #16a34a;
-    }
+.chart-container {
+  width: 100%;
+  margin-top: 12px;
+  text-align: center;
+}
 
-    .yellow {
-      background: #ca8a04;
-    }
+.chart-container img {
+  width: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  margin: auto;
+}
 
-    .red {
-      background: #dc2626;
-    }
+.donut-chart img {
+  max-width: 310px;
+}
 
-    .blue {
-      background: #08213d;
-    }
+/* =========================================
+   BARRAS
+========================================= */
 
-    .gold {
-      background: #c9ab47;
-    }
+.bar-row {
+  margin-bottom: 11px;
+}
 
-    table.data-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 10.5px;
-    }
+.bar-head {
+  display: table;
+  width: 100%;
+  margin-bottom: 5px;
+}
 
-    .data-table th {
-      background: #08213d;
-      color: white;
-      padding: 7px;
-      text-align: left;
-      font-size: 10px;
-    }
+.bar-name {
+  display: table-cell;
+  color: #334155;
+  font-weight: bold;
+}
 
-    .data-table td {
-      border: 1px solid #dbe3ec;
-      padding: 7px;
-    }
+.bar-value {
+  display: table-cell;
+  text-align: right;
+  color: #08213d;
+  font-weight: bold;
+}
 
-    .data-table tr:nth-child(even) td {
-      background: #f8fafc;
-    }
+.bar-track {
+  height: 11px;
+  background: #eef3f8;
+  border-radius: 50px;
+  overflow: hidden;
+}
 
-    .rank {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: #eef3f8;
-      color: #08213d;
-      font-weight: bold;
-      text-align: center;
-      line-height: 24px;
-    }
+.bar-fill {
+  height: 11px;
+  border-radius: 50px;
+}
 
-    .summary-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
+.green {
+  background: #16a34a;
+}
 
-    .summary-table td {
-      border-bottom: 1px solid #dbe3ec;
-      padding: 8px 4px;
-    }
+.yellow {
+  background: #ca8a04;
+}
 
-    .summary-table td:first-child {
-      color: #64748b;
-      font-weight: bold;
-    }
+.red {
+  background: #dc2626;
+}
 
-    .summary-table td:last-child {
-      text-align: right;
-      color: #08213d;
-      font-weight: bold;
-    }
+.blue {
+  background: #08213d;
+}
 
-    .badge {
-      display: inline-block;
-      padding: 3px 7px;
-      border-radius: 12px;
-      font-size: 9px;
-      font-weight: bold;
-    }
+.gold {
+  background: #c9ab47;
+}
 
-    .badge-blue {
-      background: #e0f2fe;
-      color: #075985;
-    }
+/* =========================================
+   TABLAS
+========================================= */
 
-    .footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      border-top: 1px solid #dbe3ec;
-      padding-top: 6px;
-      text-align: center;
-      color: #94a3b8;
-      font-size: 9px;
-    }
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10.5px;
+}
+
+.data-table th {
+  background: #08213d;
+  color: white;
+  padding: 7px;
+  text-align: left;
+  font-size: 10px;
+}
+
+.data-table td {
+  border: 1px solid #dbe3ec;
+  padding: 7px;
+}
+
+.data-table tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+/* =========================================
+   RESUMEN
+========================================= */
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.summary-table td {
+  border-bottom: 1px solid #dbe3ec;
+  padding: 8px 4px;
+}
+
+.summary-table td:first-child {
+  color: #64748b;
+  font-weight: bold;
+}
+
+.summary-table td:last-child {
+  text-align: right;
+  color: #08213d;
+  font-weight: bold;
+}
+
+/* =========================================
+   BADGES
+========================================= */
+
+.badge {
+  display: inline-block;
+  padding: 3px 7px;
+  border-radius: 12px;
+  font-size: 9px;
+  font-weight: bold;
+}
+
+.badge-blue {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+/* =========================================
+   FOOTER
+========================================= */
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #dbe3ec;
+  padding-top: 6px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 9px;
+}
+
+/* =========================================
+   ESTADOS PDF
+========================================= */
+
+.estado-grid-pdf {
+  display: block;
+  width: 100%;
+}
+
+.donut-chart {
+  width: 100%;
+  text-align: center;
+}
+
+.donut-chart img {
+  max-width: 165px;
+  display: block;
+  margin: 0 auto 8px auto;
+}
+
+.estado-list-pdf {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.estado-item-pdf {
+  display: table;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #dbe3ec;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 5px 8px;
+  margin-bottom: 6px;
+}
+
+.estado-item-pdf span,
+.estado-item-pdf strong {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.estado-item-pdf span:nth-child(2) {
+  color: #475569;
+  font-weight: bold;
+  padding-left: 6px;
+}
+
+.estado-item-pdf strong {
+  text-align: right;
+  color: #08213d;
+  font-weight: bold;
+}
+
+.dot-pdf {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block !important;
+}
+
+.verde-pdf {
+  background: #22c55e;
+}
+
+.amarillo-pdf {
+  background: #eab308;
+}
+
+.rojo-pdf {
+  background: #ef4444;
+}
