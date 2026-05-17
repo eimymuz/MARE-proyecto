@@ -36,9 +36,10 @@ class Solicitud(models.Model):
         # fecha_solicitud tiene auto_now_add — en objetos nuevos es None durante clean()
         # usamos today como referencia segura
         today = localdate()
-
-        if self.fecha_llegada and self.fecha_llegada < today:
-            raise ValidationError('La fecha de llegada no puede ser anterior a hoy.')
+            
+        if self.pk is None:
+            if self.fecha_llegada and self.fecha_llegada < today:
+                raise ValidationError('La fecha de llegada no puede ser anterior a hoy.')
         if self.fecha_llegada and self.fecha_salida and self.fecha_salida <= self.fecha_llegada:
             raise ValidationError('La fecha de salida debe ser posterior a la de llegada.')
 

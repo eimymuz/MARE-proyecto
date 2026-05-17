@@ -14,15 +14,6 @@
 </head>
 <body>
 
-<!-- SPLASH -->
-<div id="splash">
-  <div class="splash-mark">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <path d="M12 2L12 6M12 6L8 6M12 6L16 6M12 6L12 22M5 14a7 7 0 0 0 14 0M7 18L17 18"/>
-      <circle cx="12" cy="3.5" r="1" fill="currentColor" stroke="none"/>
-    </svg>
-  </div>
-</div>
 
 <!-- TOPBAR -->
 <div class="topbar">
@@ -550,7 +541,7 @@
 
         <div style="font-size:11px;font-weight:600;color:#4a6080;text-transform:uppercase;letter-spacing:.5px;margin:1rem 0 .6rem;padding-bottom:.4rem;border-bottom:2px solid #c9a84c">Estancia</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
-          <div><label>Llegada <span style="color:#c9a84c">*</span></label><input type="date" name="fecha_llegada" required></div>
+          <div><label>Llegada <span style="color:#c9a84c">*</span></label><input type="date" name="fecha_llegada" min="{{ today }}" required></div>
           <div><label>Salida <span style="color:#c9a84c">*</span></label><input type="date" name="fecha_salida" required></div>
         </div>
         <div style="display:flex;align-items:flex-start;gap:.6rem;padding:.65rem .75rem;background:#f6f1e3;border-radius:8px;border:1px solid #e8e2d1;margin-bottom:.75rem">

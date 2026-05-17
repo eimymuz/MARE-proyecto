@@ -188,10 +188,7 @@ document.querySelectorAll('.lang-btn').forEach(b=>{
   });
 });
 
-// ── Splash ────────────────────────────────────────────────
-window.addEventListener('load', ()=>{
-  setTimeout(()=>document.getElementById('splash').classList.add('gone'), 400);
-});
+
 
 // ── Nav scroll ────────────────────────────────────────────
 const nav = document.querySelector('nav.main');

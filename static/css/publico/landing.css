@@ -14,12 +14,7 @@ body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--paper);ove
 .eyebrow.dark{color:var(--navy)}
 h1,h2,h3,h4{font-family:'Cormorant Garamond',serif;font-weight:400;letter-spacing:-0.01em;color:var(--navy)}
 
-/* Splash */
-#splash{position:fixed;inset:0;background:var(--navy-deep);z-index:9999;display:flex;align-items:center;justify-content:center;transition:opacity .8s cubic-bezier(.4,0,.2,1),visibility .8s}
-#splash.gone{opacity:0;visibility:hidden;pointer-events:none}
-.splash-mark{width:80px;height:80px;border:1px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:pulse 1.4s ease-in-out infinite}
-.splash-mark svg{width:38px;height:38px;color:var(--gold)}
-@keyframes pulse{0%,100%{opacity:.4;transform:scale(.95)}50%{opacity:1;transform:scale(1.05)}}
+
 
 /* Topbar */
 .topbar{background:var(--navy-deep);color:rgba(255,255,255,.7);font-size:11px;letter-spacing:0.06em;padding:7px 0;position:relative;z-index:60}
