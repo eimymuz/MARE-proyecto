@@ -4,457 +4,93 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-
-<title>Reporte Estadístico</title>
-
+<title>Reporte de Solicitudes</title>
 <link rel="stylesheet" href="{% static 'css/reporte/reporte_pdf.css' %}">
-
-
 </head>
 
 <body>
 
-<!-- ======================================================
-     HEADER
-====================================================== -->
-
 <div class="header">
-
   <table class="header-table">
     <tr>
-
       <td>
         <div class="logo-title">MARE</div>
-
-        <div class="logo-sub">
-          Manejador Administrativo y Registro de Embarcaciones
-        </div>
+        <div class="logo-sub">Manejador Administrativo y Registro de Embarcaciones</div>
       </td>
-
       <td class="report-title">
-        <h1>Reporte Estadístico</h1>
-
-        <p>
-          Análisis ejecutivo de solicitudes y embarcaciones
-        </p>
+        <h1>Reporte de Solicitudes</h1>
+        <p>Listado de solicitudes filtradas por estado, mes y año</p>
       </td>
-
     </tr>
   </table>
-
 </div>
-
-<!-- ======================================================
-     FILTROS
-====================================================== -->
 
 <div class="filters">
-
   <table class="filters-grid">
     <tr>
-
       <td>
-        <div class="filter-label">
-          Tipo de reporte
-        </div>
-
+        <div class="filter-label">Estado</div>
         <div class="filter-value">
-          Estadísticas generales
+          {% if estado == 'aceptado' %}Aprobadas
+          {% elif estado == 'rechazado' %}Rechazadas
+          {% elif estado == 'completado' %}Completadas
+          {% else %}Aprobadas y Rechazadas
+          {% endif %}
         </div>
       </td>
-
       <td>
-        <div class="filter-label">
-          Mes
-        </div>
-
-        <div class="filter-value">
-          {{ mes|default:"Todos" }}
-        </div>
+        <div class="filter-label">Mes</div>
+        <div class="filter-value">{{ mes|default:"Todos" }}</div>
       </td>
-
       <td>
-        <div class="filter-label">
-          Año
-        </div>
-
-        <div class="filter-value">
-          {{ anio|default:"Todos" }}
-        </div>
+        <div class="filter-label">Año</div>
+        <div class="filter-value">{{ anio|default:"Todos" }}</div>
       </td>
-
       <td>
-        <div class="filter-label">
-          Fecha de descarga
-        </div>
-
-        <div class="filter-value">
-          {{ fecha_descarga|date:"d/m/Y" }}
-        </div>
+        <div class="filter-label">Fecha de descarga</div>
+        <div class="filter-value">{{ fecha_descarga|date:"d/m/Y" }}</div>
       </td>
-
     </tr>
   </table>
-
 </div>
 
-<!-- ======================================================
-     KPI
-====================================================== -->
-
-<table class="kpi-grid">
-  <tr>
-
-    <td width="25%">
-      <div class="kpi-card blue">
-        <div class="kpi-title">
-          Total solicitudes
-        </div>
-
-        <div class="kpi-number">
-          {{ total }}
-        </div>
-
-        <div class="kpi-desc">
-          Registros del período
-        </div>
-      </div>
-    </td>
-
-    <td width="25%">
-      <div class="kpi-card green">
-        <div class="kpi-title">
-          Aprobadas
-        </div>
-
-        <div class="kpi-number">
-          {{ aprobadas }}
-        </div>
-
-        <div class="kpi-desc">
-          Incluye completadas
-        </div>
-      </div>
-    </td>
-
-    <td width="25%">
-      <div class="kpi-card red">
-        <div class="kpi-title">
-          Rechazadas
-        </div>
-
-        <div class="kpi-number">
-          {{ rechazadas }}
-        </div>
-
-        <div class="kpi-desc">
-          Solicitudes no aceptadas
-        </div>
-      </div>
-    </td>
-
-    <td width="25%">
-      <div class="kpi-card gold">
-        <div class="kpi-title">
-          Tasa de aprobación
-        </div>
-
-        <div class="kpi-number">
-          {{ tasa_aprobacion }}%
-        </div>
-
-        <div class="kpi-desc">
-          Aprobadas sobre total
-        </div>
-      </div>
-    </td>
-
-  </tr>
-</table>
-
-<!-- ======================================================
-     GRID PRINCIPAL
-====================================================== -->
-
-<table class="main-grid">
-
-<tr>
-
-<!-- IZQUIERDA -->
-<td width="50%" style="vertical-align:top;">
-
-  <!-- DISTRIBUCIÓN -->
-
-  <div class="panel">
-
-    <div class="panel-title">
-      Distribución por estado
-    </div>
-
-    <div class="panel-sub">
-      Representación porcentual del avance de solicitudes.
-    </div>
-
-    <!-- COMPLETADAS -->
-
-    <div class="progress-item">
-
-      <table class="progress-head">
-        <tr>
-          <td>Completadas</td>
-          <td class="progress-right">
-            {{ porcentaje_completadas }}%
-          </td>
-        </tr>
-      </table>
-
-      <div class="progress-bg">
-        <div
-          class="progress-fill green-fill"
-          style="width:{{ porcentaje_completadas }}%;">
-        </div>
-      </div>
-
-    </div>
-
-    <!-- EN SEGUIMIENTO -->
-
-    <div class="progress-item">
-
-      <table class="progress-head">
-        <tr>
-          <td>En seguimiento</td>
-          <td class="progress-right">
-            {{ porcentaje_seguimiento }}%
-          </td>
-        </tr>
-      </table>
-
-      <div class="progress-bg">
-        <div
-          class="progress-fill blue-fill"
-          style="width:{{ porcentaje_seguimiento }}%;">
-        </div>
-      </div>
-
-    </div>
-
-    <!-- RECHAZADAS -->
-
-    <div class="progress-item">
-
-      <table class="progress-head">
-        <tr>
-          <td>Rechazadas</td>
-          <td class="progress-right">
-            {{ porcentaje_rechazadas }}%
-          </td>
-        </tr>
-      </table>
-
-      <div class="progress-bg">
-        <div
-          class="progress-fill red-fill"
-          style="width:{{ porcentaje_rechazadas }}%;">
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-
-  <br>
-
-  <!-- TIPOS -->
-
-  <div class="panel">
-
-    <div class="panel-title">
-      Estancias por tipo de embarcación
-    </div>
-
-    <div class="panel-sub">
-      Distribución de solicitudes agrupadas por tipo de embarcación.
-    </div>
-
-    <table class="table">
-
-      <thead>
-        <tr>
-          <th>Tipo</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-
-      <tbody>
-
-        {% for t in tipos_embarcacion %}
-
-        <tr>
-          <td>{{ t.tipo }}</td>
-          <td>{{ t.total }}</td>
-        </tr>
-
-        {% empty %}
-
-        <tr>
-          <td colspan="2">
-            No hay datos disponibles.
-          </td>
-        </tr>
-
-        {% endfor %}
-
-      </tbody>
-
-    </table>
-
-  </div>
-
-</td>
-
-<!-- DERECHA -->
-<td width="50%" style="vertical-align:top;">
-
-  <!-- TOP -->
-
-  <div class="panel">
-
-    <div class="panel-title">
-      Top embarcaciones
-    </div>
-
-    <div class="panel-sub">
-      Embarcaciones con mayor número de solicitudes registradas.
-    </div>
-
-    <table class="table">
-
-      <thead>
-        <tr>
-          <th>No.</th>
-          <th>Embarcación</th>
-          <th>Tipo</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-
-      <tbody>
-
-        {% for e in top_embarcaciones %}
-
-        <tr>
-          <td>{{ forloop.counter }}</td>
-          <td>{{ e.nombre }}</td>
-          <td>{{ e.tipo }}</td>
-          <td>{{ e.total }}</td>
-        </tr>
-
-        {% empty %}
-
-        <tr>
-          <td colspan="4">
-            No hay datos disponibles.
-          </td>
-        </tr>
-
-        {% endfor %}
-
-      </tbody>
-
-    </table>
-
-  </div>
-
-  <br>
-
-  <!-- RESUMEN -->
-
-  <div class="panel">
-
-    <div class="panel-title">
-      Resumen ejecutivo
-    </div>
-
-    <div class="panel-sub">
-      Lectura rápida de los indicadores principales del período.
-    </div>
-
-    <table class="summary-row">
-
+<div class="panel">
+  <div class="panel-title">Detalle de solicitudes</div>
+  <div class="panel-sub">Registros generados por el filtro seleccionado.</div>
+
+  <table class="table">
+    <thead>
       <tr>
-        <td class="summary-label">
-          Total de solicitudes
-        </td>
-
-        <td class="summary-value">
-          {{ total }}
-        </td>
+        <th>Embarcación</th>
+        <th>Cliente</th>
+        <th>Fecha de resolución</th>
+        <th>Estado</th>
+        <th>Motivo</th>
       </tr>
-
+    </thead>
+    <tbody>
+      {% for s in solicitudes %}
       <tr>
-        <td class="summary-label">
-          Solicitudes aprobadas
+        <td>{{ s.embarcacion.nombre_bote|default:"Sin nombre" }}</td>
+        <td>{{ s.embarcacion.cliente.fullname|default:"Sin cliente" }}</td>
+        <td>
+          {% if s.fecha_resolucion %}
+            {{ s.fecha_resolucion|date:"d/m/Y H:i" }}
+          {% else %}
+            No disponible
+          {% endif %}
         </td>
-
-        <td class="summary-value">
-          {{ aprobadas }}
-        </td>
+        <td>{{ s.estado|default:"N/A" }}</td>
+        <td>{{ s.motivo_rechazo|default:"-" }}</td>
       </tr>
-
+      {% empty %}
       <tr>
-        <td class="summary-label">
-          Solicitudes completadas
-        </td>
-
-        <td class="summary-value">
-          {{ completadas }}
-        </td>
+        <td colspan="5">No hay solicitudes para los filtros seleccionados.</td>
       </tr>
-
-      <tr>
-        <td class="summary-label">
-          Solicitudes rechazadas
-        </td>
-
-        <td class="summary-value">
-          {{ rechazadas }}
-        </td>
-      </tr>
-
-      <tr>
-        <td class="summary-label">
-          Solicitudes en seguimiento
-        </td>
-
-        <td class="summary-value">
-          {{ seguimiento }}
-        </td>
-      </tr>
-
-      <tr>
-        <td class="summary-label">
-          Tasa de aprobación
-        </td>
-
-        <td class="summary-value">
-          {{ tasa_aprobacion }}%
-        </td>
-      </tr>
-
-    </table>
-
-  </div>
-
-</td>
-
-</tr>
-
-</table>
-
-<!-- ======================================================
-     FOOTER
-====================================================== -->
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
 <div class="footer">
   MARE · Reporte generado automáticamente por el sistema · {{ fecha_descarga|date:"d/m/Y" }}

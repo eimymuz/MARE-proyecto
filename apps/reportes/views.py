@@ -264,10 +264,6 @@ def obtener_solicitudes_filtradas(request):
         solicitudes = solicitudes.filter(estado='RECHAZADA')
     elif estado == 'completado':
         solicitudes = solicitudes.filter(estado='COMPLETADA')
-    elif estado == 'proceso':
-        solicitudes = solicitudes.filter(
-            estado__in=['PENDIENTE', 'EN_ESPERA', 'APROBADA']
-        )
     else:
         solicitudes = solicitudes.filter(
             estado__in=['APROBADA', 'RECHAZADA']
@@ -349,7 +345,10 @@ def reporte_solicitudes_pdf(request):
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="reporte_solicitudes.pdf"'
 
-    HTML(string=html_string).write_pdf(response)
+    HTML(
+        string=html_string,
+        base_url=request.build_absolute_uri()
+    ).write_pdf(response)
 
     return response
 

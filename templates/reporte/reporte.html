@@ -40,7 +40,6 @@
         <option value="aceptado" {% if estado == 'aceptado' %}selected{% endif %}>Aprobadas</option>
         <option value="rechazado" {% if estado == 'rechazado' %}selected{% endif %}>Rechazadas</option>
         <option value="completado" {% if estado == 'completado' %}selected{% endif %}>Completadas</option>
-        <option value="proceso" {% if estado == 'proceso' %}selected{% endif %}>En proceso</option>
       </select>
     </div>
 
@@ -118,8 +117,10 @@
               <span class="badge badge-danger">Rechazada</span>
             {% elif s.estado == 'COMPLETADA' %}
               <span class="badge badge-success">Completada</span>
-            {% elif s.estado == 'PENDIENTE' or s.estado == 'EN_ESPERA' %}
-              <span class="badge badge-neutral">En proceso</span>
+            {% elif s.estado == 'PENDIENTE' %}
+              <span class="badge badge-neutral">Pendiente</span>
+            {% elif s.estado == 'EN_ESPERA' %}
+              <span class="badge badge-neutral">En espera</span>
             {% else %}
               <span class="badge badge-neutral">{{ s.estado }}</span>
             {% endif %}
