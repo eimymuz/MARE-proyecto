@@ -176,20 +176,34 @@ async function abrirPopupVer(pk){
     // Historial — solo si hay asignaciones
     const histWrap = document.getElementById('ver-historial-wrap');
     if(data.asignaciones && data.asignaciones.length > 0){
-      let html = '<div class="table-wrap"><table><thead><tr><th>Muelle</th><th>Espacios</th><th>Inicio</th><th>Fin</th><th>Admin</th></tr></thead><tbody>';
+      let html = `<div class="table-wrap"><table><thead><tr>
+        <th>Muelle</th>
+        <th>Espacios</th>
+        <th>Asignado</th>
+        <th>Removido</th>
+        <th>Admin</th>
+      </tr></thead><tbody>`;
+
       data.asignaciones.forEach((a, i) => {
-        const espacios = a.espacios.map(e => e.numero).join(', ') || '—';
-        const actual   = i === 0
-          ? `<span class="badge badge-success" style="font-size:10px;margin-left:4px">actual</span>`
-          : '';
-        html += `<tr>
-          <td>${a.muelle}${actual}</td>
-          <td>${espacios}</td>
-          <td>${a.fecha_inicio}</td>
-          <td>${a.fecha_fin}</td>
-          <td style="font-size:12px;color:var(--text-light)">${a.administrador}</td>
-        </tr>`;
+          const espacios = a.espacios.map(e => e.numero).join(', ') || '—';
+          const actual   = a.activa
+            ? `<span class="badge badge-success" style="font-size:10px;margin-left:4px">actual</span>`
+            : '';
+          // Removido = fecha_asignacion de la que la reemplazó (i-1, la más reciente anterior)
+          const removido = a.activa ? '—' : (
+            i > 0
+              ? data.asignaciones[i-1].fecha_asignacion
+              : '—'
+          );
+          html += `<tr>
+            <td>${a.muelle}${actual}</td>
+            <td>${espacios}</td>
+            <td style="font-size:12px">${a.fecha_asignacion}</td>
+            <td style="font-size:12px;color:var(--text-light)">${removido}</td>
+            <td style="font-size:12px;color:var(--text-light)">${a.administrador}</td>
+          </tr>`;
       });
+
       html += '</tbody></table></div>';
       document.getElementById('ver-historial').innerHTML = html;
       histWrap.style.display = 'block';

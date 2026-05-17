@@ -8,6 +8,8 @@ from apps.asignaciones.models import Asignacion, Administrador
 from apps.mapa.services.marine_api import obtener_clima
 from apps.solicitudes.models import Solicitud
 from django.core.exceptions import ValidationError
+from apps.solicitudes.models import Solicitud, SolicitudHistorial
+
 
 import json
 from django.db import transaction
@@ -288,9 +290,20 @@ def asignar_espacio(request):
         return JsonResponse({'ok': False, 'error': 'Usuario no es administrador'}, status=403)
 
     try:
+        from django.utils.timezone import localdate
+        from apps.solicitudes.models import SolicitudHistorial
+
         solicitud = Solicitud.objects.get(pk=solicitud_id)
         espacios  = Espacio.objects.filter(id__in=espacio_ids)
         muelle    = espacios.first().muelle
+
+        # Validar que la solicitud no sea reasignación con fecha ya vencida
+        es_reasignacion = Asignacion.objects.filter(solicitud=solicitud, activa=True).exists()
+        if not es_reasignacion and fecha_inicio < localdate():
+            return JsonResponse({
+                'ok': False,
+                'error': 'La fecha de llegada ya pasó. No se puede asignar este espacio.'
+            }, status=400)
 
         with transaction.atomic():
             traslapes = Asignacion.objects.filter(
@@ -333,12 +346,21 @@ def asignar_espacio(request):
             )
             asignacion.espacios.set(espacios)
 
-            solicitud.estado = 'APROBADA'
-            solicitud.full_clean()
-            solicitud.save()
+            # Cambiar estado a APROBADA sin pasar por clean()
+            if solicitud.estado != 'APROBADA':
+                estado_anterior = solicitud.estado
+                Solicitud.objects.filter(pk=solicitud.pk).update(estado='APROBADA')
+                SolicitudHistorial.objects.create(
+                    solicitud=solicitud,
+                    estado_anterior=estado_anterior,
+                    estado_nuevo='APROBADA',
+                )
 
             return JsonResponse({'ok': True, 'asignacion_id': asignacion.pk})
 
+    except ValidationError as e:
+        msgs = list(e.messages) if hasattr(e, 'messages') else [str(e)]
+        return JsonResponse({'ok': False, 'error': msgs[0]}, status=400)
     except Exception as e:
         return JsonResponse({'ok': False, 'error': str(e)}, status=400)
 

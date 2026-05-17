@@ -351,7 +351,7 @@ def solicitud_detalle_json(request, pk):
 
     asignaciones = solicitud.asignaciones.select_related(
         'muelle', 'administrador__user'
-    ).prefetch_related('espacios').order_by('-fecha_inicio')
+    ).prefetch_related('espacios').order_by('-activa', '-fecha_asignacion')
 
     asignaciones_data = []
     for a in asignaciones:
@@ -360,12 +360,14 @@ def solicitud_detalle_json(request, pk):
             for e in a.espacios.all()
         ]
         asignaciones_data.append({
-            'id':           a.pk,
-            'muelle':       a.muelle.nombre,
-            'espacios':     espacios,
-            'fecha_inicio': a.fecha_inicio.strftime('%d/%m/%Y'),
-            'fecha_fin':    a.fecha_fin.strftime('%d/%m/%Y'),
-            'administrador': str(a.administrador),
+            'id':              a.pk,
+            'muelle':          a.muelle.nombre,
+            'espacios':        espacios,
+            'fecha_inicio':    a.fecha_inicio.strftime('%d/%m/%Y'),
+            'fecha_fin':       a.fecha_fin.strftime('%d/%m/%Y'),
+            'fecha_asignacion': a.fecha_asignacion.strftime('%d/%m/%Y %H:%M') if a.fecha_asignacion else '—',
+            'administrador':   str(a.administrador),
+            'activa':          a.activa,
         })
 
     return JsonResponse({

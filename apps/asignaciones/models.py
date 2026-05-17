@@ -59,6 +59,9 @@ class Asignacion(models.Model):
         related_name="asignaciones"
     )
     
+    fecha_asignacion = models.DateTimeField(auto_now_add=True, null=True, verbose_name='Fecha de asignación')
+
+    
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
     # Una asignación puede ocupar uno o varios espacios simultáneamente

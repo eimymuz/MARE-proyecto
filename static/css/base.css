@@ -302,8 +302,14 @@
     }
     table td { padding: .7rem 1rem; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
     table tbody tr:last-child td { border-bottom: none; }
-    table tbody tr:hover { background: #fafcff; }
 
+    table tbody tr {
+        transition: background .15s ease;
+    }
+
+    table tbody tr:hover {
+        background: #dce8ff;
+    }
     /* ── BADGES ── */
     .badge {
       display: inline-flex;
