@@ -90,10 +90,24 @@
       {% endfor %}
     </tbody>
   </table>
-</div>
 
-<div class="footer">
-  MARE · Reporte generado automáticamente por el sistema · {{ fecha_descarga|date:"d/m/Y" }}
+  <!-- RESUMEN TOTAL -->
+    <div class="summary-box">
+
+      <table class="summary-row">
+        <tr>
+          <td class="summary-label">
+            Total de solicitudes
+          </td>
+
+          <td class="summary-value">
+            {{ solicitudes|length }}
+          </td>
+        </tr>
+      </table>
+
+    </div>
+
 </div>
 
 </body>
