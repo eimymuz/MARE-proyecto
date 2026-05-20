@@ -669,15 +669,20 @@ window.cerrarErrorAsig = function(){
       return;
     }
 
-    // Si hay solicitud activa y el espacio es válido → seleccionar para asignar
     if(!READONLY && solicitudActiva && (estadoFinal==='ideal'||estadoFinal==='posible'||estadoFinal==='libre')){
-      const sel    = window._espaciosSeleccionados = new Set();
-      const grupo  = (window._mapaGrupos_idx||{})[e.id];
+      
+      window._espaciosSeleccionados = new Set();
+      const sel   = window._espaciosSeleccionados;
+      const grupo = (window._mapaGrupos_idx||{})[e.id];
+
       if(grupo && e.estado==='no_cabe'){
+        // espacio con grupo contiguo — selecciona ambos automáticamente
         grupo.ids.forEach(id => sel.add(id));
       } else {
+        // espacio simple — solo este
         sel.add(e.id);
       }
+
       window.mapaRender();
       mostrarPanelAsignar(e);
     }
