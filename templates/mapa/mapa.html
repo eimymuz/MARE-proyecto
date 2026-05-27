@@ -14,6 +14,11 @@ window.MAPA_CTX = {
   embarcacion:    "{{ solicitud_ctx.embarcacion }}",
   fecha_llegada:  "{{ solicitud_ctx.fecha_llegada }}",
   fecha_salida:   "{{ solicitud_ctx.fecha_salida }}",
+  {% if not from_mapa %}
+  onAsignado: function(data){
+    window.location.href = "{% url 'solicitud_aprobadas_list' %}";
+  }
+  {% endif %}
 };
 </script>
 {% endif %}

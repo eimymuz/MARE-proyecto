@@ -728,7 +728,7 @@ window.cerrarErrorAsig = function(){
           if(typeof abrirPopupVer === 'function') abrirPopupVer(asig.solicitud_id);
         };
         document.getElementById('popup-btn-detalle').href    = '#';
-        document.getElementById('popup-btn-reasignar').href  = `/mapa/?solicitud_id=${asig.solicitud_id}`;
+        document.getElementById('popup-btn-reasignar').href = `/mapa/?solicitud_id=${asig.solicitud_id}&from=mapa`;
       } else {
         document.getElementById('popup-body').innerHTML = '<span style="color:var(--text-light)">Sin información disponible</span>';
       }

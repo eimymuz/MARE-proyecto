@@ -37,6 +37,7 @@ def mapa_view(request):
             }
         except Solicitud.DoesNotExist:
             pass
+    ctx['from_mapa'] = request.GET.get('from') == 'mapa'
     return render(request, 'mapa/mapa.html', ctx)
 
 

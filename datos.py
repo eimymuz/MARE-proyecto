@@ -7,7 +7,10 @@ from apps.solicitudes.models import Solicitud, SolicitudHistorial
 from apps.asignaciones.models import Administrador, Asignacion
 from apps.muelles.models import Muelle, Espacio
 
-FECHA_FIN = date(2026, 5, 14)
+FECHA_FIN     = date(2026, 5, 14)
+FECHA_HOY     = date(2026, 5, 19)  # fecha actual del sistema
+FECHA_FUTURA  = date(2026, 5, 20)  # inicio fechas futuras para pendientes
+FECHA_FUT_MAX = date(2026, 7, 31)  # máximo futuro para pendientes
 
 ESPACIOS = {
     'A': [5030,5031,5032,5033,5034,5035,5036,5037,5038,5039,5040,5041,5042,5043,5044,5045],
@@ -190,8 +193,7 @@ for nombre in ['VELERO','CATAMARÁN','YATE','LANCHA','MOTONAVE']:
         t, _ = TipoBarco.objects.get_or_create(tipo_barco=nombre)
         tipos_map[nombre] = t
 
-# Temporada alta Pacífico mexicano: ene > feb > mar > abr > may (bajando)
-# Enero: 140, Febrero: 130, Marzo: 120, Abril: 100, Mayo 1-14: 70 = 560
+# Temporada alta: Ene:140, Feb:130, Mar:120, Abr:100, May:70 = 560
 meses_config = [
     (date(2026,1,1),  date(2026,1,31),  140),
     (date(2026,2,1),  date(2026,2,28),  130),
@@ -209,15 +211,12 @@ random.shuffle(fechas_pool)
 TOTAL = len(fechas_pool)
 print(f'Total a crear: {TOTAL}')
 
-# Estados con lógica de temporada:
-# Temporada alta (ene-feb) más aprobadas/completadas, menos rechazos
-# Temporada baja (abr-may) más rechazos y pendientes
 estados_pool = (
-    ['COMPLETADA'] * 392 +  # 70%
-    ['APROBADA']   * 84  +  # 15%
-    ['RECHAZADA']  * 56  +  # 10%
-    ['EN_ESPERA']  * 17  +  # 3%
-    ['PENDIENTE']  * 11     # 2%
+    ['COMPLETADA'] * 392 +
+    ['APROBADA']   * 84  +
+    ['RECHAZADA']  * 56  +
+    ['EN_ESPERA']  * 17  +
+    ['PENDIENTE']  * 11
 )
 random.shuffle(estados_pool)
 
@@ -249,8 +248,18 @@ for i in range(TOTAL):
     estado_final = estados_pool[i]
     fecha_sol    = fechas_pool[i]
     duracion     = random.randint(3, 28)
-    fecha_ll     = fecha_sol + timedelta(days=random.randint(2, 8))
-    fecha_sa     = fecha_ll  + timedelta(days=duracion)
+
+    # ── Fechas según estado ───────────────────────────────
+    if estado_final in ('PENDIENTE', 'EN_ESPERA'):
+        # Fechas futuras — la solicitud ya existe pero el barco aún no llega
+        fecha_ll = fecha_rand(FECHA_FUTURA, FECHA_FUT_MAX)
+        fecha_sa = fecha_ll + timedelta(days=duracion)
+        # La solicitud se hizo recientemente (últimos 5 días)
+        fecha_sol = fecha_rand(date(2026,5,15), FECHA_HOY)
+    else:
+        # Fechas históricas normales
+        fecha_ll = fecha_sol + timedelta(days=random.randint(2, 8))
+        fecha_sa = fecha_ll  + timedelta(days=duracion)
 
     sol = Solicitud(
         embarcacion=emb,
@@ -318,3 +327,4 @@ for i in range(TOTAL):
 
 print(f'\nListo — {creadas} solicitudes creadas.')
 print(f'Distribución: Ene:140 Feb:130 Mar:120 Abr:100 May:70')
+print(f'Pendientes/En espera: fechas de llegada a partir del 20/05/2026')
