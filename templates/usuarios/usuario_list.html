@@ -1,34 +1,46 @@
 {% extends "base.html" %}
+{% comment %}
+   =========================================================
+   usuarios/usuario_list.html — Gestión de usuarios del sistema
+   Solo accesible para administradores con rol Gerente.
+   Permite crear, editar, desactivar y reactivar usuarios.
+   Toda la UI de CRUD está en modales para no salir de la página.
+   ========================================================= {%  endcomment %}
 {% block title %}Usuarios — MARE{% endblock %}
 
 {% block content %}
 
+{# ── Encabezado con botón para crear nuevo usuario ─────────── #}
 <div class="page-header">
   <h2>Usuarios del sistema</h2>
+  {% comment %}
+     Al hacer clic llama a abrirModalUsuario() que limpia y
+     muestra el modal en modo "Nuevo usuario" {%  endcomment %}
   <button class="btn btn-primary" onclick="abrirModalUsuario()">+ Nuevo usuario</button>
 </div>
 
-<!-- Filtros rápidos -->
+{% comment %}
+   ══ FILTROS RÁPIDOS POR ROL ════════════════════════════════
+   Botones que filtran la tabla del lado del cliente (sin
+   hacer petición al servidor). Llaman a filtrarRol(). {%  endcomment %}
 <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
-  <button onclick="filtrarRol('')" id="tab-todos" class="btn btn-default btn-sm">
-    Todos
-  </button>
-  <button onclick="filtrarRol('gerente')" id="tab-gerente" class="btn btn-default btn-sm">
-    Gerentes
-  </button>
-  <button onclick="filtrarRol('empleado')" id="tab-empleado" class="btn btn-default btn-sm">
-    Empleados
-  </button>
-  <button onclick="filtrarRol('inactivo')" id="tab-inactivo" class="btn btn-default btn-sm">
-    Inactivos
-  </button>
+  <button onclick="filtrarRol('')"        id="tab-todos"    class="btn btn-default btn-sm">Todos</button>
+  <button onclick="filtrarRol('gerente')" id="tab-gerente"  class="btn btn-default btn-sm">Gerentes</button>
+  <button onclick="filtrarRol('empleado')"id="tab-empleado" class="btn btn-default btn-sm">Empleados</button>
+  <button onclick="filtrarRol('inactivo')"id="tab-inactivo" class="btn btn-default btn-sm">Inactivos</button>
+
+  {% comment %}
+     Campo de búsqueda libre por nombre o usuario.
+     oninput dispara filtrarTabla() en tiempo real. {%  endcomment %}
   <input type="text" id="inp-buscar" placeholder="Buscar por nombre o usuario..."
     oninput="filtrarTabla()"
     style="margin-left:auto;font-size:12px;padding:.35rem .6rem;border:1px solid var(--border);
            border-radius:var(--radius);background:var(--surface);color:var(--text);width:220px">
 </div>
 
+{# ══ TABLA DE USUARIOS ══════════════════════════════════════ #}
 <div class="table-wrap">
+  {# id="tabla-usuarios" permite que JS seleccione las filas para filtrar #}
   <table id="tabla-usuarios">
     <thead>
       <tr>
@@ -40,11 +52,19 @@
       </tr>
     </thead>
     <tbody>
+      {% comment %}
+         administradores = queryset de Administrador con select_related('user')
+         del modelo Administrador (OneToOne con el User de Django) {%  endcomment %}
       {% for admin in administradores %}
+      {# data-* attrs: usados por JS para filtrar sin petición al servidor #}
       <tr data-rol="{{ admin.rol }}"
           data-activo="{{ admin.activo|yesno:'si,no' }}"
           data-nombre="{{ admin.user.get_full_name|lower }}"
           data-username="{{ admin.user.username|lower }}">
+
+        {% comment %}
+           Nombre completo — si no tiene nombre completo, usa el username.
+           Los usuarios inactivos tienen opacidad reducida visualmente. {%  endcomment %}
         <td style="font-weight:500;{% if not admin.activo %}opacity:.5{% endif %}">
           {{ admin.user.get_full_name|default:admin.user.username }}
         </td>
@@ -52,8 +72,16 @@
           {{ admin.user.username }}
         </td>
         <td style="color:var(--text-light);{% if not admin.activo %}opacity:.5{% endif %}">
+          {# Si no tiene email registrado muestra "—" con el filtro |default #}
           {{ admin.user.email|default:"—" }}
         </td>
+
+        {% comment %}
+           ── Badge de rol ──────────────────────────────────────
+           Tres variantes visuales:
+           - Inactivo: gris (usuario desactivado, no puede iniciar sesión)
+           - Gerente: dorado (acceso total incluyendo gestión de usuarios)
+           - Empleado: azul (acceso estándar sin gestión de usuarios) {%  endcomment %}
         <td>
           {% if not admin.activo %}
             <span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;
@@ -66,8 +94,15 @@
                   background:var(--info-bg);color:var(--info);border:1px solid var(--info)">Empleado</span>
           {% endif %}
         </td>
+
+        {% comment %}
+           ── Acciones por usuario ──────────────────────────────
+           Editar: siempre disponible — abre modal de edición.
+           Desactivar/Reactivar: solo si NO es el usuario actual
+           (un gerente no puede desactivarse a sí mismo). {%  endcomment %}
         <td>
           <div style="display:flex;gap:.3rem">
+            {# Botón Editar — pasa todos los datos al modal via parámetros JS #}
             <button class="btn btn-default btn-sm"
               onclick="abrirModalEditar(
                 {{ admin.pk }},
@@ -77,8 +112,13 @@
                 '{{ admin.user.email }}',
                 '{{ admin.rol }}'
               )">Editar</button>
+
+            {% comment %}
+               No mostrar botón de estado para el propio usuario logueado
+               (request.user es el User de Django del administrador actual) {%  endcomment %}
             {% if admin.user != request.user %}
               {% if admin.activo %}
+                {# Desactivar: impide el login del usuario sin borrarlo #}
                 <button type="button" class="btn btn-danger btn-sm"
                   onclick="confirmarCambioEstado(
                     '{% url 'usuario_eliminar' admin.pk %}',
@@ -86,6 +126,7 @@
                     'desactivar'
                   )">Desactivar</button>
               {% else %}
+                {# Reactivar: restaura el acceso al usuario inactivo #}
                 <button type="button" class="btn btn-success btn-sm"
                   onclick="confirmarCambioEstado(
                     '{% url 'usuario_reactivar' admin.pk %}',
@@ -109,7 +150,10 @@
 </div>
 
 
-<!-- ── MODAL CREAR/EDITAR USUARIO ── -->
+{% comment %}
+   ══ MODAL CREAR / EDITAR USUARIO ══════════════════════════
+   Reutilizado tanto para crear como para editar.
+   JS cambia el título, action del form y campos según el modo. {%  endcomment %}
 <div id="modal-usuario" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
      background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;
      opacity:0;transition:opacity .2s ease">
@@ -117,6 +161,7 @@
        box-shadow:var(--shadow-md);transform:scale(0.95);
        transition:transform .25s cubic-bezier(.34,1.56,.64,1)">
 
+    {# Header del modal — título cambia entre "Nuevo usuario" y "Editar usuario" #}
     <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);
          display:flex;justify-content:space-between;align-items:center">
       <div style="font-size:16px;font-weight:600;color:var(--text)" id="modal-usuario-titulo">
@@ -126,12 +171,18 @@
         style="background:none;border:none;cursor:pointer;color:var(--text-light);font-size:20px;line-height:1">✕</button>
     </div>
 
+    {% comment %}
+       Formulario — action cambia según modo (crear vs editar) via JS.
+       Al crear apunta a usuario_crear; al editar a /usuarios/<pk>/editar/ {%  endcomment %}
     <form id="form-usuario" method="post" action="{% url 'usuario_crear' %}">
       {% csrf_token %}
       <div style="padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.85rem">
+
+        {# Nombre y apellido en dos columnas #}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
           <div>
             <label>Nombre</label>
+            {# id="modal-first-name" — rellenado por JS al editar #}
             <input type="text" name="first_name" id="modal-first-name" required placeholder="Juan">
           </div>
           <div>
@@ -139,21 +190,30 @@
             <input type="text" name="last_name" id="modal-last-name" required placeholder="Pérez">
           </div>
         </div>
+
+        {# Username de Django — se usa para iniciar sesión #}
         <div>
           <label>Usuario</label>
           <input type="text" name="username" id="modal-username" required placeholder="juanperez">
         </div>
+
+        {# Email opcional para notificaciones #}
         <div>
           <label>Email</label>
           <input type="email" name="email" id="modal-email" placeholder="juan@marina.com">
         </div>
+
         <div>
+          {# Etiqueta cambia: "Contraseña" al crear, "Nueva contraseña" al editar #}
           <label id="modal-pass-label">Contraseña</label>
           <input type="password" name="password" id="modal-password" placeholder="Mínimo 8 caracteres">
+          {# Hint visible solo al editar — indica que puede dejarse vacío #}
           <span id="modal-pass-hint" style="font-size:11px;color:var(--text-light);display:none">
             Deja vacío para mantener la contraseña actual
           </span>
         </div>
+
+        {# Selector de rol: Empleado (acceso estándar) o Gerente (acceso total) #}
         <div>
           <label>Rol</label>
           <select name="rol" id="modal-rol">
@@ -162,9 +222,12 @@
           </select>
         </div>
       </div>
+
+      {# Footer del modal con botones Cancelar y Crear/Guardar #}
       <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);
            display:flex;justify-content:flex-end;gap:.5rem">
         <button type="button" onclick="cerrarModalUsuario()" class="btn btn-default">Cancelar</button>
+        {# Texto del botón cambia entre "Crear usuario" y "Guardar cambios" #}
         <button type="submit" class="btn btn-primary" id="modal-btn-guardar">Crear usuario</button>
       </div>
     </form>
@@ -172,7 +235,10 @@
 </div>
 
 
-<!-- ── MODAL CONFIRMAR DESACTIVAR/REACTIVAR ── -->
+{% comment %}
+   ══ MODAL DE CONFIRMACIÓN DESACTIVAR / REACTIVAR ══════════
+   Se muestra antes de ejecutar el cambio de estado del usuario
+   para evitar acciones accidentales. {%  endcomment %}
 <div id="modal-confirmar" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
      background:rgba(0,0,0,0.5);z-index:1100;align-items:center;justify-content:center;
      opacity:0;transition:opacity .2s ease">
@@ -180,6 +246,7 @@
        box-shadow:var(--shadow-md);transform:scale(0.95);
        transition:transform .25s cubic-bezier(.34,1.56,.64,1)">
 
+    {# Título dinámico: "Desactivar usuario" o "Reactivar usuario" #}
     <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);
          display:flex;justify-content:space-between;align-items:center">
       <div style="font-size:15px;font-weight:600;color:var(--text)" id="confirmar-titulo">
@@ -189,6 +256,7 @@
         style="background:none;border:none;cursor:pointer;color:var(--text-light);font-size:20px;line-height:1">✕</button>
     </div>
 
+    {# Mensaje descriptivo con el nombre del usuario afectado #}
     <div style="padding:1.25rem 1.5rem">
       <p id="confirmar-mensaje" style="font-size:14px;color:var(--text);margin:0"></p>
     </div>
@@ -196,8 +264,12 @@
     <div style="padding:1rem 1.5rem;border-top:1px solid var(--border);
          display:flex;justify-content:flex-end;gap:.5rem">
       <button type="button" onclick="cerrarModalConfirmar()" class="btn btn-default">Cancelar</button>
+      {% comment %}
+         form-confirmar: el action se asigna dinámicamente por JS a la URL
+         de desactivar o reactivar según la acción solicitada {%  endcomment %}
       <form id="form-confirmar" method="post" style="display:inline">
         {% csrf_token %}
+        {# Clase y texto del botón cambian: btn-danger o btn-success #}
         <button type="submit" id="confirmar-btn" class="btn btn-danger">Confirmar</button>
       </form>
     </div>
@@ -207,11 +279,16 @@
 
 
 <script>
+/* Estado del tab activo en los filtros rápidos de rol */
 let _rolActivo = '';
 
-// ── Filtro por rol ──
+/* ── filtrarRol(rol) ─────────────────────────────────────────
+   Cambia el tab activo y llama a filtrarTabla() para ocultar
+   o mostrar filas según el rol seleccionado.
+   rol = '' → Todos | 'gerente' | 'empleado' | 'inactivo' */
 function filtrarRol(rol){
   _rolActivo = rol;
+  /* Actualizar estilos de todos los tabs */
   ['todos','gerente','empleado','inactivo'].forEach(t=>{
     const btn = document.getElementById('tab-'+t);
     if(!btn) return;
@@ -224,7 +301,10 @@ function filtrarRol(rol){
   filtrarTabla();
 }
 
-// ── Filtro combinado rol + texto ──
+/* ── filtrarTabla() ──────────────────────────────────────────
+   Filtra las filas de la tabla combinando rol activo + texto.
+   Lee los data-* atributos de cada fila para comparar.
+   Muestra u oculta cada fila con display = '' o 'none'. */
 function filtrarTabla(){
   const q    = document.getElementById('inp-buscar').value.toLowerCase();
   const rows = document.querySelectorAll('#tabla-usuarios tbody tr[data-rol]');
@@ -234,17 +314,22 @@ function filtrarTabla(){
     const rol      = row.dataset.rol      || '';
     const activo   = row.dataset.activo   || 'si';
 
+    /* Evaluar si la fila pasa el filtro de rol */
     let pasaRol;
-    if(_rolActivo === '')         pasaRol = true;
+    if(_rolActivo === '')              pasaRol = true;          // Todos 
     else if(_rolActivo === 'inactivo') pasaRol = activo === 'no';
-    else                          pasaRol = rol === _rolActivo && activo === 'si';
+    else                               pasaRol = rol === _rolActivo && activo === 'si';
 
+    /* Evaluar si la fila pasa el filtro de texto */
     const pasaQ = !q || nombre.includes(q) || username.includes(q);
     row.style.display = (pasaRol && pasaQ) ? '' : 'none';
   });
 }
 
-// ── Modal confirmar desactivar/reactivar ──
+/* ── confirmarCambioEstado(url, nombre, accion) ──────────────
+   Abre el modal de confirmación. Asigna dinámicamente:
+   - Título, mensaje y clase del botón según la acción
+   - action del form al URL correspondiente (desactivar/reactivar) */
 function confirmarCambioEstado(url, nombre, accion){
   const esDesactivar = accion === 'desactivar';
   document.getElementById('confirmar-titulo').textContent  = esDesactivar ? 'Desactivar usuario' : 'Reactivar usuario';
@@ -256,8 +341,10 @@ function confirmarCambioEstado(url, nombre, accion){
   const btn = document.getElementById('confirmar-btn');
   btn.textContent       = esDesactivar ? 'Desactivar' : 'Reactivar';
   btn.className         = esDesactivar ? 'btn btn-danger' : 'btn btn-success';
+  /* Asignar la URL de la acción al form de confirmación */
   document.getElementById('form-confirmar').action = url;
 
+  /* Mostrar modal con animación */
   const modal = document.getElementById('modal-confirmar');
   const card  = modal.querySelector('div');
   modal.style.display = 'flex';
@@ -267,6 +354,7 @@ function confirmarCambioEstado(url, nombre, accion){
   });
 }
 
+/* Cerrar modal de confirmación con animación de salida */
 function cerrarModalConfirmar(){
   const modal = document.getElementById('modal-confirmar');
   const card  = modal.querySelector('div');
@@ -275,11 +363,17 @@ function cerrarModalConfirmar(){
   setTimeout(()=>{ modal.style.display='none'; }, 200);
 }
 
+/* Cerrar al hacer clic en el overlay del modal de confirmación */
 document.getElementById('modal-confirmar').addEventListener('click', function(ev){
   if(ev.target === this) cerrarModalConfirmar();
 });
 
-// ── Modal crear usuario ──
+/* ── abrirModalUsuario() ─────────────────────────────────────
+   Configura el modal en modo "Crear nuevo usuario":
+   - Título: "Nuevo usuario"
+   - Action del form: URL de creación
+   - Contraseña requerida (required=true)
+   - Limpia todos los campos */
 function abrirModalUsuario(){
   document.getElementById('modal-usuario-titulo').textContent = 'Nuevo usuario';
   document.getElementById('modal-btn-guardar').textContent    = 'Crear usuario';
@@ -287,6 +381,7 @@ function abrirModalUsuario(){
   document.getElementById('modal-pass-label').textContent     = 'Contraseña';
   document.getElementById('modal-pass-hint').style.display    = 'none';
   document.getElementById('modal-password').required          = true;
+  /* Limpiar todos los campos del formulario */
   ['modal-first-name','modal-last-name','modal-username','modal-email','modal-password'].forEach(id=>{
     document.getElementById(id).value = '';
   });
@@ -294,14 +389,19 @@ function abrirModalUsuario(){
   mostrarModalUsuario();
 }
 
-// ── Modal editar usuario ──
+/* ── abrirModalEditar(pk, ...) ───────────────────────────────
+   Configura el modal en modo "Editar usuario existente":
+   - Título: "Editar usuario"
+   - Action del form: URL de edición con el PK del administrador
+   - Contraseña opcional (required=false + hint visible)
+   - Rellena todos los campos con los datos actuales */
 function abrirModalEditar(pk, firstName, lastName, username, email, rol){
   document.getElementById('modal-usuario-titulo').textContent = 'Editar usuario';
   document.getElementById('modal-btn-guardar').textContent    = 'Guardar cambios';
   document.getElementById('form-usuario').action              = `/usuarios/${pk}/editar/`;
   document.getElementById('modal-pass-label').textContent     = 'Nueva contraseña';
   document.getElementById('modal-pass-hint').style.display    = 'inline';
-  document.getElementById('modal-password').required          = false;
+  document.getElementById('modal-password').required          = false;   // Opcional al editar 
   document.getElementById('modal-first-name').value = firstName;
   document.getElementById('modal-last-name').value  = lastName;
   document.getElementById('modal-username').value   = username;
@@ -311,6 +411,7 @@ function abrirModalEditar(pk, firstName, lastName, username, email, rol){
   mostrarModalUsuario();
 }
 
+// Mostrar el modal de usuario con animación de entrada 
 function mostrarModalUsuario(){
   const modal = document.getElementById('modal-usuario');
   const card  = modal.querySelector('div');
@@ -321,6 +422,7 @@ function mostrarModalUsuario(){
   });
 }
 
+// Cerrar modal de usuario con animación de salida 
 function cerrarModalUsuario(){
   const modal = document.getElementById('modal-usuario');
   const card  = modal.querySelector('div');
@@ -329,6 +431,7 @@ function cerrarModalUsuario(){
   setTimeout(()=>{ modal.style.display='none'; }, 200);
 }
 
+// Cerrar al hacer clic en el overlay del modal de usuario 
 document.getElementById('modal-usuario').addEventListener('click', function(ev){
   if(ev.target === this) cerrarModalUsuario();
 });

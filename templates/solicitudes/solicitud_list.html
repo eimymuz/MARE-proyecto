@@ -1,199 +1,273 @@
 {% extends "base.html" %}
+{% comment %}
+  =========================================================
+   solicitudes/solicitud_list.html — Lista de solicitudes
+   Vista reutilizada para dos estados diferentes:
+     - Pendientes  (estado_activo = 'PENDIENTE')
+     - En Espera   (estado_activo = 'EN_ESPERA')
+   El título, filtros disponibles y acciones en la tabla
+   cambian según el estado activo inyectado por la vista.
+
+   Contexto requerido desde la vista:
+     - titulo          → texto del encabezado de página
+     - estado_activo   → 'PENDIENTE' | 'EN_ESPERA'
+     - solicitudes     → queryset paginado
+     - page_obj        → paginador de Django
+     - tipos_barco     → queryset para el select de tipo
+     - hay_filtros     → bool, True si hay parámetros GET activos
+     - q               → texto de búsqueda actual
+     - tipo_id         → PK del tipo filtrado (string)
+     - primera_entrada → '1' si el checkbox está marcado
+     - modo_fecha      → 'solicitud'|'llegada'|'salida'|'estancia'
+     - fecha_a/fecha_b → rango de fecha para modos simples
+     - fecha_llegada/fecha_salida → para modo estancia
+     - orden           → 'reciente'|'urgente' (solo EN_ESPERA)
+   ========================================================= {%  endcomment %}
 {% block title %}{{ titulo }} — MARE{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div style="display:flex;align-items:center;gap:1rem">
     <h2>{{ titulo }}</h2>
-    <!-- Tabs de estado -->
   </div>
 </div>
 
+{% comment %}
+   ══ MÓDULO DE FILTROS COLAPSABLE ═══════════════════════════
+   Formulario GET. Los parámetros se mantienen en la URL
+   para que la paginación y el PDF los hereden. {%  endcomment %}
+<form method="get" id="form-filtros">
 
-    <!-- FILTROS COLAPSABLE -->
-    <form method="get" id="form-filtros">
-    
-      <!-- Barra trigger -->
-      <div style="display:flex;align-items:center;justify-content:space-between;
-          background:var(--surface);border:1px solid var(--border);
-          border-radius:var(--radius-lg);padding:.6rem 1rem;cursor:pointer;
-          user-select:none;margin-bottom:4px" onclick="toggleFiltros()">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:13px;font-weight:500;color:var(--text)">⚙ Filtros</span>
-          <div id="chips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+  {% comment %}
+     ── Barra trigger ────────────────────────────────────────
+     Al hacer clic expande/colapsa el panel de filtros.
+     Muestra chips con los filtros activos y un contador. {%  endcomment %}
+  <div style="display:flex;align-items:center;justify-content:space-between;
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius-lg);padding:.6rem 1rem;cursor:pointer;
+      user-select:none;margin-bottom:4px" onclick="toggleFiltros()">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:13px;font-weight:500;color:var(--text)">⚙ Filtros</span>
+      {# Chips visuales de filtros activos — llenados por actualizarChips() #}
+      <div id="chips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      {# Contador "N activos" — oculto si no hay filtros #}
+      <span id="filtros-count" style="display:none;font-size:11px;padding:2px 8px;
+            border-radius:20px;background:var(--info-bg);color:var(--info);font-weight:500"></span>
+      {# Flecha que rota al abrir el panel #}
+      <span id="arrow" style="font-size:11px;color:var(--text-light);transition:transform .2s">▾</span>
+    </div>
+  </div>
+
+  {% comment %}
+     ── Panel colapsable de filtros ──────────────────────────
+     Abierto si hay_filtros=True (la vista detectó parámetros GET).
+     Grid de dos columnas: búsqueda/tipo a la izquierda,
+     filtros de fecha a la derecha. {%  endcomment %}
+  <div id="panel-filtros" style="display:{% if hay_filtros %}block{% else %}none{% endif %};
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1rem">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+
+      {# ── Columna izquierda ────────────────────────────────── #}
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+
+        {# Búsqueda por texto libre en nombre de embarcación o cliente #}
+        <div>
+          <label>Buscar</label>
+          <input type="text" name="q" id="inp-q" value="{{ q }}"
+            placeholder="Embarcación o cliente...">
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span id="filtros-count" style="display:none;font-size:11px;padding:2px 8px;
-                border-radius:20px;background:var(--info-bg);color:var(--info);font-weight:500"></span>
-          <span id="arrow" style="font-size:11px;color:var(--text-light);transition:transform .2s">▾</span>
+
+        {% comment %}
+           Selector de tipo de embarcación — tipos_barco viene del queryset
+           TipoBarco.objects.all() inyectado por la vista {%  endcomment %}
+        <div>
+          <label>Tipo de barco</label>
+          <select name="tipo" id="inp-tipo">
+            <option value="">Todos</option>
+            {% for t in tipos_barco %}
+              {# |stringformat:'s' convierte el PK int a string para comparar #}
+              <option value="{{ t.pk }}" {% if tipo_id == t.pk|stringformat:'s' %}selected{% endif %}>
+                {{ t.tipo_barco }}
+              </option>
+            {% endfor %}
+          </select>
         </div>
+
+        {% comment %}
+           Checkbox "Primera entrada a México" — solo visible en estado PENDIENTE
+           para identificar embarcaciones internacionales que requieren trámites
+           migratorios adicionales {%  endcomment %}
+        {% if estado_activo == 'PENDIENTE' %}
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;
+              font-weight:normal;color:var(--text);cursor:pointer;margin:0">
+          <input type="checkbox" name="primera_entrada" id="inp-primera" value="1"
+            style="width:auto" {% if primera_entrada == '1' %}checked{% endif %}>
+          Primera entrada a México
+        </label>
+        {% endif %}
+
+        {# Botones de acción del panel de filtros #}
+        <div style="display:flex;gap:.4rem;margin-top:auto;padding-top:.5rem;
+            border-top:1px solid var(--border)">
+          <button type="submit" class="btn btn-primary btn-sm" style="flex:1;justify-content:center">Filtrar</button>
+          {# Botón resetear — solo aparece si hay filtros activos #}
+          {% if hay_filtros %}
+          <a href="." class="btn btn-default btn-sm" id="btn-reset">✕ Resetear</a>
+          {% endif %}
+        </div>
+
       </div>
-    
-      <!-- Panel colapsable -->
-      <div id="panel-filtros" style="display:{% if hay_filtros %}block{% else %}none{% endif %};
-          background:var(--surface);border:1px solid var(--border);
-          border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1rem">
-    
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
-    
-          <!-- Columna izquierda -->
-          <div style="display:flex;flex-direction:column;gap:.75rem">
-            <div>
-              <label>Buscar</label>
-              <input type="text" name="q" id="inp-q" value="{{ q }}"
-                placeholder="Embarcación o cliente...">
-            </div>
-            <div>
-              <label>Tipo de barco</label>
-              <select name="tipo" id="inp-tipo">
-                <option value="">Todos</option>
-                {% for t in tipos_barco %}
-                  <option value="{{ t.pk }}" {% if tipo_id == t.pk|stringformat:'s' %}selected{% endif %}>
-                    {{ t.tipo_barco }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-            {% if estado_activo == 'PENDIENTE' %}
-            <label style="display:flex;align-items:center;gap:8px;font-size:12px;
-                  font-weight:normal;color:var(--text);cursor:pointer;margin:0">
-              <input type="checkbox" name="primera_entrada" id="inp-primera" value="1"
-                style="width:auto" {% if primera_entrada == '1' %}checked{% endif %}>
-              Primera entrada a México
-            </label>
-            {% endif %}
 
-            <div style="display:flex;gap:.4rem;margin-top:auto;padding-top:.5rem;
-                border-top:1px solid var(--border)">
-              <button type="submit" class="btn btn-primary btn-sm" style="flex:1;justify-content:center">Filtrar</button>
-              
-              {% if hay_filtros %}
-              <a href="." class="btn btn-default btn-sm" id="btn-reset">✕ Resetear</a>
-              {% endif %}
+      {# ── Columna derecha: filtros de fecha ────────────────── #}
+      <div>
+        <label style="margin-bottom:.5rem">Fecha</label>
 
-            </div>
+        {% comment %}
+           ── Tabs de modo de fecha ─────────────────────────────
+           Cuatro modos de búsqueda por fecha. Al cambiar el tab
+           se llama a setModo(m) que actualiza la UI y el campo
+           oculto #modo-fecha.
+           Los estilos activo/inactivo se generan inline con
+           el condicional {% if modo_fecha == '...' %} {%  endcomment %}
+        <div style="display:flex;gap:3px;margin-bottom:.6rem">
 
+          {# Solicitud: filtra por fecha en que se envió la solicitud #}
+          <button type="button" id="tab-solicitud" onclick="setModo('solicitud')"
+            title="Fecha en que se envió la solicitud"
+            style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
+                  font-size:10px;font-weight:500;
+                  background:{% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info-bg){% else %}var(--bg){% endif %};
+                  color:{% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info){% else %}var(--text-mid){% endif %};
+                  border:1px solid {% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info){% else %}var(--border){% endif %}">
+            ✦ Solicitud
+          </button>
 
-          </div>
-    
-          <!-- Columna derecha: fechas -->
-          <div>
-            <label style="margin-bottom:.5rem">Fecha</label>
-    
-            <!-- Tabs modo -->
-            <div style="display:flex;gap:3px;margin-bottom:.6rem">
-              <button type="button" id="tab-solicitud" onclick="setModo('solicitud')"
-                title="Fecha en que se envió la solicitud"
-                style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
-                      font-size:10px;font-weight:500;
-                      background:{% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info-bg){% else %}var(--bg){% endif %};
-                      color:{% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info){% else %}var(--text-mid){% endif %};
-                      border:1px solid {% if modo_fecha == 'solicitud' or not modo_fecha %}var(--info){% else %}var(--border){% endif %}">
-                ✦ Solicitud
-              </button>
-              <button type="button" id="tab-llegada" onclick="setModo('llegada')"
-                title="Fecha de llegada de la embarcación"
-                style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
-                      font-size:10px;font-weight:500;
-                      background:{% if modo_fecha == 'llegada' %}var(--info-bg){% else %}var(--bg){% endif %};
-                      color:{% if modo_fecha == 'llegada' %}var(--info){% else %}var(--text-mid){% endif %};
-                      border:1px solid {% if modo_fecha == 'llegada' %}var(--info){% else %}var(--border){% endif %}">
-                → Llegada
-              </button>
-              <button type="button" id="tab-salida" onclick="setModo('salida')"
-                title="Fecha de salida de la embarcación"
-                style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
-                      font-size:10px;font-weight:500;
-                      background:{% if modo_fecha == 'salida' %}var(--info-bg){% else %}var(--bg){% endif %};
-                      color:{% if modo_fecha == 'salida' %}var(--info){% else %}var(--text-mid){% endif %};
-                      border:1px solid {% if modo_fecha == 'salida' %}var(--info){% else %}var(--border){% endif %}">
-                ← Salida
-              </button>
-              <button type="button" id="tab-estancia" onclick="setModo('estancia')"
-                title="Embarcaciones cuya estancia caiga en el periodo"
-                style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
-                      font-size:10px;font-weight:500;
-                      background:{% if modo_fecha == 'estancia' %}var(--info-bg){% else %}var(--bg){% endif %};
-                      color:{% if modo_fecha == 'estancia' %}var(--info){% else %}var(--text-mid){% endif %};
-                      border:1px solid {% if modo_fecha == 'estancia' %}var(--info){% else %}var(--border){% endif %}">
-                ↔ Estancia
-              </button>
-            </div>
-    
-            <!-- Input simple -->
-            <div id="input-simple" style="display:{% if modo_fecha == 'estancia' %}none{% else %}flex{% endif %};
-                align-items:center;border:1px solid var(--border);border-radius:var(--radius);
-                overflow:hidden;background:var(--surface)">
-              <input type="date" id="fecha-a" name="fecha_a" value="{{ fecha_a }}"
-                style="flex:1;border:none;outline:none;padding:7px 10px;font-size:12px;
-                      background:transparent;color:var(--text)">
-              <button type="button" id="btn-periodo" onclick="togglePeriodo()"
-                title="Activar búsqueda por rango"
-                style="padding:7px 10px;border:none;border-left:1px solid var(--border);
-                      cursor:pointer;font-size:12px;background:transparent;
-                      color:{% if fecha_b %}var(--info){% else %}var(--text-mid){% endif %}">↔</button>
-              <div id="fecha-b-wrap" style="display:{% if fecha_b %}flex{% else %}none{% endif %};
-                  flex:1;border-left:1px solid var(--info)">
-                <input type="date" id="fecha-b" name="fecha_b" value="{{ fecha_b }}"
-                  style="width:100%;border:none;outline:none;padding:7px 10px;font-size:12px;
-                        background:transparent;color:var(--text);box-sizing:border-box">
-              </div>
-            </div>
-    
-            <!-- Input estancia -->
-            <div id="input-estancia" style="display:{% if modo_fecha == 'estancia' %}block{% else %}none{% endif %};
-                border:1px solid var(--border);border-radius:var(--radius);
-                overflow:hidden;background:var(--surface)">
-              <div style="display:flex">
-                <div style="flex:1;border-right:1px solid var(--border)">
-                  <div style="padding:3px 10px 0;font-size:10px;color:var(--text-light)">llegada</div>
-                  <input type="date" name="fecha_llegada" id="fecha-llegada" value="{{ fecha_llegada }}"
-                    style="width:100%;border:none;outline:none;padding:2px 10px 7px;font-size:12px;
-                          background:transparent;color:var(--text);box-sizing:border-box">
-                </div>
-                <div style="flex:1">
-                  <div style="padding:3px 10px 0;font-size:10px;color:var(--text-light)">salida</div>
-                  <input type="date" name="fecha_salida" id="fecha-salida" value="{{ fecha_salida }}"
-                    style="width:100%;border:none;outline:none;padding:2px 10px 7px;font-size:12px;
-                          background:transparent;color:var(--text);box-sizing:border-box">
-                </div>
-              </div>
-            </div>
-    
-            <!-- Hint -->
-            <div id="hint" style="font-size:11px;color:var(--text-light);margin-top:.4rem"></div>
+          {# Llegada: filtra por fecha de llegada de la embarcación #}
+          <button type="button" id="tab-llegada" onclick="setModo('llegada')"
+            title="Fecha de llegada de la embarcación"
+            style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
+                  font-size:10px;font-weight:500;
+                  background:{% if modo_fecha == 'llegada' %}var(--info-bg){% else %}var(--bg){% endif %};
+                  color:{% if modo_fecha == 'llegada' %}var(--info){% else %}var(--text-mid){% endif %};
+                  border:1px solid {% if modo_fecha == 'llegada' %}var(--info){% else %}var(--border){% endif %}">
+            → Llegada
+          </button>
 
-            {% if estado_activo == 'EN_ESPERA' %}
-            <br>
-            <div>
-              <label>Ordenar por</label>
-              <select name="orden" id="inp-orden">
-                <option value="reciente" {% if orden == 'reciente' or not orden %}selected{% endif %}>
-                  Más reciente
-                </option>
-                <option value="urgente" {% if orden == 'urgente' %}selected{% endif %}>
-                  Más urgente (llegada próxima)
-                </option>
-              </select>
-            </div>
-            {% endif %}
+          {# Salida: filtra por fecha de salida de la embarcación #}
+          <button type="button" id="tab-salida" onclick="setModo('salida')"
+            title="Fecha de salida de la embarcación"
+            style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
+                  font-size:10px;font-weight:500;
+                  background:{% if modo_fecha == 'salida' %}var(--info-bg){% else %}var(--bg){% endif %};
+                  color:{% if modo_fecha == 'salida' %}var(--info){% else %}var(--text-mid){% endif %};
+                  border:1px solid {% if modo_fecha == 'salida' %}var(--info){% else %}var(--border){% endif %}">
+            ← Salida
+          </button>
 
-
-          </div>
-    
+          {% comment %}
+             Estancia: filtra embarcaciones cuyo rango llegada-salida
+             se solapa con el periodo introducido {%  endcomment %}
+          <button type="button" id="tab-estancia" onclick="setModo('estancia')"
+            title="Embarcaciones cuya estancia caiga en el periodo"
+            style="flex:1;padding:5px 4px;border-radius:var(--radius);cursor:pointer;
+                  font-size:10px;font-weight:500;
+                  background:{% if modo_fecha == 'estancia' %}var(--info-bg){% else %}var(--bg){% endif %};
+                  color:{% if modo_fecha == 'estancia' %}var(--info){% else %}var(--text-mid){% endif %};
+                  border:1px solid {% if modo_fecha == 'estancia' %}var(--info){% else %}var(--border){% endif %}">
+            ↔ Estancia
+          </button>
         </div>
-      </div>
-    
-      <input type="hidden" name="modo_fecha" id="modo-fecha" value="{{ modo_fecha|default:'solicitud' }}">
-    
-    </form>
-    
-<!-- FIN FILTROS -->
 
+        {% comment %}
+           ── Input simple (modos: solicitud, llegada, salida) ──
+           Un solo campo de fecha con opción de activar rango.
+           El botón ↔ llama a togglePeriodo() para mostrar
+           el segundo campo. Oculto en modo estancia. {%  endcomment %}
+        <div id="input-simple" style="display:{% if modo_fecha == 'estancia' %}none{% else %}flex{% endif %};
+            align-items:center;border:1px solid var(--border);border-radius:var(--radius);
+            overflow:hidden;background:var(--surface)">
+          {# Fecha A — fecha exacta o inicio del rango #}
+          <input type="date" id="fecha-a" name="fecha_a" value="{{ fecha_a }}"
+            style="flex:1;border:none;outline:none;padding:7px 10px;font-size:12px;
+                  background:transparent;color:var(--text)">
+          {# Botón ↔ para activar modo rango de fechas #}
+          <button type="button" id="btn-periodo" onclick="togglePeriodo()"
+            title="Activar búsqueda por rango"
+            style="padding:7px 10px;border:none;border-left:1px solid var(--border);
+                  cursor:pointer;font-size:12px;background:transparent;
+                  color:{% if fecha_b %}var(--info){% else %}var(--text-mid){% endif %}">↔</button>
+          {# Fecha B — visible solo si hay fecha_b desde el servidor o al activar rango #}
+          <div id="fecha-b-wrap" style="display:{% if fecha_b %}flex{% else %}none{% endif %};
+              flex:1;border-left:1px solid var(--info)">
+            <input type="date" id="fecha-b" name="fecha_b" value="{{ fecha_b }}"
+              style="width:100%;border:none;outline:none;padding:7px 10px;font-size:12px;
+                    background:transparent;color:var(--text);box-sizing:border-box">
+          </div>
+        </div>
+
+        {% comment %}
+           ── Input estancia (modo: estancia) ──────────────────
+           Dos campos en paralelo: llegada y salida.
+           Solo visible en modo 'estancia'. {%  endcomment %}
+        <div id="input-estancia" style="display:{% if modo_fecha == 'estancia' %}block{% else %}none{% endif %};
+            border:1px solid var(--border);border-radius:var(--radius);
+            overflow:hidden;background:var(--surface)">
+          <div style="display:flex">
+            <div style="flex:1;border-right:1px solid var(--border)">
+              <div style="padding:3px 10px 0;font-size:10px;color:var(--text-light)">llegada</div>
+              <input type="date" name="fecha_llegada" id="fecha-llegada" value="{{ fecha_llegada }}"
+                style="width:100%;border:none;outline:none;padding:2px 10px 7px;font-size:12px;
+                      background:transparent;color:var(--text);box-sizing:border-box">
+            </div>
+            <div style="flex:1">
+              <div style="padding:3px 10px 0;font-size:10px;color:var(--text-light)">salida</div>
+              <input type="date" name="fecha_salida" id="fecha-salida" value="{{ fecha_salida }}"
+                style="width:100%;border:none;outline:none;padding:2px 10px 7px;font-size:12px;
+                      background:transparent;color:var(--text);box-sizing:border-box">
+            </div>
+          </div>
+        </div>
+
+        {# Texto de ayuda que describe el modo activo y si hay rango #}
+        <div id="hint" style="font-size:11px;color:var(--text-light);margin-top:.4rem"></div>
+
+        {% comment %}
+           Selector de orden — solo disponible en estado EN_ESPERA:
+           reciente → más nueva primero
+           urgente  → llegada más próxima primero (para priorizar atención) {%  endcomment %}
+        {% if estado_activo == 'EN_ESPERA' %}
+        <br>
+        <div>
+          <label>Ordenar por</label>
+          <select name="orden" id="inp-orden">
+            <option value="reciente" {% if orden == 'reciente' or not orden %}selected{% endif %}>
+              Más reciente
+            </option>
+            <option value="urgente" {% if orden == 'urgente' %}selected{% endif %}>
+              Más urgente (llegada próxima)
+            </option>
+          </select>
+        </div>
+        {% endif %}
+
+      </div>
+
+    </div>
+  </div>
+
+  {% comment %}
+     Campo oculto que sincroniza el modo de fecha activo al enviar el form.
+     setModo() actualiza su value antes del submit. {%  endcomment %}
+  <input type="hidden" name="modo_fecha" id="modo-fecha" value="{{ modo_fecha|default:'solicitud' }}">
+
+</form>
+
+{# ══ TABLA DE SOLICITUDES ═══════════════════════════════════ #}
 <div class="table-wrap">
-
-    
-
   <table>
     <thead>
       <tr>
@@ -208,14 +282,18 @@
       </tr>
     </thead>
     <tbody>
+      {# Itera sobre el queryset paginado de solicitudes #}
       {% for sol in solicitudes %}
       <tr>
         <td style="color:var(--text-light)">#{{ sol.id }}</td>
         <td style="font-weight:500">{{ sol.embarcacion.nombre_bote }}</td>
         <td>{{ sol.embarcacion.cliente.fullname }}</td>
         <td>{{ sol.embarcacion.tipo_barco.tipo_barco }}</td>
+        {# |date:"d/m/Y" formatea el objeto date a DD/MM/YYYY #}
         <td>{{ sol.fecha_llegada|date:"d/m/Y" }}</td>
         <td>{{ sol.fecha_salida|date:"d/m/Y" }}</td>
+
+        {# Badge de color según estado del modelo Solicitud #}
         <td>
           {% if sol.estado == 'PENDIENTE' %}
             <span class="badge badge-warning">Pendiente</span>
@@ -229,36 +307,60 @@
             <span class="badge badge-danger">Rechazada</span>
           {% endif %}
         </td>
+
+        {% comment %}
+           ── Acciones por estado ──────────────────────────────
+           Cada estado tiene un flujo de trabajo diferente. {%  endcomment %}
         <td>
           <div style="display:flex;gap:.3rem;flex-wrap:wrap">
+
             {% if sol.estado == 'PENDIENTE' %}
+              {% comment %}
+                 Aprobar: cambia el estado a EN_ESPERA via POST.
+                 La URL solicitud_cambiar_estado recibe pk y nuevo estado. {%  endcomment %}
               <form method="post" action="{% url 'solicitud_cambiar_estado' sol.pk 'EN_ESPERA' %}" style="display:inline">
                 {% csrf_token %}
                 <button class="btn btn-success btn-sm">En espera</button>
               </form>
+              {# Rechazar: abre modal_rechazo con origen 'list' #}
               <button class="btn btn-danger btn-sm"
                 onclick="abrirModalRechazo({{ sol.pk }}, '{{ sol.embarcacion.nombre_bote }}', 'list')">
                 Rechazar
               </button>
-              
-              {% elif sol.estado == 'EN_ESPERA' %}
-                <button onclick="window.open('https://mail.google.com/mail/?view=cm&to={{ sol.embarcacion.cliente.email }}&su=Solicitud — {{ sol.embarcacion.nombre_bote }}&body=Estimado {{ sol.embarcacion.cliente.fullname }}')" 
-                  class="btn btn-info btn-sm">Contactar</button>
-                <a href="https://mail.google.com/mail/u/0/#search/{{ sol.embarcacion.cliente.email }}"
-                  target="_blank" class="btn btn-default btn-sm">Revisar</a>
-                  <!--Poner url de mapa-->
-                <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Asignar</a>
-                <button class="btn btn-danger btn-sm"
-                  onclick="abrirModalRechazo({{ sol.pk }}, '{{ sol.embarcacion.nombre_bote }}', 'en_espera')">
-                  Rechazar
-                </button>
 
+            {% elif sol.estado == 'EN_ESPERA' %}
+              {% comment %}
+                 Contactar: abre Gmail con To/Subject/Body prellenados
+                 usando los datos del cliente para facilitar comunicación {%  endcomment %}
+              <button onclick="window.open('https://mail.google.com/mail/?view=cm&to={{ sol.embarcacion.cliente.email }}&su=Solicitud — {{ sol.embarcacion.nombre_bote }}&body=Estimado {{ sol.embarcacion.cliente.fullname }}')"
+                class="btn btn-info btn-sm">Contactar</button>
+
+              {% comment %}
+                 Revisar: abre la bandeja de Gmail filtrada por email
+                 del cliente para ver el historial de comunicación {%  endcomment %}
+              <a href="https://mail.google.com/mail/u/0/#search/{{ sol.embarcacion.cliente.email }}"
+                target="_blank" class="btn btn-default btn-sm">Revisar</a>
+
+              {% comment %}
+                 Asignar: navega al mapa con el ID de la solicitud
+                 para que el administrador elija un espacio físico {%  endcomment %}
+              <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Asignar</a>
+
+              {# Rechazar: abre modal con origen 'en_espera' #}
+              <button class="btn btn-danger btn-sm"
+                onclick="abrirModalRechazo({{ sol.pk }}, '{{ sol.embarcacion.nombre_bote }}', 'en_espera')">
+                Rechazar
+              </button>
 
             {% elif sol.estado == 'APROBADA' %}
-            <!--Poner url de mapa (ya)-->
+              {# Reasignar: navega al mapa para cambiar el espacio asignado #}
               <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Reasignar</a>
             {% endif %}
-           <button class="btn btn-default btn-sm" onclick="abrirPopupVer({{ sol.pk }})">Ver</button>
+
+            {% comment %}
+               Botón Ver — siempre disponible, abre popup_solicitud.html
+               con todos los datos de la solicitud cargados via fetch {%  endcomment %}
+            <button class="btn btn-default btn-sm" onclick="abrirPopupVer({{ sol.pk }})">Ver</button>
           </div>
         </td>
       </tr>
@@ -273,6 +375,7 @@
   </table>
 </div>
 
+{# ── Paginación — los enlaces mantienen los filtros GET ───── #}
 {% if page_obj.has_other_pages %}
 <div class="pagination">
   {% if page_obj.has_previous %}
@@ -285,34 +388,53 @@
 </div>
 {% endif %}
 
+{# Componentes modales reutilizables #}
 {% include "components/popup_solicitud.html" %}
 
+{# Token CSRF extra para que modal_rechazo.html lo encuentre en el DOM #}
+{% csrf_token %}
+{% include "components/modal_rechazo.html" %}
 
+{# ══ JAVASCRIPT DE FILTROS ══════════════════════════════════ #}
 <script>
+// Estado inicial del panel (abierto si la vista detectó filtros GET) 
 let abierto = {% if hay_filtros %}true{% else %}false{% endif %};
+// Modo de fecha activo — default 'solicitud' 
 let modo    = '{{ modo_fecha|default:"solicitud" }}';
+// True si hay un segundo campo de fecha activo (rango) 
 let periodoActivo = {% if fecha_b %}true{% else %}false{% endif %};
- 
+
+/* Configuración de textos de ayuda por modo de fecha */
 const CFG = {
   solicitud: { hint:'Fecha exacta de solicitud · activa ↔ para rango', hintP:'Solicitudes enviadas entre esas fechas' },
   llegada:   { hint:'Fecha exacta de llegada · activa ↔ para rango',   hintP:'Embarcaciones que llegan entre esas fechas' },
   salida:    { hint:'Fecha exacta de salida · activa ↔ para rango',    hintP:'Embarcaciones que salen entre esas fechas' },
   estancia:  { hint:'Introduce llegada y salida para buscar por estancia', hintP:'' },
 };
- 
-// estado inicial del arrow
+
+/* Apuntar la flecha y el hint según los valores del servidor */
 document.getElementById('arrow').style.transform = abierto ? 'rotate(180deg)' : 'rotate(0)';
 document.getElementById('hint').textContent = 'ℹ ' + (periodoActivo ? CFG[modo].hintP : CFG[modo].hint);
- 
+
+/* ── toggleFiltros() ─────────────────────────────────────────
+   Expande o colapsa el panel de filtros. */
 function toggleFiltros(){
   abierto = !abierto;
   document.getElementById('panel-filtros').style.display = abierto ? 'block' : 'none';
   document.getElementById('arrow').style.transform = abierto ? 'rotate(180deg)' : 'rotate(0)';
 }
- 
+
+/* ── setModo(m) ──────────────────────────────────────────────
+   Cambia el modo de búsqueda por fecha. Actualiza:
+   - Estilos activo/inactivo de los 4 tabs
+   - Visibilidad de input-simple vs input-estancia
+   - El campo oculto #modo-fecha para enviarlo al server
+   - El texto de ayuda */
 function setModo(m){
   modo = m; periodoActivo = false;
   document.getElementById('modo-fecha').value = m;
+
+  /* Actualizar estilos de los 4 tabs */
   ['solicitud','llegada','salida','estancia'].forEach(t=>{
     const btn = document.getElementById('tab-'+t);
     const act = t===m;
@@ -320,13 +442,17 @@ function setModo(m){
     btn.style.color      = act?'var(--info)':'var(--text-mid)';
     btn.style.border     = act?'1px solid var(--info)':'1px solid var(--border)';
   });
+
   const simple   = document.getElementById('input-simple');
   const estancia = document.getElementById('input-estancia');
   const bWrap    = document.getElementById('fecha-b-wrap');
   const btnP     = document.getElementById('btn-periodo');
+
   if(m==='estancia'){
+    /* Modo estancia: mostrar dos campos separados de llegada y salida */
     simple.style.display='none'; estancia.style.display='block';
   } else {
+    /* Otros modos: mostrar el input simple y resetear rango */
     simple.style.display='flex'; estancia.style.display='none';
     bWrap.style.display='none'; btnP.style.color='var(--text-mid)';
     document.getElementById('fecha-b').value='';
@@ -334,21 +460,30 @@ function setModo(m){
   document.getElementById('hint').textContent='ℹ '+CFG[m].hint;
   actualizarChips();
 }
- 
+
+/* ── togglePeriodo() ─────────────────────────────────────────
+   Activa/desactiva el segundo campo de fecha para buscar
+   por rango en los modos solicitud/llegada/salida. */
 function togglePeriodo(){
-  if(modo==='estancia') return;
+  if(modo==='estancia') return;  // El modo estancia ya tiene su propia UI 
   periodoActivo=!periodoActivo;
   const bWrap=document.getElementById('fecha-b-wrap');
   const btnP=document.getElementById('btn-periodo');
   bWrap.style.display=periodoActivo?'flex':'none';
   btnP.style.color=periodoActivo?'var(--info)':'var(--text-mid)';
+  /* Limpiar la fecha B al desactivar para no enviarla al server */
   if(!periodoActivo) document.getElementById('fecha-b').value='';
   document.getElementById('hint').textContent='ℹ '+(periodoActivo?CFG[modo].hintP:CFG[modo].hint);
   actualizarChips();
 }
- 
+
+/* ── fmt(d) ──────────────────────────────────────────────────
+   Convierte "YYYY-MM-DD" a "DD/MM/YYYY" para los chips. */
 function fmt(d){ return d?new Date(d+'T00:00').toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}):null; }
- 
+
+/* ── actualizarChips() ───────────────────────────────────────
+   Lee los valores actuales de todos los inputs de filtro
+   y actualiza los chips visuales y el contador en la barra. */
 function actualizarChips(){
   const chips=[];
   const q     = document.getElementById('inp-q')?.value.trim();
@@ -358,42 +493,47 @@ function actualizarChips(){
   const b     = document.getElementById('fecha-b').value;
   const ll    = document.getElementById('fecha-llegada').value;
   const sl    = document.getElementById('fecha-salida').value;
- 
+
   if(q) chips.push(q);
   if(tipo && tipo!=='Todos') chips.push(tipo);
   if(prim) chips.push('1ª entrada MX');
-  if(modo==='estancia'){ if(ll) chips.push(`Llega ${fmt(ll)}`); if(sl) chips.push(`Sale ${fmt(sl)}`); }
-  else if(a){
+
+  /* Generar texto del chip de fecha según el modo activo */
+  if(modo==='estancia'){
+    if(ll) chips.push(`Llega ${fmt(ll)}`);
+    if(sl) chips.push(`Sale ${fmt(sl)}`);
+  } else if(a){
     const etq={solicitud:'Sol',llegada:'Llegada',salida:'Salida'}[modo];
     chips.push(periodoActivo&&b ? `${etq}: ${fmt(a)}–${fmt(b)}` : `${etq}: ${fmt(a)}`);
   }
- 
+
+  /* Renderizar máximo 3 chips en la barra (evitar overflow) */
   const cont=document.getElementById('chips');
   cont.innerHTML=chips.slice(0,3).map(c=>`
     <span style="font-size:11px;padding:2px 8px;border-radius:20px;
           background:var(--info-bg);color:var(--info);border:1px solid var(--info)">${c}</span>
   `).join('');
- 
+
+  /* Actualizar el contador "N activos" */
   const count=document.getElementById('filtros-count');
   if(chips.length){ count.textContent=chips.length+' activo'+(chips.length>1?'s':''); count.style.display='inline'; }
   else count.style.display='none';
 
+  /* También incluir el orden urgente en los chips si está activo */
   const ordenEl = document.getElementById('inp-orden');
   if(ordenEl && ordenEl.value === 'urgente') chips.push('Urgente primero');
 }
- 
-// init chips con valores del servidor
+
+/* Inicializar chips con los valores ya cargados desde el servidor */
 actualizarChips();
- 
-// escuchar cambios en inputs
+
+/* Actualizar chips en tiempo real cuando el usuario modifica un filtro */
 ['inp-q','inp-tipo','inp-primera','fecha-a','fecha-b','fecha-llegada','fecha-salida'].forEach(id=>{
   const el=document.getElementById(id);
   if(el) el.addEventListener('change', actualizarChips);
+  // Para inputs de texto también escuchar cada tecla (input event) 
   if(el && el.type==='text') el.addEventListener('input', actualizarChips);
 });
 </script>
 
-
-{% csrf_token %}
-{% include "components/modal_rechazo.html" %}
 {% endblock %}

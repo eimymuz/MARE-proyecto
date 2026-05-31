@@ -1,9 +1,15 @@
-<!-- ══════════════════════════════════════════════════════
-     CORAL — Asistente IA de MARE
-     Agregar justo antes del </body> en base.html
-     ══════════════════════════════════════════════════════ -->
+{% comment %} =========================================================
+   components/coral.html — Asistente IA "Coral"
+   Incluido en inicio.html. Widget de chat flotante que
+   permite consultar datos operativos de la marina en
+   lenguaje natural. Las respuestas vienen del backend
+   en /asistente/ que consulta la base de datos y usa IA.
+   ========================================================= {%  endcomment %}
 
-<!-- Burbuja flotante -->
+{% comment %} ── BURBUJA FLOTANTE (FAB) ──────────────────────────────────
+   Botón circular fijo en la esquina inferior derecha.
+   Al hacer clic llama a toggleCoral() que muestra/oculta
+   la ventana de chat. {%  endcomment %}
 <div id="coral-fab" onclick="toggleCoral()"
   style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:900;
          width:54px;height:54px;border-radius:50%;
@@ -11,11 +17,13 @@
          display:flex;align-items:center;justify-content:center;
          cursor:pointer;box-shadow:0 4px 20px rgba(10,37,64,.35);
          transition:all .2s">
-        <!-- Icono coral  -->
-        <img src="/static/img/icon.png" width="30" height="30" style="object-fit:contain">
+  {# Ícono del asistente — imagen estática del proyecto #}
+  <img src="/static/img/icon.png" width="30" height="30" style="object-fit:contain">
 </div>
 
-<!-- Ventana de chat -->
+{% comment %} ── VENTANA DE CHAT ─────────────────────────────────────────
+   Panel de chat completo. Oculto por defecto (display:none).
+   Se muestra como flex cuando _coralAbierto = true. {%  endcomment %}
 <div id="coral-chat" style="display:none;position:fixed;bottom:5rem;right:1.5rem;
      z-index:901;width:340px;max-height:520px;
      background:var(--surface);border-radius:var(--radius-lg);
@@ -24,15 +32,16 @@
      display:flex;flex-direction:column;overflow:hidden;
      animation:coral-open .2s ease">
 
-  <!-- Header -->
+  {% comment %} ── Header del chat ───────────────────────────────────────
+     Fondo azul marino con avatar, nombre y botón de cierre. {%  endcomment %}
   <div style="background:var(--navy);padding:.85rem 1rem;
        display:flex;align-items:center;justify-content:space-between">
     <div style="display:flex;align-items:center;gap:8px">
+      {# Avatar circular con ícono del asistente #}
       <div style="width:32px;height:32px;border-radius:50%;
            background:rgba(201,168,76,.15);border:1px solid var(--accent);
            display:flex;align-items:center;justify-content:center">
-           <!-- Icono coral  -->
-            <img src="/static/img/icon.png" width="18" height="18" style="object-fit:contain">
+        <img src="/static/img/icon.png" width="18" height="18" style="object-fit:contain">
       </div>
       <div>
         <div style="font-size:13px;font-weight:600;color:#fff">Coral</div>
@@ -41,22 +50,30 @@
         </div>
       </div>
     </div>
+    {# Botón ✕ para cerrar la ventana de chat #}
     <button onclick="toggleCoral()"
       style="background:none;border:none;color:rgba(255,255,255,.5);
              cursor:pointer;font-size:18px;line-height:1;padding:2px">✕</button>
   </div>
 
-  <!-- Mensajes -->
+  {% comment %} ── Área de mensajes ──────────────────────────────────────
+     Contenedor scrollable donde se agregan los mensajes
+     del bot y del usuario dinámicamente con agregarMensaje(). {%  endcomment %}
   <div id="coral-mensajes"
     style="flex:1;overflow-y:auto;padding:.85rem;
            display:flex;flex-direction:column;gap:.6rem;
            max-height:340px;min-height:200px">
-    <!-- Mensaje bienvenida -->
+
+    {# Mensaje de bienvenida inicial del asistente #}
     <div class="coral-msg coral-msg-bot">
       ¡Hola! Soy <strong>Coral</strong>, tu asistente de marina. 🐚<br>
       Puedo ayudarte con consultas operativas. Prueba preguntarme algo:
     </div>
-    <!-- Sugerencias rápidas -->
+
+    {% comment %} ── Sugerencias rápidas ────────────────────────────────
+       Botones con preguntas predefinidas. Al hacer clic en
+       cualquiera llama a preguntarCoral(texto) que oculta
+       este bloque y envía la pregunta automáticamente. {%  endcomment %}
     <div id="coral-sugerencias" style="display:flex;flex-direction:column;gap:.3rem">
       <button class="coral-sug" onclick="preguntarCoral('¿Quiénes salen hoy?')">
         🚢 ¿Quiénes salen hoy?
@@ -76,7 +93,9 @@
     </div>
   </div>
 
-  <!-- Input -->
+  {% comment %} ── Input de mensaje ──────────────────────────────────────
+     Campo de texto + botón enviar.
+     onkeydown detecta la tecla Enter para enviar sin botón. {%  endcomment %}
   <div style="padding:.7rem;border-top:1px solid var(--border);
        display:flex;gap:.4rem;background:var(--bg)">
     <input id="coral-input" type="text"
@@ -85,6 +104,7 @@
       style="flex:1;font-size:13px;padding:.45rem .65rem;
              border:1px solid var(--border);border-radius:var(--radius);
              background:var(--surface);color:var(--text);outline:none">
+    {# Botón de enviar — ícono de flecha ➤ #}
     <button onclick="enviarCoral()"
       style="background:var(--navy);color:var(--accent);border:none;
              border-radius:var(--radius);padding:.45rem .7rem;
@@ -94,29 +114,36 @@
   </div>
 </div>
 
+{# ── Estilos internos del componente ────────────────────────── #}
 <style>
+/* Animación de apertura de la ventana de chat — sube y aparece */
 @keyframes coral-open {
   from { opacity:0; transform:translateY(10px) scale(.97); }
   to   { opacity:1; transform:translateY(0)    scale(1); }
 }
+/* Estilo base de todos los mensajes (bot y usuario) */
 .coral-msg {
   font-size:13px;line-height:1.5;padding:.6rem .75rem;
   border-radius:10px;max-width:90%;word-break:break-word;
 }
+/* Mensajes del bot — fondo gris claro, alineados a la izquierda */
 .coral-msg-bot {
   background:var(--bg);color:var(--text);
   border-bottom-left-radius:3px;align-self:flex-start;
 }
+/* Mensajes del usuario — fondo azul marino, alineados a la derecha */
 .coral-msg-user {
   background: var(--navy);
   color: #9e9c9c !important;
   border-bottom-right-radius: 3px;
   align-self: flex-end;
 }
+/* Mensajes de error — fondo rojo claro */
 .coral-msg-error {
   background:var(--danger-bg);color:var(--danger);
   border-bottom-left-radius:3px;align-self:flex-start;
 }
+/* Botones de sugerencias rápidas con hover azul marino */
 .coral-sug {
   background:var(--surface);border:1px solid var(--border);
   border-radius:20px;padding:.35rem .75rem;font-size:12px;
@@ -126,6 +153,7 @@
 .coral-sug:hover {
   background:var(--navy);color:#fff;border-color:var(--navy);
 }
+/* Indicador de "escribiendo" — 3 puntos animados */
 .coral-typing {
   display:flex;gap:4px;align-items:center;padding:.5rem .75rem;
 }
@@ -134,6 +162,7 @@
   background:var(--text-light);display:inline-block;
   animation:coral-dot .9s infinite;
 }
+/* Delays escalonados para que los 3 puntos se animen en secuencia */
 .coral-typing span:nth-child(2){animation-delay:.15s}
 .coral-typing span:nth-child(3){animation-delay:.3s}
 @keyframes coral-dot {
@@ -143,14 +172,21 @@
 </style>
 
 <script>
+// Token CSRF necesario para el POST a /asistente/ 
 const CORAL_CSRF = "{{ csrf_token }}";
+
+// stado de apertura del chat — true = abierto, false = cerrado 
 let _coralAbierto = false;
 
+/* ── toggleCoral() ───────────────────────────────────────────
+   Alterna la visibilidad del chat. Cambia el color del FAB
+   según el estado y pone el foco en el input al abrir. */
 function toggleCoral(){
   _coralAbierto = !_coralAbierto;
   const chat = document.getElementById('coral-chat');
   const fab  = document.getElementById('coral-fab');
   chat.style.display = _coralAbierto ? 'flex' : 'none';
+  // El FAB cambia de color navy→accent cuando el chat está abierto 
   fab.style.background = _coralAbierto ? 'var(--accent)' : 'var(--navy)';
   fab.querySelector('svg').style.stroke = _coralAbierto ? 'var(--navy)' : 'var(--accent)';
   if(_coralAbierto){
@@ -158,34 +194,43 @@ function toggleCoral(){
   }
 }
 
+/* ── preguntarCoral(texto) ───────────────────────────────────
+   Usada por los botones de sugerencias. Oculta las sugerencias,
+   rellena el input con el texto y dispara el envío. */
 function preguntarCoral(texto){
-  // ocultar sugerencias al usar una
   const sugs = document.getElementById('coral-sugerencias');
   if(sugs) sugs.style.display = 'none';
   document.getElementById('coral-input').value = texto;
   enviarCoral();
 }
 
+/* ── enviarCoral() ───────────────────────────────────────────
+   Función principal de envío. Toma el texto del input,
+   lo muestra como mensaje de usuario, muestra animación
+   de typing, hace POST a /asistente/ y muestra la respuesta.
+   Endpoint: POST /asistente/ con body JSON { mensaje: "..." }
+   Respuesta esperada: { respuesta: "texto de la IA" } */
 async function enviarCoral(){
   const input = document.getElementById('coral-input');
   const msg   = input.value.trim();
-  if(!msg) return;
+  if(!msg) return;                // No enviar mensajes vacíos 
 
-  input.value = '';
-  agregarMensaje(msg, 'user');
-  mostrarTyping();
+  input.value = '';               // Limpiar el input inmediatamente 
+  agregarMensaje(msg, 'user');    // Mostrar el mensaje del usuario 
+  mostrarTyping();                // Mostrar animación de "escribiendo" 
 
   try{
     const res  = await fetch('/asistente/', {
       method:  'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken':  CORAL_CSRF,
+        'X-CSRFToken':  CORAL_CSRF,   // Header CSRF requerido por Django 
       },
       body: JSON.stringify({ mensaje: msg }),
     });
     const data = await res.json();
     quitarTyping();
+    // data.respuesta contiene el texto generado por la IA 
     agregarMensaje(data.respuesta || 'No pude procesar esa pregunta.', 'bot');
   } catch(err){
     quitarTyping();
@@ -193,15 +238,23 @@ async function enviarCoral(){
   }
 }
 
+/* ── agregarMensaje(texto, tipo) ─────────────────────────────
+   Crea un div con la clase coral-msg-{tipo} y lo agrega
+   al área de mensajes. Hace auto-scroll al fondo para que
+   siempre se vea el mensaje más reciente. */
 function agregarMensaje(texto, tipo){
   const cont = document.getElementById('coral-mensajes');
   const div  = document.createElement('div');
   div.className = `coral-msg coral-msg-${tipo}`;
   div.innerHTML = texto;
   cont.appendChild(div);
+  // scrollTop = scrollHeight lleva el scroll hasta el final del área 
   cont.scrollTop = cont.scrollHeight;
 }
 
+/* ── mostrarTyping() ─────────────────────────────────────────
+   Inserta el indicador animado de 3 puntos mientras el bot
+   genera su respuesta. */
 function mostrarTyping(){
   const cont = document.getElementById('coral-mensajes');
   const div  = document.createElement('div');
@@ -212,6 +265,8 @@ function mostrarTyping(){
   cont.scrollTop = cont.scrollHeight;
 }
 
+/* ── quitarTyping() ──────────────────────────────────────────
+   Remueve el indicador de typing cuando llega la respuesta. */
 function quitarTyping(){
   const el = document.getElementById('coral-typing-indicator');
   if(el) el.remove();

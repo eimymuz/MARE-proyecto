@@ -1,54 +1,79 @@
 {% extends "base.html" %}
 {% load static %}
+{% comment %} =========================================================
+   inicio.html — Dashboard principal del sistema MARE
+   Página de inicio que muestra un resumen operativo del día:
+   ocupación, clima, métricas de llegadas/salidas y mapa.
+
+   Contexto requerido desde la vista:
+     - porcentaje_ocupacion    → % de espacios ocupados esta semana
+     - libres / ocupados       → conteo de espacios libres y ocupados
+     - clima                   → dict con datos meteorológicos:
+         .icono, .descripcion, .temperatura, .viento,
+         .direccion_viento, .nubosidad, .alerta_viento.nivel/texto
+     - llegadas_hoy            → nº de embarcaciones que llegan hoy
+     - salidas_hoy             → nº de embarcaciones que salen hoy
+     - fecha_hoy               → fecha formateada para mostrar
+     - fecha_hoy_iso           → fecha ISO para el script del mapa
+     - llegadas_embarcaciones  → queryset de solicitudes con llegada hoy
+     - salidas_embarcaciones   → queryset de solicitudes con salida hoy
+     - asignaciones_activas    → queryset de asignaciones vigentes hoy
+   ========================================================= {% endcomment %}
 {% block title %}Inicio — MARE{% endblock %}
 
 {% block content %}
 
+{% comment %} Carga los estilos específicos del dashboard de inicio {% endcomment %}
 <link rel="stylesheet" href="{% static 'css/inicio.css' %}">
 
-<!-- =========================================
-     WIDGETS SUPERIORES
-========================================= -->
-
+{% comment %} ══ SECCIÓN 1: WIDGETS SUPERIORES ═════════════════════════
+   Dos tarjetas en fila: ocupación de la marina y clima actual. {% endcomment %}
 <section class="marine-widgets">
 
-  <!-- OCUPACIÓN -->
+  {% comment %} ── Widget de Ocupación ──────────────────────────────────
+     Muestra el porcentaje de espacios ocupados esta semana
+     en un círculo grande, y debajo los conteos de libres y
+     ocupados con colores diferenciados. {% endcomment %}
   <div class="marine-card ocupacion-card">
 
+    {% comment %} Círculo con porcentaje — se rellena desde la vista con
+       el cálculo: (ocupados / total_espacios) * 100 {% endcomment %}
     <div class="circle">
       {{ porcentaje_ocupacion }}%
     </div>
 
     <h4>Ocupación</h4>
-
     <p>esta semana</p>
 
     <div class="ocupacion-footer">
 
+      {% comment %} Espacios libres — color verde (--success) {% endcomment %}
       <div>
         <strong style="color:var(--success)">
           {{ libres }}
         </strong>
-
         <span>Libres</span>
       </div>
 
+      {% comment %} Espacios ocupados — color azul marino (--mare-mid) {% endcomment %}
       <div>
         <strong style="color:var(--mare-mid)">
           {{ ocupados }}
         </strong>
-
         <span>Ocupados</span>
       </div>
 
     </div>
-
   </div>
 
-
-  <!-- CLIMA -->
+  {% comment %} ── Widget de Clima ──────────────────────────────────────
+     Muestra condiciones meteorológicas actuales consultadas
+     por la vista desde una API de clima (Open-Meteo o similar).
+     La alerta de viento tiene nivel: 'ok'|'moderado'|'fuerte'
+     que genera una clase CSS diferente. {% endcomment %}
   <div class="marine-card clima-card">
 
+    {% comment %} Ícono del clima — emoji según descripción (sol, nubes, lluvia) {% endcomment %}
     <div class="clima-icon">
       {{ clima.icono }}
     </div>
@@ -57,460 +82,342 @@
 
       <h5>Condiciones actuales</h5>
 
+      {% comment %} Descripción textual + temperatura en grados Celsius {% endcomment %}
       <h3>
         {{ clima.descripcion }} · {{ clima.temperatura }}°C
       </h3>
 
+      {% comment %} Tres métricas de viento y nubosidad en fila {% endcomment %}
       <div class="clima-info">
-
         <div>
           <span>Viento</span>
           <strong>{{ clima.viento }} km/h</strong>
         </div>
-
         <div>
           <span>Dirección</span>
+          {% comment %} Dirección en grados (0=Norte, 90=Este, 180=Sur, 270=Oeste) {% endcomment %}
           <strong>{{ clima.direccion_viento }}°</strong>
         </div>
-
         <div>
           <span>Nubosidad</span>
           <strong>{{ clima.nubosidad }}%</strong>
         </div>
-
       </div>
 
+      {% comment %} Alerta de viento — clase CSS dinámica según nivel:
+         clima-alerta-ok → verde (sin riesgo)
+         clima-alerta-moderado → amarillo (precaución)
+         clima-alerta-fuerte → rojo (no recomendado zarpar) {% endcomment %}
       <div class="clima-alerta clima-alerta-{{ clima.alerta_viento.nivel }}">
         {{ clima.alerta_viento.texto }}
       </div>
 
     </div>
-
   </div>
 
 </section>
 
-
-<!-- =========================================
-     MÉTRICAS
-========================================= -->
-
+{% comment %} ══ SECCIÓN 2: MÉTRICAS DEL DÍA ════════════════════════════
+   Cuatro tarjetas numéricas con actividad del día.
+   Las 3 primeras son clicables y abren un popup con detalle. {% endcomment %}
 <div class="metricas-grid">
 
-  <!-- LLEGADAS -->
+  {% comment %} ── Llegadas hoy ──────────────────────────────────────────
+     Clicable — abre popup-llegadas con la lista de embarcaciones
+     que llegan hoy. Color azul marino. {% endcomment %}
   <div
     class="metrica-card metrica-click"
     onclick="abrirPopup('popup-llegadas')"
   >
-
-    <div class="metrica-title">
-      Llegadas hoy
-    </div>
-
-    <div
-      class="metrica-num"
-      style="color:var(--mare-mid)"
-    >
+    <div class="metrica-title">Llegadas hoy</div>
+    <div class="metrica-num" style="color:var(--mare-mid)">
       {{ llegadas_hoy }}
     </div>
-
-    <div class="metrica-desc">
-      embarcaciones programadas
-    </div>
-
+    <div class="metrica-desc">embarcaciones programadas</div>
   </div>
 
-
-  <!-- SALIDAS -->
+  {% comment %} ── Salidas hoy ───────────────────────────────────────────
+     Clicable — abre popup-salidas. Color morado. {% endcomment %}
   <div
     class="metrica-card metrica-click"
     onclick="abrirPopup('popup-salidas')"
   >
-
-    <div class="metrica-title">
-      Salidas hoy
-    </div>
-
-    <div
-      class="metrica-num"
-      style="color:var(--emp-purple)"
-    >
+    <div class="metrica-title">Salidas hoy</div>
+    <div class="metrica-num" style="color:var(--emp-purple)">
       {{ salidas_hoy }}
     </div>
-
-    <div class="metrica-desc">
-      salidas programadas
-    </div>
-
+    <div class="metrica-desc">salidas programadas</div>
   </div>
 
-
-  <!-- OCUPADOS -->
+  {% comment %} ── Espacios ocupados ─────────────────────────────────────
+     Clicable — abre popup-ocupados. Color naranja/warning. {% endcomment %}
   <div
     class="metrica-card metrica-click"
     onclick="abrirPopup('popup-ocupados')"
   >
-
-    <div class="metrica-title">
-      Ocupados hoy
-    </div>
-
-    <div
-      class="metrica-num"
-      style="color:var(--warning)"
-    >
+    <div class="metrica-title">Ocupados hoy</div>
+    <div class="metrica-num" style="color:var(--warning)">
       {{ ocupados }}
     </div>
-
-    <div class="metrica-desc">
-      espacios con embarcación
-    </div>
-
+    <div class="metrica-desc">espacios con embarcación</div>
   </div>
 
-
-  <!-- LIBRES -->
+  {% comment %} ── Espacios libres ───────────────────────────────────────
+     NO clicable — solo informativo. Color verde. {% endcomment %}
   <div class="metrica-card">
-
-    <div class="metrica-title">
-      Libres
-    </div>
-
-    <div
-      class="metrica-num"
-      style="color:var(--success)"
-    >
+    <div class="metrica-title">Libres</div>
+    <div class="metrica-num" style="color:var(--success)">
       {{ libres }}
     </div>
-
-    <div class="metrica-desc">
-      espacios disponibles
-    </div>
-
+    <div class="metrica-desc">espacios disponibles</div>
   </div>
 
 </div>
 
-
-<!-- =========================================
-     MAPA
-========================================= -->
-
+{% comment %} ══ SECCIÓN 3: MAPA EN MINIATURA ════════════════════════════
+   Vista de solo lectura del mapa de la marina.
+   El usuario puede ver el estado actual pero no interactuar. {% endcomment %}
 <div class="card" style="padding:.75rem">
 
+  {% comment %} Encabezado del mapa con leyenda de colores y link al mapa completo {% endcomment %}
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
 
     <div>
-
       <span style="font-size:14px;font-weight:600;color:var(--text)">
         Vista general de la marina
       </span>
-
+      {% comment %} Fecha actual formateada para mostrar debajo del título {% endcomment %}
       <span style="font-size:11px;color:var(--text-light);margin-left:.5rem">
         {{ fecha_hoy }}
       </span>
-
     </div>
 
+    {% comment %} Leyenda de colores + botón para ir al mapa completo interactivo {% endcomment %}
     <div style="display:flex;gap:.75rem;font-size:11px;color:var(--text-mid);align-items:center">
-
+      {% comment %} Cuadrado rojo = espacio ocupado {% endcomment %}
       <span style="display:flex;align-items:center;gap:4px">
         <span style="display:inline-block;width:10px;height:10px;background:#f87171;border-radius:2px"></span>
         Ocupado
       </span>
-
+      {% comment %} Cuadrado gris = espacio libre {% endcomment %}
       <span style="display:flex;align-items:center;gap:4px">
         <span style="display:inline-block;width:10px;height:10px;background:#d1d5db;border-radius:2px"></span>
         Libre
       </span>
-
+      {% comment %} Cuadrado café = pasillo entre muelles {% endcomment %}
       <span style="display:flex;align-items:center;gap:4px">
         <span style="display:inline-block;width:10px;height:10px;background:#c8a87a;border-radius:2px"></span>
         Pasillo
       </span>
-
+      {% comment %} Enlace al mapa completo con todos los controles {% endcomment %}
       <a href="{% url 'mapa' %}" class="btn btn-default btn-sm">
         Ver mapa completo →
       </a>
-
     </div>
 
   </div>
 
+  {% comment %} Expone la fecha de hoy al JavaScript del mapa para que cargue
+     la disponibilidad correcta al hacer fetch a la API. {% endcomment %}
   <script>
     window.MAPA_CTX = {
       fecha: '{{ fecha_hoy_iso }}'
     };
   </script>
 
+  {% comment %} Incluye el componente de mapa en modo solo lectura.
+     mapa_readonly=True oculta filtros, panel izquierdo y
+     reduce la altura del canvas a 420px. {% endcomment %}
   {% include 'mapa/mapa_component.html' with mapa_readonly=True %}
 
 </div>
 
+{% comment %} ══ SECCIÓN 4: POPUPS DE DETALLE ════════════════════════════
+   Tres overlays ocultos que se abren al clicar las métricas.
+   Cada uno lista las embarcaciones correspondientes al día. {% endcomment %}
 
-
-<!-- =========================================
-     POPUP LLEGADAS
-========================================= -->
-
+{% comment %} ── Popup: Llegadas de hoy ───────────────────────────────────
+   Muestra el queryset llegadas_embarcaciones (solicitudes
+   cuya fecha_llegada == hoy). {% endcomment %}
 <div class="popup-overlay" id="popup-llegadas">
-
   <div class="popup-box">
 
     <div class="popup-header">
-
-      <h3>
-        Llegadas de hoy
-      </h3>
-
-      <button
-        class="popup-close"
-        onclick="cerrarPopup('popup-llegadas')"
-      >
-        ×
-      </button>
-
+      <h3>Llegadas de hoy</h3>
+      {% comment %} Botón ✕ cierra el popup removiendo la clase 'active' {% endcomment %}
+      <button class="popup-close" onclick="cerrarPopup('popup-llegadas')">×</button>
     </div>
 
     <div class="popup-body">
-
       {% for s in llegadas_embarcaciones %}
 
         <div class="popup-item">
+          {% comment %} Nombre de la embarcación como título del item {% endcomment %}
+          <h4>{{ s.embarcacion.nombre_bote }}</h4>
 
-          <h4>
-            {{ s.embarcacion.nombre_bote }}
-          </h4>
-
+          {% comment %} Grid de 4 datos: cliente, tipo, llegada y salida {% endcomment %}
           <div class="popup-grid">
-
             <div>
               <strong>Cliente:</strong><br>
               {{ s.embarcacion.cliente.fullname }}
             </div>
-
             <div>
               <strong>Tipo:</strong><br>
               {{ s.embarcacion.tipo_barco.tipo_barco }}
             </div>
-
             <div>
               <strong>Llegada:</strong><br>
               {{ s.fecha_llegada }}
             </div>
-
             <div>
               <strong>Salida:</strong><br>
               {{ s.fecha_salida }}
             </div>
-
           </div>
-
         </div>
 
       {% empty %}
-
+        {% comment %} Mensaje cuando no hay llegadas programadas para hoy {% endcomment %}
         <div class="popup-empty">
           No hay llegadas programadas.
         </div>
-
       {% endfor %}
-
     </div>
 
   </div>
-
 </div>
 
-
-
-<!-- =========================================
-     POPUP SALIDAS
-========================================= -->
-
+{% comment %} ── Popup: Salidas de hoy ────────────────────────────────────
+   Muestra el queryset salidas_embarcaciones (solicitudes
+   cuya fecha_salida == hoy). {% endcomment %}
 <div class="popup-overlay" id="popup-salidas">
-
   <div class="popup-box">
 
     <div class="popup-header">
-
-      <h3>
-        Salidas de hoy
-      </h3>
-
-      <button
-        class="popup-close"
-        onclick="cerrarPopup('popup-salidas')"
-      >
-        ×
-      </button>
-
+      <h3>Salidas de hoy</h3>
+      <button class="popup-close" onclick="cerrarPopup('popup-salidas')">×</button>
     </div>
 
     <div class="popup-body">
-
       {% for s in salidas_embarcaciones %}
 
         <div class="popup-item">
-
-          <h4>
-            {{ s.embarcacion.nombre_bote }}
-          </h4>
-
+          <h4>{{ s.embarcacion.nombre_bote }}</h4>
           <div class="popup-grid">
-
             <div>
               <strong>Cliente:</strong><br>
               {{ s.embarcacion.cliente.fullname }}
             </div>
-
             <div>
               <strong>Tipo:</strong><br>
               {{ s.embarcacion.tipo_barco.tipo_barco }}
             </div>
-
             <div>
               <strong>Llegada:</strong><br>
               {{ s.fecha_llegada }}
             </div>
-
             <div>
               <strong>Salida:</strong><br>
               {{ s.fecha_salida }}
             </div>
-
           </div>
-
         </div>
 
       {% empty %}
-
         <div class="popup-empty">
           No hay salidas programadas.
         </div>
-
       {% endfor %}
-
     </div>
 
   </div>
-
 </div>
 
-
-
-<!-- =========================================
-     POPUP OCUPADOS
-========================================= -->
-
+{% comment %} ── Popup: Espacios ocupados ─────────────────────────────────
+   Muestra el queryset asignaciones_activas (Asignacion con
+   fecha_inicio <= hoy <= fecha_fin). {% endcomment %}
 <div class="popup-overlay" id="popup-ocupados">
-
   <div class="popup-box">
 
     <div class="popup-header">
-
-      <h3>
-        Espacios ocupados
-      </h3>
-
-      <button
-        class="popup-close"
-        onclick="cerrarPopup('popup-ocupados')"
-      >
-        ×
-      </button>
-
+      <h3>Espacios ocupados</h3>
+      <button class="popup-close" onclick="cerrarPopup('popup-ocupados')">×</button>
     </div>
 
     <div class="popup-body">
-
+      {% comment %} asignaciones_activas = Asignacion.objects.filter(
+           fecha_inicio__lte=hoy, fecha_fin__gte=hoy) {% endcomment %}
       {% for a in asignaciones_activas %}
 
         <div class="popup-item">
-
-          <h4>
-            {{ a.solicitud.embarcacion.nombre_bote }}
-          </h4>
-
+          {% comment %} Nombre del bote a través de la relación Asignacion→Solicitud→Embarcacion {% endcomment %}
+          <h4>{{ a.solicitud.embarcacion.nombre_bote }}</h4>
           <div class="popup-grid">
-
             <div>
               <strong>Cliente:</strong><br>
               {{ a.solicitud.embarcacion.cliente.fullname }}
             </div>
-
+            {% comment %} Muelle asignado a través del FK Asignacion.muelle {% endcomment %}
             <div>
               <strong>Muelle:</strong><br>
               {{ a.muelle.nombre }}
             </div>
-
             <div>
               <strong>Inicio:</strong><br>
               {{ a.fecha_inicio }}
             </div>
-
             <div>
               <strong>Fin:</strong><br>
               {{ a.fecha_fin }}
             </div>
-
           </div>
-
         </div>
 
       {% empty %}
-
         <div class="popup-empty">
           No hay espacios ocupados.
         </div>
-
       {% endfor %}
-
     </div>
 
   </div>
-
 </div>
 
+{% comment %} Incluye el asistente IA Coral (burbuja flotante + chat) {% endcomment %}
 {% include "components/coral.html" %}
 
-
-<!-- =========================================
-     SCRIPTS
-========================================= -->
-
+{% comment %} ══ JAVASCRIPT DEL DASHBOARD ════════════════════════════════ {% endcomment %}
 <script>
 
+  /* ── abrirPopup(id) ──────────────────────────────────────────
+     Añade la clase 'active' al overlay con el id dado.
+     CSS de inicio.css aplica display:flex al .popup-overlay.active */
   function abrirPopup(id) {
-
     document
       .getElementById(id)
       .classList
       .add('active')
-
   }
 
+  /* ── cerrarPopup(id) ─────────────────────────────────────────
+     Remueve la clase 'active' para ocultar el overlay. */
   function cerrarPopup(id) {
-
     document
       .getElementById(id)
       .classList
       .remove('active')
-
   }
 
+  /* Cerrar el popup al hacer clic directamente en el overlay oscuro
+     (fuera del cuadro blanco). Compara e.target con el propio overlay. */
   window.addEventListener('click', function(e) {
-
     document
       .querySelectorAll('.popup-overlay')
       .forEach(function(popup) {
-
         if (e.target === popup) {
           popup.classList.remove('active')
         }
-
       })
-
   })
 
 </script>

@@ -1,23 +1,41 @@
+{%  comment %} =========================================================
+   components/navbar.html — Barra de navegación principal
+   Incluido en base.html. Visible en todas las páginas internas.
+   Requiere que el usuario esté autenticado para mostrar
+   los links y el badge de usuario.
+   ========================================================= {%  endcomment %}
+
 <header>
   <div class="header-inner">
 
+    {%  comment %} ── LOGO ────────────────────────────────────────────────
+       Enlace al inicio del sistema. La imagen viene de
+       Google Drive (thumbnail público por ID). {%  endcomment %}
     <a href="{% url 'inicio' %}" class="logo">
       <div class="logo-empresa">
         <img src="https://drive.google.com/thumbnail?id=1jvK1frI44vZ-WkTlk3MzQFbQ7YsC-7VI&sz=w1000" alt="Logo" style="height:40px">
       </div>
     </a>
 
+    {%  comment %} ── MENÚ DE NAVEGACIÓN PRINCIPAL ────────────────────────
+       Cada enlace compara su url_name con el de la URL actual
+       para añadir la clase "active" y resaltar la sección. {%  endcomment %}
     <nav>
+
+      {# Solicitudes Pendientes — estado PENDIENTE #}
       <a href="{% url 'solicitud_list' %}"
          class="nav-link {% if request.resolver_match.url_name == 'solicitud_list' %}active{% endif %}">
+        {# Ícono SVG de clipboard/lista #}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
         </svg>
         Pendientes
       </a>
 
+      {# Solicitudes en Espera — estado EN_ESPERA #}
       <a href="{% url 'solicitud_en_espera_list' %}"
          class="nav-link {% if request.resolver_match.url_name == 'solicitud_en_espera_list' %}active{% endif %}">
+        {# Ícono SVG de reloj #}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
           <polyline points="12 6 12 12 16 14"/>
@@ -25,17 +43,20 @@
         Esperando
       </a>
 
+      {# Solicitudes Asignadas — estado APROBADA (embarcaciones ya en la marina) #}
       <a href="{% url 'solicitud_aprobadas_list' %}"
          class="nav-link {% if request.resolver_match.url_name == 'solicitud_aprobadas_list' %}active{% endif %}">
+        {# Ícono SVG de palomita/checkmark #}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
         Asignadas
       </a>
 
-
+      {# Mapa operativo de la marina #}
       <a href="{% url 'mapa' %}"
          class="nav-link {% if request.resolver_match.url_name == 'mapa' %}active{% endif %}">
+        {# Ícono SVG de mapa con cuadrícula #}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
           <line x1="9" y1="3" x2="9" y2="18"/>
@@ -44,9 +65,10 @@
         Mapa
       </a>
 
-
+      {# Reportes y estadísticas de solicitudes #}
       <a href="{% url 'reporte_solicitudes' %}"
          class="nav-link {% if request.resolver_match.url_name == 'reporte_solicitudes' %}active{% endif %}">
+        {# Ícono SVG de gráfica de líneas #}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 3v18h18"/>
           <path d="M7 14l3-3 3 2 4-5"/>
@@ -60,10 +82,19 @@
 
     </nav>
 
+    {% comment %}
+       ── ZONA DERECHA DEL HEADER ─────────────────────────────
+       Contiene: link de Usuarios (solo gerentes), badge de
+       usuario logueado y botón de cerrar sesión. {%  endcomment %}
     <div class="header-right">
+
+      {% comment %}
+         Link de gestión de usuarios — SOLO visible si el usuario
+         tiene el rol de gerente (es_gerente = True en Administrador) {%  endcomment %}
       {% if user.is_authenticated and user.administrador.es_gerente %}
       <a href="{% url 'usuario_list' %}"
         class="nav-link {% if request.resolver_match.url_name == 'usuario_list' %}active{% endif %}">
+        {# Ícono SVG de grupo de personas #}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
           <circle cx="9" cy="7" r="4"/>
@@ -74,20 +105,28 @@
       </a>
       {% endif %}
 
-    <div class="user-badge">
-      <div class="user-avatar">
-        {{ user.get_short_name|default:user.username|first|upper }}
+      {% comment %}
+         Badge circular con la inicial del nombre del usuario.
+         get_short_name devuelve el first_name; si está vacío
+         usa username. |first toma la primera letra, |upper la pone
+         en mayúscula para el avatar. {%  endcomment %}
+      <div class="user-badge">
+        <div class="user-avatar">
+          {{ user.get_short_name|default:user.username|first|upper }}
+        </div>
+        <div>
+          {# Nombre corto del usuario #}
+          <span>{{ user.get_short_name|default:user.username }}</span>
+          {# Rol del administrador (Empleado / Gerente) — solo si está autenticado #}
+          {% if user.is_authenticated %}
+          <span style="font-size:10px;color:var(--text-light);display:block">
+            {{ user.administrador.get_rol_display }}
+          </span>
+          {% endif %}
+        </div>
       </div>
-      <div>
-        <span>{{ user.get_short_name|default:user.username }}</span>
-        {% if user.is_authenticated %}
-        <span style="font-size:10px;color:var(--text-light);display:block">
-          {{ user.administrador.get_rol_display }}
-        </span>
-        {% endif %}
-      </div>
-    </div>
 
+      {# Botón de cerrar sesión — llama a la URL 'logout' de Django auth #}
       {% if user.is_authenticated %}
       <a href="{% url 'logout' %}" class="logout-link">Cerrar sesión</a>
       {% endif %}

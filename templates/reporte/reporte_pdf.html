@@ -1,19 +1,42 @@
 {% load static %}
+{% comment %}
+  =========================================================
+   reporte/reporte_pdf.html — Plantilla PDF de solicitudes
+   NO extiende base.html. Es una página HTML pura que la
+   librería WeasyPrint (o similar) convierte a PDF.
+   Se accede vía GET desde el botón "Descargar PDF" en
+   reporte/reporte.html, pasando los mismos filtros activos
+   en los query params: ?estado=&mes=&anio=
 
+   Contexto requerido desde la vista:
+     - solicitudes      → queryset filtrado de solicitudes
+     - estado           → filtro de estado aplicado
+     - mes / anio       → filtro de mes/año aplicado
+     - fecha_descarga   → fecha actual (date) para mostrar en cabecera
+   ========================================================= {%  endcomment %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <title>Reporte de Solicitudes</title>
+
+{% comment %} 
+  Hoja de estilos específica para PDF: márgenes de página,
+   tipografía, colores de tabla e impresión {%  endcomment %}
 <link rel="stylesheet" href="{% static 'css/reporte/reporte_pdf.css' %}">
 </head>
 
 <body>
 
+{% comment %}
+   ── ENCABEZADO DEL REPORTE ──────────────────────────────────
+   Tabla de dos columnas: logo/nombre a la izquierda,
+   título del reporte a la derecha. {%  endcomment %}
 <div class="header">
   <table class="header-table">
     <tr>
       <td>
+        {# Nombre del sistema y descripción completa #}
         <div class="logo-title">MARE</div>
         <div class="logo-sub">Manejador Administrativo y Registro de Embarcaciones</div>
       </td>
@@ -25,12 +48,17 @@
   </table>
 </div>
 
+{% comment %}
+   ── RESUMEN DE FILTROS APLICADOS ────────────────────────────
+   Muestra en una fila los parámetros con los que se generó
+   el reporte, para que el documento sea autoexplicativo. {%  endcomment %}
 <div class="filters">
   <table class="filters-grid">
     <tr>
       <td>
         <div class="filter-label">Estado</div>
         <div class="filter-value">
+          {# Traduce el valor interno del filtro a texto legible #}
           {% if estado == 'aceptado' %}Aprobadas
           {% elif estado == 'rechazado' %}Rechazadas
           {% elif estado == 'completado' %}Completadas
@@ -40,20 +68,26 @@
       </td>
       <td>
         <div class="filter-label">Mes</div>
+        {# Si no hay mes seleccionado, muestra "Todos" #}
         <div class="filter-value">{{ mes|default:"Todos" }}</div>
       </td>
       <td>
         <div class="filter-label">Año</div>
+        {# Si no hay año seleccionado, muestra "Todos" #}
         <div class="filter-value">{{ anio|default:"Todos" }}</div>
       </td>
       <td>
         <div class="filter-label">Fecha de descarga</div>
+        {# Fecha en que se generó el PDF, formato DD/MM/YYYY #}
         <div class="filter-value">{{ fecha_descarga|date:"d/m/Y" }}</div>
       </td>
     </tr>
   </table>
 </div>
 
+{% comment %}
+   ── TABLA DE SOLICITUDES ────────────────────────────────────
+   Lista todas las solicitudes que pasaron el filtro. {%  endcomment %}
 <div class="panel">
   <div class="panel-title">Detalle de solicitudes</div>
   <div class="panel-sub">Registros generados por el filtro seleccionado.</div>
@@ -69,21 +103,35 @@
       </tr>
     </thead>
     <tbody>
+      {# Itera sobre el queryset de solicitudes filtradas #}
       {% for s in solicitudes %}
       <tr>
+        {# Nombre del bote — |default evita celdas vacías en el PDF #}
         <td>{{ s.embarcacion.nombre_bote|default:"Sin nombre" }}</td>
+
+        {# Nombre completo del cliente relacionado #}
         <td>{{ s.embarcacion.cliente.fullname|default:"Sin cliente" }}</td>
+
         <td>
+          {% comment %} fecha_resolucion se guarda cuando la solicitud cambia a
+             APROBADA o RECHAZADA. Puede ser null si aún no se resolvió. {%  endcomment %}
           {% if s.fecha_resolucion %}
             {{ s.fecha_resolucion|date:"d/m/Y H:i" }}
           {% else %}
             No disponible
           {% endif %}
         </td>
+
+        {# Estado interno del modelo (APROBADA, RECHAZADA, etc.) #}
         <td>{{ s.estado|default:"N/A" }}</td>
+
+        {% comment %}
+           Motivo de rechazo — solo aplica si el estado es RECHAZADA.
+           Para solicitudes aprobadas muestra "-" {%  endcomment %}
         <td>{{ s.motivo_rechazo|default:"-" }}</td>
       </tr>
       {% empty %}
+      {# Mensaje cuando ninguna solicitud coincide con los filtros #}
       <tr>
         <td colspan="5">No hay solicitudes para los filtros seleccionados.</td>
       </tr>
@@ -91,22 +139,22 @@
     </tbody>
   </table>
 
-  <!-- RESUMEN TOTAL -->
-    <div class="summary-box">
-
-      <table class="summary-row">
-        <tr>
-          <td class="summary-label">
-            Total de solicitudes
-          </td>
-
-          <td class="summary-value">
-            {{ solicitudes|length }}
-          </td>
-        </tr>
-      </table>
-
-    </div>
+  {% comment %}
+     ── RESUMEN TOTAL ───────────────────────────────────────────
+     Muestra el total de registros incluidos en el reporte.
+     |length cuenta los elementos del queryset ya evaluado. {%  endcomment %}
+  <div class="summary-box">
+    <table class="summary-row">
+      <tr>
+        <td class="summary-label">
+          Total de solicitudes
+        </td>
+        <td class="summary-value">
+          {{ solicitudes|length }}
+        </td>
+      </tr>
+    </table>
+  </div>
 
 </div>
 

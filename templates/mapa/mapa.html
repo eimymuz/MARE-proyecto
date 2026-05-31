@@ -1,19 +1,40 @@
 {% extends "base.html" %}
+{% comment %}
+ =========================================================
+   mapa/mapa.html — Página del Mapa Operativo
+   Extiende base.html. Esta página es el contenedor de la
+   vista completa del mapa interactivo de la marina.
+   Toda la lógica SVG, zoom, filtros y asignación está en
+   mapa/mapa_component.html que se incluye aquí.
+   ========================================================= {%  endcomment %}
 {% block title %}Mapa Operativo — MARE{% endblock %}
 {% block content %}
 
+{# Encabezado de la sección #}
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
   <h2 style="margin:0">Mapa Operativo</h2>
 </div>
 
+{% comment %}
+    ── Contexto de solicitud activa ────────────────────────────
+   Cuando se llega al mapa desde "Asignar" o "Reasignar" en la
+   lista de solicitudes, la URL trae ?solicitud_id=>pk<.
+   La vista inyecta solicitud_ctx con los datos de esa solicitud.
+   Este bloque >script< expone esos datos como window.MAPA_CTX
+   para que mapa_component.html los lea en JavaScript. {%  endcomment %}
 {% if solicitud_ctx %}
 <script>
 window.MAPA_CTX = {
-  solicitud_id:   {{ solicitud_ctx.id }},
-  solicitud_label:"{{ solicitud_ctx.label }}",
-  embarcacion:    "{{ solicitud_ctx.embarcacion }}",
-  fecha_llegada:  "{{ solicitud_ctx.fecha_llegada }}",
-  fecha_salida:   "{{ solicitud_ctx.fecha_salida }}",
+  solicitud_id:   {{ solicitud_ctx.id }},           // ID de la solicitud a asignar 
+  solicitud_label:"{{ solicitud_ctx.label }}",       // Etiqueta legible: "Solicitud #N" 
+  embarcacion:    "{{ solicitud_ctx.embarcacion }}",  // Nombre del bote 
+  fecha_llegada:  "{{ solicitud_ctx.fecha_llegada }}",// Fecha inicio de la estancia (ISO) 
+  fecha_salida:   "{{ solicitud_ctx.fecha_salida }}", // Fecha fin de la estancia (ISO) 
+
+  /* Si no se viene desde el propio mapa (from_mapa=False), al
+     confirmar la asignación se redirige a la lista de asignadas.
+     Si from_mapa=True el callback no se define y el mapa solo
+     se recarga sin redirigir. */
   {% if not from_mapa %}
   onAsignado: function(data){
     window.location.href = "{% url 'solicitud_aprobadas_list' %}";
@@ -23,6 +44,10 @@ window.MAPA_CTX = {
 </script>
 {% endif %}
 
+{% comment %} 
+   Componente completo del mapa: SVG, filtros, scripts de
+   zoom/pan/render/interacción/API. Se pasa sin mapa_readonly
+   para que muestre todos los controles de asignación. {%  endcomment %}
 {% include 'mapa/mapa_component.html' %}
 
 {% endblock %}

@@ -1,33 +1,76 @@
-<!-- Modal motivo de rechazo — reutilizable -->
+{%  comment %} =========================================================
+   components/modal_rechazo.html — Modal para rechazar solicitud
+   Componente reutilizable. Se incluye en:
+     - solicitudes/solicitud_list.html
+     - solicitudes/solicitud_aprobadas.html
+     - mapa/mapa_component.html
+   Se activa llamando abrirModalRechazo(pk, nombre, origen)
+   desde cualquiera de esas páginas.
+   ========================================================= {%  endcomment %}
+
+{%  comment %} Overlay oscuro de fondo — oculto por defecto con display:none.
+   Se muestra como flex cuando se llama abrirModalRechazo(). {%  endcomment %}
 <div id="modal-rechazo" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
      background:rgba(0,0,0,0.5);z-index:1100;align-items:center;justify-content:center">
+
+  {# Tarjeta blanca centrada del modal #}
   <div style="background:var(--surface);border-radius:var(--radius-lg);padding:1.5rem;
               width:420px;max-width:95%;box-shadow:var(--shadow-md)">
+
+    {# Título del modal con color de peligro/rojo #}
     <h3 style="margin-bottom:.5rem;color:var(--danger)">Rechazar solicitud</h3>
+
+    {%  comment %} Muestra el nombre de la embarcación — se rellena por JS con
+       document.getElementById('modal-rechazo-nombre').textContent {%  endcomment %}
     <p style="font-size:13px;color:var(--text-mid);margin-bottom:1rem">
       Embarcación: <strong id="modal-rechazo-nombre"></strong>
     </p>
+
+    {%  comment %} Campo oculto que almacena el PK de la solicitud a rechazar.
+       Lo lee confirmarRechazo() para construir la URL del fetch. {%  endcomment %}
     <input type="hidden" id="modal-rechazo-pk">
+
+    {%  comment %} Campo oculto que indica desde dónde se abrió el modal:
+       'list' | 'en_espera' | 'aprobadas'
+       El backend lo usa para redirigir a la lista correcta. {%  endcomment %}
     <input type="hidden" id="modal-rechazo-origen" value="list">
+
+    {# Etiqueta del textarea con asterisco rojo indicando campo obligatorio #}
     <label style="font-size:12px;font-weight:600;color:var(--text-mid);
                   text-transform:uppercase;letter-spacing:.4px">
       Motivo del rechazo <span style="color:var(--danger)">*</span>
     </label>
+
+    {%  comment %} Textarea donde el administrador escribe el motivo del rechazo.
+       resize:vertical permite agrandar verticalmente si hay texto largo. {%  endcomment %}
     <textarea id="modal-rechazo-motivo" rows="4"
       placeholder="Describe el motivo por el cual se rechaza esta solicitud..."
       style="width:100%;margin-top:.35rem;padding:.6rem;border:1px solid var(--border);
              border-radius:var(--radius);font-family:var(--font-sans);font-size:13px;
              resize:vertical;box-sizing:border-box"></textarea>
+
+    {# Mensaje de error inline — se muestra si el campo motivo está vacío #}
     <div id="modal-rechazo-error" style="display:none;color:var(--danger);
          font-size:12px;margin-top:.4rem"></div>
+
+    {# Botones de acción alineados a la derecha #}
     <div style="display:flex;gap:.5rem;margin-top:1rem;justify-content:flex-end">
+      {# Cancelar — cierra el modal sin hacer nada #}
       <button class="btn btn-default" onclick="cerrarModalRechazo()">Cancelar</button>
+      {# Confirmar — dispara la función asíncrona de rechazo #}
       <button class="btn btn-danger" onclick="confirmarRechazo()">Confirmar rechazo</button>
     </div>
   </div>
 </div>
 
 <script>
+/* ── abrirModalRechazo(pk, nombre, origen) ───────────────────
+   Rellena los campos ocultos con los datos de la solicitud,
+   limpia el textarea y el error previo, y muestra el modal.
+   Parámetros:
+     pk     → PK de la solicitud (número)
+     nombre → nombre de la embarcación (string)
+     origen → 'list' | 'en_espera' | 'aprobadas' */
 function abrirModalRechazo(pk, nombre, origen){
     document.getElementById('modal-rechazo-pk').value = pk;
     document.getElementById('modal-rechazo-nombre').textContent = nombre;
@@ -37,39 +80,57 @@ function abrirModalRechazo(pk, nombre, origen){
     document.getElementById('modal-rechazo').style.display = 'flex';
 }
 
+/* ── cerrarModalRechazo() ────────────────────────────────────
+   Oculta el modal y limpia el textarea y el mensaje de error. */
 function cerrarModalRechazo(){
     document.getElementById('modal-rechazo').style.display = 'none';
     document.getElementById('modal-rechazo-motivo').value = '';
     document.getElementById('modal-rechazo-error').style.display = 'none';
 }
 
+/* ── confirmarRechazo() ──────────────────────────────────────
+   Función async que valida y envía el rechazo al backend.
+   1. Lee pk, motivo y origen de los campos ocultos.
+   2. Valida que el motivo no esté vacío — si lo está muestra error.
+   3. Lee el CSRF token del DOM o usa el tag de Django como fallback.
+   4. Hace POST a /solicitudes/<pk>/estado/RECHAZADA/ con FormData.
+   5. Si el servidor responde con una redirección, la sigue.
+   6. Si responde OK, cierra el modal y recarga la página.
+   7. Si hay error de red o HTTP, muestra mensaje en rojo. */
 async function confirmarRechazo(){
     const pk     = document.getElementById('modal-rechazo-pk').value;
     const motivo = document.getElementById('modal-rechazo-motivo').value.trim();
     const origen = document.getElementById('modal-rechazo-origen').value;
     const errEl  = document.getElementById('modal-rechazo-error');
+
+    // Intenta obtener el CSRF token del DOM; si no existe usa el tag de Django 
     const CSRF   = document.querySelector('[name=csrfmiddlewaretoken]')?.value
                    || "{{ csrf_token }}";
 
+    // Validación del lado del cliente: motivo es obligatorio 
     if(!motivo){
         errEl.textContent = 'El motivo es obligatorio.';
         errEl.style.display = 'block';
         return;
     }
 
+    // Construye el FormData con los campos que espera la vista 
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', CSRF);
     formData.append('motivo_rechazo', motivo);
     formData.append('origen', origen);
 
     try{
+        // POST a la URL de cambio de estado de la solicitud 
         const resp = await fetch(`/solicitudes/${pk}/estado/RECHAZADA/`, {
             method: 'POST',
             body: formData
         });
         if(resp.redirected){
+            // El backend redirigió (HttpResponseRedirect) — seguir la URL 
             window.location.href = resp.url;
         } else if(resp.ok){
+            // Éxito sin redirección — cerrar modal y recargar la tabla 
             cerrarModalRechazo();
             window.location.reload();
         } else {

@@ -1,23 +1,49 @@
-<!-- ── POPUP VER SOLICITUD (componente reutilizable) ── -->
+{%  comment %}
+  =========================================================
+   components/popup_solicitud.html — Popup de detalle de solicitud
+   Componente reutilizable incluido en:
+     - solicitudes/solicitud_list.html
+     - solicitudes/solicitud_aprobadas.html
+     - mapa/mapa_component.html
+   Se abre llamando abrirPopupVer(pk) desde cualquier página.
+   Carga los datos del backend en tiempo real via fetch.
+   ========================================================= 
+   {%  endcomment %}
+
+{%  comment %} 
+── OVERLAY OSCURO + TARJETA DEL POPUP ─────────────────────
+   Oculto por defecto. Se muestra como flex al llamar
+   abrirPopupVer(). La opacidad y escala se animan con CSS
+   transitions para una apertura suave. 
+   {%  endcomment %}
 <div id="popup-ver" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
      background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;
      opacity:0;transition:opacity .2s ease">
+
+  {# Tarjeta principal — ancho 740px, scroll vertical si el contenido es largo #}
   <div id="popup-ver-card" style="background:var(--surface);border-radius:var(--radius-lg);
        width:740px;max-width:95%;max-height:90vh;overflow-y:auto;
        box-shadow:var(--shadow-md);
        transform:scale(0.95);transition:transform .25s cubic-bezier(.34,1.56,.64,1)">
 
-    <!-- Header -->
+    {% comment %}
+       ── HEADER DEL POPUP ──────────────────────────────────────
+       Sticky para que siempre sea visible al hacer scroll.
+       Muestra: nombre de la embarcación, badge de estado y subtítulo. {%  endcomment %}
     <div style="padding:1.5rem 2rem;border-bottom:1px solid var(--border);
          display:flex;justify-content:space-between;align-items:flex-start;
          position:sticky;top:0;background:var(--surface);z-index:1">
       <div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          {# Nombre de la embarcación — se rellena con JS: ver-titulo #}
           <span id="ver-titulo" style="font-size:22px;font-weight:500;color:var(--text)"></span>
+          {# Badge de color con el estado actual — estilos asignados por JS #}
           <span id="ver-badge" style="font-size:12px;padding:3px 12px;border-radius:20px;font-weight:500"></span>
         </div>
+        {# "Nombre del cliente · Solicitud #N" — rellena ver-subtitulo #}
         <span id="ver-subtitulo" style="font-size:14px;color:var(--text-light)"></span>
       </div>
+      {# Botón de cierre con efecto hover de fondo y color #}
       <button onclick="cerrarPopupVer()"
         style="background:none;border:none;cursor:pointer;color:var(--text-light);
                font-size:22px;padding:4px;line-height:1;transition:color .15s;border-radius:50%;
@@ -26,33 +52,54 @@
         onmouseout="this.style.background='none';this.style.color='var(--text-light)'">✕</button>
     </div>
 
-    <!-- Body -->
+    {%  comment %} 
+      ── BODY DEL POPUP ────────────────────────────────────────
+       Muestra "Cargando..." mientras el fetch no termina.
+       Después muestra ver-body con los datos en 3 columnas. {%  endcomment %}
     <div style="padding:2rem">
+      {# Indicador de carga — visible mientras fetch está en curso #}
       <div id="ver-loading" style="text-align:center;color:var(--text-light);font-size:15px;padding:3rem">
         Cargando...
       </div>
+
+      {# Contenedor de datos — oculto hasta que el fetch responde #}
       <div id="ver-body" style="display:none">
 
-        <!-- 3 columnas -->
+        {% comment %}
+           ── 3 COLUMNAS: Embarcación | Cliente | Estancia ──────
+           Los divs ver-emb, ver-cliente, ver-estancia se llenan
+           con la función verCampo() por JavaScript. {%  endcomment %}
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin-bottom:1.5rem">
+
+          {# Columna 1: datos técnicos de la embarcación #}
           <div style="padding-right:28px">
             <div style="font-size:11px;font-weight:600;color:#c9a84c;
                  text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px">Embarcación</div>
+            {# Rellena JS con: Tipo, Eslora, Manga, Calado #}
             <div id="ver-emb" style="display:flex;flex-direction:column;gap:10px"></div>
           </div>
+
+          {# Columna 2: datos del cliente dueño de la embarcación #}
           <div style="border-left:1px solid var(--border);padding:0 28px">
             <div style="font-size:11px;font-weight:600;color:#c9a84c;
                  text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px">Cliente</div>
+            {# Rellena JS con: Nombre, Email, Teléfono, 1ª entrada MX #}
             <div id="ver-cliente" style="display:flex;flex-direction:column;gap:10px"></div>
           </div>
+
+          {# Columna 3: fechas de la estancia #}
           <div style="border-left:1px solid var(--border);padding-left:28px">
             <div style="font-size:11px;font-weight:600;color:#c9a84c;
                  text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px">Estancia</div>
+            {# Rellena JS con: Fecha solicitud, Llegada, Salida #}
             <div id="ver-estancia" style="display:flex;flex-direction:column;gap:10px"></div>
           </div>
         </div>
 
-        <!-- Comentario -->
+        {% comment %}
+           ── BLOQUE DE COMENTARIO / SOLICITUDES ESPECIALES ─────
+           Se muestra solo si la solicitud tiene comentario.
+           JS lo controla con comentWrap.style.display. {%  endcomment %}
         <div id="ver-comentario-wrap" style="display:none;margin-bottom:1.5rem;
              border-left:3px solid #c9a84c;border-radius:0 var(--radius) var(--radius) 0;
              padding:.85rem 1.1rem">
@@ -60,22 +107,32 @@
                text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">
             Solicitudes especiales
           </div>
+          {# Texto del comentario ingresado por el cliente #}
           <div id="ver-comentario" style="font-size:14px;color:var(--text)"></div>
         </div>
 
-        <!-- Historial de ubicaciones (solo si hay asignaciones) -->
+        {% comment %}
+           ── HISTORIAL DE UBICACIONES ──────────────────────────
+           Se muestra solo si la solicitud tiene asignaciones previas.
+           Tabla con: Muelle, Espacios, Fecha asignado, Fecha removido, Encargado.
+           La columna "Removido" se calcula en JS comparando la
+           fecha_asignacion de la entrada siguiente en el array. {%  endcomment %}
         <div id="ver-historial-wrap" style="display:none">
           <div style="font-size:11px;font-weight:600;color:#c9a84c;
                text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">
             Historial de ubicaciones
           </div>
+          {# La tabla se construye dinámicamente con JS #}
           <div id="ver-historial"></div>
         </div>
 
       </div>
     </div>
 
-    <!-- Footer -->
+    {% comment %}
+       ── FOOTER DEL POPUP ──────────────────────────────────────
+       Sticky al fondo. Contiene los botones de acción según
+       el estado de la solicitud. Se renderiza con renderBotonesVer(). {%  endcomment %}
     <div id="ver-footer" style="padding:1.1rem 2rem;border-top:1px solid var(--border);
          background:var(--bg);display:flex;gap:8px;align-items:center;flex-wrap:wrap;
          position:sticky;bottom:0">
@@ -84,7 +141,10 @@
   </div>
 </div>
 
+{# ── Estilos para los campos del popup ──────────────────────── #}
 <style>
+/* Campo individual: label pequeño arriba y valor abajo. 
+   Al hacer hover escala ligeramente para dar feedback visual. */
 .ver-field { padding:7px 9px;border-radius:6px;cursor:default;transition:background .15s; }
 .ver-field:hover { background:var(--bg); }
 .ver-field:hover .ver-field-val { transform:scale(1.03);color:var(--navy); }
@@ -94,6 +154,7 @@
   transition:transform .15s,color .15s;
   display:inline-block;transform-origin:left center;
 }
+/* Variante azul para valores tipo email o link */
 .ver-field-val-info {
   font-size:14px;font-weight:500;color:var(--info);
   transition:transform .15s;display:inline-block;transform-origin:left center;
@@ -102,8 +163,10 @@
 </style>
 
 <script>
+// Token CSRF para los formularios de cambio de estado generados por JS 
 const CSRF_VER = "{{ csrf_token }}";
 
+// Mapa de estilos CSS para el badge de estado del popup 
 const BADGE_STYLES_VER = {
   'Pendiente':  'background:var(--warning-bg);color:var(--warning)',
   'En espera':  'background:var(--info-bg);color:var(--info)',
@@ -112,6 +175,9 @@ const BADGE_STYLES_VER = {
   'Rechazada':  'background:var(--danger-bg);color:var(--danger)',
 };
 
+/* ── verCampo(label, valor, esInfo) ─────────────────────────
+   Genera el HTML de un campo con etiqueta + valor.
+   Si esInfo=true usa la clase azul (para emails/links). */
 function verCampo(label, valor, esInfo=false){
   return `<div class="ver-field">
     <div class="ver-field-label">${label}</div>
@@ -119,15 +185,24 @@ function verCampo(label, valor, esInfo=false){
   </div>`;
 }
 
+/* ── abrirPopupVer(pk) ───────────────────────────────────────
+   Muestra el popup con animación, luego hace fetch a
+   /solicitudes/<pk>/json/ para cargar todos los datos.
+   Rellena título, badge, columnas y footer con los datos
+   recibidos del backend. */
 async function abrirPopupVer(pk){
   const popup = document.getElementById('popup-ver');
   const card  = document.getElementById('popup-ver-card');
+
+  /* Mostrar overlay y animar apertura con requestAnimationFrame
+     para que la transición CSS se dispare correctamente */
   popup.style.display = 'flex';
   requestAnimationFrame(()=>{
     popup.style.opacity  = '1';
     card.style.transform = 'scale(1)';
   });
 
+  // Resetear contenido anterior y mostrar "Cargando..." 
   document.getElementById('ver-loading').style.display    = 'block';
   document.getElementById('ver-body').style.display       = 'none';
   document.getElementById('ver-footer').innerHTML         = '';
@@ -136,21 +211,31 @@ async function abrirPopupVer(pk){
   document.getElementById('ver-badge').textContent        = '';
 
   try{
+    /* GET al endpoint JSON de la solicitud — devuelve todos los datos
+       del modelo Solicitud con sus relaciones serializadas */
     const res  = await fetch(`/solicitudes/${pk}/json/`);
     const data = await res.json();
 
+    // Rellenar encabezado con nombre y subtítulo 
     document.getElementById('ver-titulo').textContent    = data.embarcacion;
     document.getElementById('ver-subtitulo').textContent = `${data.cliente} · Solicitud #${data.id}`;
+
+    // Badge: aplica estilos CSS según el estado devuelto 
     const badge = document.getElementById('ver-badge');
     badge.textContent   = data.estado;
     badge.style.cssText = `font-size:12px;padding:3px 12px;border-radius:20px;font-weight:500;${BADGE_STYLES_VER[data.estado]||''}`;
 
+    /* Columna 1: datos técnicos de la embarcación
+       data.eslora/manga/calado vienen en metros desde el modelo */
     document.getElementById('ver-emb').innerHTML =
       verCampo('Tipo',   data.tipo) +
       verCampo('Eslora', data.eslora+' m') +
       verCampo('Manga',  data.manga+' m') +
       verCampo('Calado', data.calado+' m');
 
+    /* Columna 2: datos del cliente
+       El email se convierte en mailto: link.
+       primera_entrada_mexico es un booleano del modelo Solicitud. */
     document.getElementById('ver-cliente').innerHTML =
       verCampo('Nombre',        data.cliente) +
       verCampo('Email',         `<a href="mailto:${data.email_cliente}" style="color:var(--info);text-decoration:none">${data.email_cliente}</a>`, true) +
@@ -159,12 +244,13 @@ async function abrirPopupVer(pk){
         ? '<span style="color:var(--warning);font-weight:500">Sí</span>'
         : '<span style="color:var(--text-light)">No</span>');
 
+    // Columna 3: fechas de la solicitud 
     document.getElementById('ver-estancia').innerHTML =
       verCampo('Solicitud', data.fecha_solicitud) +
       verCampo('Llegada',   data.fecha_llegada) +
       verCampo('Salida',    data.fecha_salida);
 
-    // Comentario
+    // Mostrar comentario solo si existe en la solicitud 
     const comentWrap = document.getElementById('ver-comentario-wrap');
     if(data.comentario){
       document.getElementById('ver-comentario').textContent = data.comentario;
@@ -173,7 +259,11 @@ async function abrirPopupVer(pk){
       comentWrap.style.display = 'none';
     }
 
-    // Historial — solo si hay asignaciones
+    /* ── Historial de asignaciones ───────────────────────────
+       data.asignaciones es una lista ordenada de más antigua a
+       más reciente. La asignación activa (activa=true) es la última.
+       La columna "Removido" se calcula tomando la fecha_asignacion
+       de la entrada anterior (índice i-1) en el array. */
     const histWrap = document.getElementById('ver-historial-wrap');
     if(data.asignaciones && data.asignaciones.length > 0){
       let html = `<div class="table-wrap"><table><thead><tr>
@@ -185,11 +275,14 @@ async function abrirPopupVer(pk){
       </tr></thead><tbody>`;
 
       data.asignaciones.forEach((a, i) => {
+          // Convierte el array de espacios a string "E1, E2" 
           const espacios = a.espacios.map(e => e.numero).join(', ') || '—';
+          // Badge verde "actual" solo para la asignación vigente 
           const actual   = a.activa
             ? `<span class="badge badge-success" style="font-size:10px;margin-left:4px">actual</span>`
             : '';
-          // Removido = fecha_asignacion de la que la reemplazó (i-1, la más reciente anterior)
+          /* Fecha de remoción: si está activa es "—", si no, es la
+             fecha de asignación de la entrada más reciente anterior (i-1) */
           const removido = a.activa ? '—' : (
             i > 0
               ? data.asignaciones[i-1].fecha_asignacion
@@ -211,8 +304,11 @@ async function abrirPopupVer(pk){
       histWrap.style.display = 'none';
     }
 
+    // Ocultar loading y mostrar datos 
     document.getElementById('ver-loading').style.display = 'none';
     document.getElementById('ver-body').style.display    = 'block';
+
+    // Renderizar botones de acción en el footer según el estado 
     renderBotonesVer(data);
 
   } catch(err){
@@ -221,6 +317,29 @@ async function abrirPopupVer(pk){
   }
 }
 
+/* ── renderBotonesVer(data) ──────────────────────────────────
+   Genera los botones del footer del popup según el estado.
+   Cada estado tiene un flujo de acciones diferente: 
+
+   PENDIENTE:
+     - Aprobar  → POST a /solicitudes/<pk>/estado/EN_ESPERA/
+     - Rechazar → abre modal_rechazo con origen 'list'
+     - Editar   → navega a /solicitudes/<pk>/editar/
+
+   EN_ESPERA:
+     - Asignar en mapa → /mapa/?solicitud_id=<pk>
+     - Contactar → abre Gmail con To/Subject/Body prellenados
+     - Revisar   → abre bandeja de Gmail filtrada por email del cliente
+     - Rechazar  → abre modal_rechazo con origen 'en_espera'
+     - Editar    → navega a /solicitudes/<pk>/editar/
+
+   APROBADA:
+     - Contactar / Revisar → igual que EN_ESPERA
+     - Reasignar → /mapa/?solicitud_id=<pk>
+     - Editar    → navega a /solicitudes/<pk>/editar/
+     - Rechazar  → abre modal_rechazo con origen 'aprobadas'
+
+   Todos incluyen botón "Cerrar" alineado a la derecha. */
 function renderBotonesVer(data){
   const pk     = data.id;
   const footer = document.getElementById('ver-footer');
@@ -237,9 +356,11 @@ function renderBotonesVer(data){
     html += `<a href="/solicitudes/${pk}/editar/" class="btn btn-default">Editar</a>`;
 
   } else if(data.estado === 'En espera'){
+    // Botón que abre Gmail con asunto y cuerpo prellenados usando la info del cliente 
     html += `<a href="/mapa/?solicitud_id=${pk}" class="btn btn-accent">Asignar en mapa</a>`;
     html += `<button class="btn btn-default"
       onclick="window.open('https://mail.google.com/mail/?view=cm&to=${data.email_cliente}&su=Solicitud — ${data.embarcacion}&body=Estimado ${data.cliente}','_blank')">Contactar</button>`;
+    // Abre la bandeja de Gmail filtrando por email del cliente para revisar historial 
     html += `<a href="https://mail.google.com/mail/u/0/#search/${data.email_cliente}"
       target="_blank" class="btn btn-default">Revisar</a>`;
     html += `<button class="btn btn-danger"
@@ -259,10 +380,14 @@ function renderBotonesVer(data){
       data-nombre="${data.embarcacion.replace(/"/g,'&quot;')}">Rechazar</button>`;
   }
 
+  // Botón Cerrar siempre al extremo derecho (margin-left:auto) 
   html += `<button onclick="cerrarPopupVer()" class="btn btn-default" style="margin-left:auto">Cerrar</button>`;
   footer.innerHTML = html;
 }
 
+/* ── cerrarPopupVer() ────────────────────────────────────────
+   Anima el cierre (opacidad→0, escala→0.95) y luego oculta
+   el elemento con display:none tras 200ms. */
 function cerrarPopupVer(){
   const popup = document.getElementById('popup-ver');
   const card  = document.getElementById('popup-ver-card');
@@ -271,6 +396,7 @@ function cerrarPopupVer(){
   setTimeout(()=>{ popup.style.display='none'; }, 200);
 }
 
+// Cierra el popup al hacer clic en el overlay oscuro (fuera de la tarjeta) 
 document.addEventListener('DOMContentLoaded', ()=>{
   const el = document.getElementById('popup-ver');
   if(el) el.addEventListener('click', function(ev){

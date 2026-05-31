@@ -1,3 +1,11 @@
+{%  comment %} =========================================================
+   components/footer.html — Pie de página global
+   Incluido automáticamente en base.html al final del <body>.
+   ========================================================= {%  endcomment %}
+
 <footer>
+  {%  comment %} Nombre del sistema seguido del año actual.
+     {% now "Y" %} usa el tag de Django para generar el año
+     en tiempo de render, así el copyright nunca queda desactualizado. {%  endcomment %}
   MARE &nbsp;·&nbsp; {% now "Y" %}
 </footer>

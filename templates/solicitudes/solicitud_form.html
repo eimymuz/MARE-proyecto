@@ -1,10 +1,24 @@
 {% extends "base.html" %}
+{% comment %}
+   =========================================================
+   solicitudes/solicitud_form.html — Formulario de edición de solicitud
+   Permite a un administrador editar los datos de una solicitud
+   existente (cliente, embarcación y fechas de estancia).
+   La vista recibe el PK por URL y carga la solicitud con
+   todos sus datos relacionados para prellenar el formulario.
+   ========================================================= {%  endcomment %}
 {% block title %}Editar solicitud #{{ solicitud.pk }} — MARE{% endblock %}
 
 {% block content %}
+
+{% comment %}
+   ── Encabezado con botón Volver ─────────────────────────────
+   El destino del botón "Volver" depende del estado actual
+   de la solicitud para regresar a la lista correcta. {%  endcomment %}
 <div class="page-header">
   <h2>Editar solicitud #{{ solicitud.pk }}</h2>
-    <!-- Volver -->
+
+  {# Redirige a la lista que corresponde según el estado de la solicitud #}
   {% if solicitud.estado == 'PENDIENTE' %}
     <a href="{% url 'solicitud_list' %}" class="btn btn-default">← Volver</a>
   {% elif solicitud.estado == 'EN_ESPERA' %}
@@ -16,35 +30,53 @@
   {% endif %}
 </div>
 
+{% comment %}
+   ── Errores de validación ───────────────────────────────────
+   Si la vista devuelve errores (dict de campo→lista o lista plana),
+   se muestran aquí antes del formulario. {%  endcomment %}
 {% if errors %}
 <div class="errors-box">
   {% if errors.items %}
+    {# Errores por campo: { 'eslora': ['Este campo es obligatorio.'] } #}
     {% for campo, lista in errors.items %}
       {% for e in lista %}<p><strong>{{ campo }}:</strong> {{ e }}</p>{% endfor %}
     {% endfor %}
   {% else %}
+    {# Errores planos (lista simple de strings) #}
     {% for e in errors %}<p>{{ e }}</p>{% endfor %}
   {% endif %}
 </div>
 {% endif %}
 
+{% comment %}
+   ── Formulario principal — POST a la misma URL ──────────────
+   La vista maneja tanto GET (mostrar) como POST (guardar). {%  endcomment %}
 <form method="post">
   {% csrf_token %}
 
-  <!-- Cliente -->
+  {% comment %}
+     ══ SECCIÓN 1: Datos del cliente ══════════════════════════
+     Los campos se prellenan con datos del cliente relacionado
+     a través de solicitud.embarcacion.cliente {%  endcomment %}
   <div class="card">
     <div class="card-header">
       <span class="card-title">Datos del cliente</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+
+      {# Nombre completo del cliente (modelo Cliente.fullname) #}
       <div class="form-group">
         <label>Nombre completo</label>
         <input type="text" name="cliente_fullname" value="{{ solicitud.embarcacion.cliente.fullname }}" required>
       </div>
+
+      {# Correo electrónico del cliente (modelo Cliente.email) #}
       <div class="form-group">
         <label>Correo electrónico</label>
         <input type="email" name="cliente_email" value="{{ solicitud.embarcacion.cliente.email }}" required>
       </div>
+
+      {# Teléfono del cliente (modelo Cliente.telefono) #}
       <div class="form-group">
         <label>Teléfono</label>
         <input type="text" name="cliente_telefono" value="{{ solicitud.embarcacion.cliente.telefono }}" required>
@@ -52,16 +84,26 @@
     </div>
   </div>
 
-  <!-- Embarcación -->
+  {% comment %}
+     ══ SECCIÓN 2: Datos de la embarcación ════════════════════
+     Los campos se prellenan con datos del modelo Embarcacion
+     relacionado a través de solicitud.embarcacion {%  endcomment %}
   <div class="card">
     <div class="card-header">
       <span class="card-title">Datos de la embarcación</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+
+      {# Nombre del bote (modelo Embarcacion.nombre_bote) #}
       <div class="form-group">
         <label>Nombre de la embarcación</label>
         <input type="text" name="nombre_bote" value="{{ solicitud.embarcacion.nombre_bote }}" required>
       </div>
+
+      {% comment %}
+         Tipo de embarcación — select dinámico con todos los TipoBarco.
+         Compara solicitud.embarcacion.tipo_barco_id == tipo.pk
+         para marcar el tipo actual como "selected". {%  endcomment %}
       <div class="form-group">
         <label>Tipo de embarcación</label>
         <select name="tipo_barco" required>
@@ -73,15 +115,23 @@
         </select>
       </div>
     </div>
+
+    {# Dimensiones de la embarcación en metros — step 0.01 permite decimales #}
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem">
+
+      {# Eslora: longitud total de la embarcación (modelo Embarcacion.eslora) #}
       <div class="form-group">
         <label>Eslora (m)</label>
         <input type="number" name="eslora" value="{{ solicitud.embarcacion.eslora }}" step="0.01" min="0.01" required>
       </div>
+
+      {# Manga: ancho máximo de la embarcación (modelo Embarcacion.manga) #}
       <div class="form-group">
         <label>Manga (m)</label>
         <input type="number" name="manga" value="{{ solicitud.embarcacion.manga }}" step="0.01" min="0.01" required>
       </div>
+
+      {# Calado: profundidad bajo el agua (modelo Embarcacion.calado) #}
       <div class="form-group">
         <label>Calado (m)</label>
         <input type="number" name="calado" value="{{ solicitud.embarcacion.calado }}" step="0.01" min="0.01" required>
@@ -89,25 +139,43 @@
     </div>
   </div>
 
-  <!-- Solicitud -->
+  {% comment %}
+     ══ SECCIÓN 3: Datos de la solicitud ══════════════════════
+     Fechas de la estancia y comentarios. {%  endcomment %}
   <div class="card">
     <div class="card-header">
       <span class="card-title">Datos de la solicitud</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+
+      {% comment %} 
+        Fecha de llegada — el filtro |date:'Y-m-d' convierte el
+         objeto date de Django al formato YYYY-MM-DD que requiere
+         el input type="date" de HTML {%  endcomment %}
       <div class="form-group">
         <label>Fecha de llegada</label>
         <input type="date" name="fecha_llegada" value="{{ solicitud.fecha_llegada|date:'Y-m-d' }}" required>
       </div>
+
+      {# Fecha de salida — mismo filtro de conversión #}
       <div class="form-group">
         <label>Fecha de salida</label>
         <input type="date" name="fecha_salida" value="{{ solicitud.fecha_salida|date:'Y-m-d' }}" required>
       </div>
     </div>
+
+    {% comment %}
+       Comentario libre del solicitante — puede estar vacío,
+       |default:'' evita que muestre "None" en el textarea {%  endcomment %}
     <div class="form-group">
       <label>Comentario</label>
       <textarea name="comentario" rows="3">{{ solicitud.comentario|default:'' }}</textarea>
     </div>
+
+    {% comment %}
+       Checkbox: primera vez que la embarcación entra a México.
+       Si solicitud.primera_entrada_mexico es True, el atributo
+       "checked" se agrega al input. {%  endcomment %}
     <div class="form-group">
       <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:normal;font-size:13px">
         <input type="checkbox" name="primera_entrada_mexico" style="width:auto"
@@ -117,9 +185,13 @@
     </div>
   </div>
 
+  {% comment %}
+     ── Botones finales ─────────────────────────────────────────
+     Guardar hace submit del formulario.
+     Cancelar redirige a la lista correcta según el estado,
+     igual que el botón Volver del encabezado. {%  endcomment %}
   <div style="display:flex;gap:.5rem">
     <button type="submit" class="btn btn-primary">Guardar cambios</button>
-    <!-- Cancelar -->
     {% if solicitud.estado == 'PENDIENTE' %}
       <a href="{% url 'solicitud_list' %}" class="btn btn-default">Cancelar</a>
     {% elif solicitud.estado == 'EN_ESPERA' %}

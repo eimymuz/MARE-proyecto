@@ -1,130 +1,171 @@
 {% extends "base.html" %}
+{% comment %}
+   =========================================================
+   solicitudes/solicitud_aprobadas.html — Embarcaciones asignadas
+   Lista todas las solicitudes con estado APROBADA, es decir,
+   embarcaciones que actualmente están físicamente en la marina
+   con un espacio asignado.
+   ========================================================= {%  endcomment %}
 {% block title %}Asignadas — MARE{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <h2>Asignadas — en marina</h2>
 </div>
-    <!-- FILTROS -->
-    <form method="get" id="form-filtros">
 
-      <!-- Barra trigger -->
-      <div style="display:flex;align-items:center;justify-content:space-between;
-          background:var(--surface);border:1px solid var(--border);
-          border-radius:var(--radius-lg);padding:.6rem 1rem;cursor:pointer;
-          user-select:none;margin-bottom:4px" onclick="toggleFiltros()">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:13px;font-weight:500;color:var(--text)">⚙ Filtros</span>
-          <div id="chips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+{% comment %}
+   ══ MÓDULO DE FILTROS COLAPSABLE ═══════════════════════════
+   Formulario GET que filtra las solicitudes asignadas.
+   Los parámetros se mantienen en la URL para paginación. {%  endcomment %}
+<form method="get" id="form-filtros">
+
+  {% comment %}
+     ── Barra trigger del panel de filtros ───────────────────
+     Al hacer clic llama a toggleFiltros() que expande o
+     colapsa el panel. Muestra chips y contador de filtros activos. {%  endcomment %}
+  <div style="display:flex;align-items:center;justify-content:space-between;
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius-lg);padding:.6rem 1rem;cursor:pointer;
+      user-select:none;margin-bottom:4px" onclick="toggleFiltros()">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:13px;font-weight:500;color:var(--text)">⚙ Filtros</span>
+      {# Chips visuales con los filtros activos (llenados por actualizarChips()) #}
+      <div id="chips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      {# Contador "N activos" — solo visible si hay filtros aplicados #}
+      <span id="filtros-count" style="display:none;font-size:11px;padding:2px 8px;
+            border-radius:20px;background:var(--info-bg);color:var(--info);font-weight:500"></span>
+      {# Flecha que rota 180° cuando el panel está abierto #}
+      <span id="arrow" style="font-size:11px;color:var(--text-light);
+            transition:transform .2s;display:inline-block">▾</span>
+    </div>
+  </div>
+
+  {% comment %} ── Panel de filtros colapsable ───────────────────────────
+     Se muestra si hay filtros activos (hay_filtros=True desde vista),
+     de lo contrario se oculta por defecto. {%  endcomment %}
+  <div id="panel-filtros" style="display:{% if hay_filtros %}block{% else %}none{% endif %};
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1rem">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+
+      {# ── Columna izquierda: búsqueda, muelle y orden ────── #}
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+
+        {# Búsqueda por nombre de embarcación o cliente #}
+        <div>
+          <label>Buscar</label>
+          <input type="text" name="q" id="inp-q" value="{{ q }}"
+            placeholder="Embarcación o cliente...">
         </div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span id="filtros-count" style="display:none;font-size:11px;padding:2px 8px;
-                border-radius:20px;background:var(--info-bg);color:var(--info);font-weight:500"></span>
-          <span id="arrow" style="font-size:11px;color:var(--text-light);
-                transition:transform .2s;display:inline-block">▾</span>
+
+        {% comment %}
+           Selector de muelle — filtra para mostrar solo las
+           embarcaciones asignadas en ese muelle específico.
+           muelles viene del queryset de todos los Muelle del sistema. {%  endcomment %}
+        <div>
+          <label>Muelle actual</label>
+          <select name="muelle" id="inp-muelle">
+            <option value="">Todos</option>
+            {% for m in muelles %}
+              {# Marca como seleccionado el muelle que está en el GET actual #}
+              <option value="{{ m.pk }}" {% if muelle_id == m.pk|stringformat:'s' %}selected{% endif %}>
+                {{ m.nombre }}
+              </option>
+            {% endfor %}
+          </select>
         </div>
+
+        {% comment %}
+           Orden de la tabla:
+           - salida (default): primero las que salen antes (más urgentes)
+           - reciente: primero las que llegaron más recientemente {%  endcomment %}
+        <div>
+          <label>Ordenar por</label>
+          <select name="orden" id="inp-orden">
+            <option value="salida" {% if orden == 'salida' or not orden %}selected{% endif %}>
+              Salida más próxima
+            </option>
+            <option value="reciente" {% if orden == 'reciente' %}selected{% endif %}>
+              Llegada más reciente
+            </option>
+          </select>
+        </div>
+
+        {# Botones de acción del panel #}
+        <div style="display:flex;gap:.4rem;margin-top:auto;padding-top:.5rem;
+            border-top:1px solid var(--border)">
+          <button type="submit" class="btn btn-primary btn-sm"
+            style="flex:1;justify-content:center">Filtrar</button>
+          {# Botón de resetear — solo aparece si hay filtros activos #}
+          {% if hay_filtros %}
+            <a href="." class="btn btn-default btn-sm">✕ Resetear</a>
+          {% endif %}
+        </div>
+
       </div>
 
-      <!-- Panel -->
-      <div id="panel-filtros" style="display:{% if hay_filtros %}block{% else %}none{% endif %};
-          background:var(--surface);border:1px solid var(--border);
-          border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1rem">
+      {# ── Columna derecha: filtro por fecha de salida ─────── #}
+      <div>
+        <label style="margin-bottom:.5rem">Fecha de salida</label>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+        {% comment %}
+           Input de fecha con botón ↔ para activar rango de fechas.
+           El botón ↔ llama a togglePeriodo() que muestra
+           el segundo input "hasta". {%  endcomment %}
+        <div style="display:flex;align-items:center;border:1px solid var(--border);
+            border-radius:var(--radius);overflow:hidden;background:var(--surface)">
+          {# Fecha "desde" — si solo hay una fecha, es la fecha exacta #}
+          <input type="date" id="fecha-desde" name="fecha_salida_desde"
+            value="{{ fecha_salida_desde }}"
+            style="flex:1;border:none;outline:none;padding:7px 10px;font-size:12px;
+                  background:transparent;color:var(--text)">
+          {# Botón ↔ — activa modo rango. Se pone azul si hay fecha_hasta #}
+          <button type="button" id="btn-periodo" onclick="togglePeriodo()"
+            title="Activar búsqueda por rango"
+            style="padding:7px 10px;border:none;border-left:1px solid var(--border);
+                  cursor:pointer;font-size:12px;background:transparent;
+                  color:{% if fecha_salida_hasta %}var(--info){% else %}var(--text-mid){% endif %}">↔</button>
 
-          <!-- Izquierda -->
-          <div style="display:flex;flex-direction:column;gap:.75rem">
-            <div>
-              <label>Buscar</label>
-              <input type="text" name="q" id="inp-q" value="{{ q }}"
-                placeholder="Embarcación o cliente...">
-            </div>
-            <div>
-              <label>Muelle actual</label>
-              <select name="muelle" id="inp-muelle">
-                <option value="">Todos</option>
-                {% for m in muelles %}
-                  <option value="{{ m.pk }}" {% if muelle_id == m.pk|stringformat:'s' %}selected{% endif %}>
-                    {{ m.nombre }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <div>
-              <label>Ordenar por</label>
-              <select name="orden" id="inp-orden">
-                <option value="salida" {% if orden == 'salida' or not orden %}selected{% endif %}>
-                  Salida más próxima
-                </option>
-                <option value="reciente" {% if orden == 'reciente' %}selected{% endif %}>
-                  Llegada más reciente
-                </option>
-              </select>
-            </div>
-
-            <div style="display:flex;gap:.4rem;margin-top:auto;padding-top:.5rem;
-                border-top:1px solid var(--border)">
-              <button type="submit" class="btn btn-primary btn-sm"
-                style="flex:1;justify-content:center">Filtrar</button>
-              {% if hay_filtros %}
-                <a href="." class="btn btn-default btn-sm">✕ Resetear</a>
-              {% endif %}
-            </div>
-
+          {# Input de fecha "hasta" — oculto por defecto, visible al activar rango #}
+          <div id="hasta-wrap" style="display:{% if fecha_salida_hasta %}flex{% else %}none{% endif %};
+              flex:1;border-left:1px solid var(--info)">
+            <input type="date" id="fecha-hasta" name="fecha_salida_hasta"
+              value="{{ fecha_salida_hasta }}"
+              style="width:100%;border:none;outline:none;padding:7px 10px;font-size:12px;
+                    background:transparent;color:var(--text);box-sizing:border-box">
           </div>
-
-          <!-- Derecha: fecha salida -->
-
-          <div>
-            <label style="margin-bottom:.5rem">Fecha de salida</label>
-            <div style="display:flex;align-items:center;border:1px solid var(--border);
-                border-radius:var(--radius);overflow:hidden;background:var(--surface)">
-              <input type="date" id="fecha-desde" name="fecha_salida_desde"
-                value="{{ fecha_salida_desde }}"
-                style="flex:1;border:none;outline:none;padding:7px 10px;font-size:12px;
-                      background:transparent;color:var(--text)">
-              <button type="button" id="btn-periodo" onclick="togglePeriodo()"
-                title="Activar búsqueda por rango"
-                style="padding:7px 10px;border:none;border-left:1px solid var(--border);
-                      cursor:pointer;font-size:12px;background:transparent;
-                      color:{% if fecha_salida_hasta %}var(--info){% else %}var(--text-mid){% endif %}">↔</button>
-
-              <div id="hasta-wrap" style="display:{% if fecha_salida_hasta %}flex{% else %}none{% endif %};
-                  flex:1;border-left:1px solid var(--info)">
-                <input type="date" id="fecha-hasta" name="fecha_salida_hasta"
-                  value="{{ fecha_salida_hasta }}"
-                  style="width:100%;border:none;outline:none;padding:7px 10px;font-size:12px;
-                        background:transparent;color:var(--text);box-sizing:border-box">
-              </div>
-
-            </div>
-
-            <div id="hint-fecha" style="font-size:11px;color:var(--text-light);margin-top:.4rem">
-              ℹ Fecha exacta de salida · activa ↔ para rango
-            </div>
-
-            <br>
-            <div>
-              <label>Tipo de barco</label>
-              <select name="tipo" id="inp-tipo">
-                <option value="">Todos</option>
-                {% for t in tipos_barco %}
-                  <option value="{{ t.pk }}" {% if tipo_id == t.pk|stringformat:'s' %}selected{% endif %}>
-                    {{ t.tipo_barco }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-
-          </div>
-
         </div>
+
+        {# Texto de ayuda — cambia según si el rango está activo o no #}
+        <div id="hint-fecha" style="font-size:11px;color:var(--text-light);margin-top:.4rem">
+          ℹ Fecha exacta de salida · activa ↔ para rango
+        </div>
+
+        <br>
+        {# Selector de tipo de embarcación para filtrar la tabla #}
+        <div>
+          <label>Tipo de barco</label>
+          <select name="tipo" id="inp-tipo">
+            <option value="">Todos</option>
+            {% for t in tipos_barco %}
+              <option value="{{ t.pk }}" {% if tipo_id == t.pk|stringformat:'s' %}selected{% endif %}>
+                {{ t.tipo_barco }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
       </div>
 
-    </form>
+    </div>
+  </div>
 
-    <!-- Tabla crud -->
+</form>
+
+{# ══ TABLA DE SOLICITUDES ASIGNADAS ════════════════════════ #}
 <div class="table-wrap">
   <table>
     <thead>
@@ -140,19 +181,31 @@
       </tr>
     </thead>
     <tbody>
+      {# Itera sobre el queryset paginado de solicitudes APROBADAS #}
       {% for sol in solicitudes %}
       <tr>
         <td style="color:var(--text-light)">#{{ sol.id }}</td>
         <td style="font-weight:500">{{ sol.embarcacion.nombre_bote }}</td>
         <td>{{ sol.embarcacion.cliente.fullname }}</td>
         <td>{{ sol.embarcacion.tipo_barco.tipo_barco }}</td>
+        {# |date:"d/m/Y" formatea la fecha a DD/MM/YYYY para mostrar #}
         <td>{{ sol.fecha_llegada|date:"d/m/Y" }}</td>
         <td>{{ sol.fecha_salida|date:"d/m/Y" }}</td>
+
+        {% comment %}
+           ── Columna de ubicación actual ───────────────────────
+           asignacion_activa es una property del modelo Solicitud
+           que retorna la última Asignacion con fecha_fin >= hoy.
+           Si no hay asignación activa muestra "Sin asignar". {%  endcomment %}
         <td>
           {% with ultima=sol.asignacion_activa %}
             {% if ultima %}
               <span style="font-size:12px">
+                {# Nombre del muelle — relacionado por ForeignKey #}
                 {{ ultima.muelle.nombre }} —
+                {% comment %}
+                   Lista los números de espacio separados por coma
+                   ultima.espacios es ManyToMany con Espacio {%  endcomment %}
                 {% for e in ultima.espacios.all %}{{ e.numero }}{% if not forloop.last %}, {% endif %}{% endfor %}
               </span>
             {% else %}
@@ -160,10 +213,16 @@
             {% endif %}
           {% endwith %}
         </td>
+
+        {% comment %}
+           ── Acciones disponibles para solicitudes aprobadas ───
+           Reasignar: va al mapa con el ID de la solicitud activa.
+           Ver: abre el popup de detalle. {%  endcomment %}
         <td>
           <div style="display:flex;gap:.3rem">
-
-            <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}"class="btn btn-accent btn-sm">Reasignar</a>
+            {# Redirige al mapa pasando solicitud_id para pre-seleccionar #}
+            <a href="{% url 'mapa' %}?solicitud_id={{ sol.pk }}" class="btn btn-accent btn-sm">Reasignar</a>
+            {# Abre popup_solicitud.html con los datos de esta solicitud #}
             <button class="btn btn-default btn-sm" onclick="abrirPopupVer({{ sol.pk }})">
               Ver
             </button>
@@ -171,6 +230,7 @@
         </td>
       </tr>
       {% empty %}
+      {# Mensaje cuando no hay solicitudes aprobadas (con o sin filtros) #}
       <tr>
         <td colspan="8" style="text-align:center;color:var(--text-light);padding:2rem">
           No hay embarcaciones asignadas en la marina.
@@ -181,9 +241,11 @@
   </table>
 </div>
 
+{# ── Paginación — solo se muestra si hay más de una página ── #}
 {% if page_obj.has_other_pages %}
 <div class="pagination">
   {% if page_obj.has_previous %}
+    {# Enlace a la página anterior — mantiene los filtros GET activos #}
     <a href="?page={{ page_obj.previous_page_number }}">Anterior</a>
   {% endif %}
   <span class="current">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
@@ -193,21 +255,30 @@
 </div>
 {% endif %}
 
+{# Componentes reutilizables incluidos al final del contenido #}
 {% include "components/popup_solicitud.html" %}
 
-<!-- FILTROS -->
+{# ── JavaScript de filtros ─────────────────────────────────── #}
 <script>
+/* Estado inicial del panel: abierto si hay filtros activos */
 let abierto = {% if hay_filtros %}true{% else %}false{% endif %};
 let periodoActivo = {% if fecha_salida_hasta %}true{% else %}false{% endif %};
 
+/* Apuntar la flecha según el estado inicial */
 document.getElementById('arrow').style.transform = abierto ? 'rotate(180deg)' : 'rotate(0)';
 
+/* ── toggleFiltros() ─────────────────────────────────────────
+   Alterna la visibilidad del panel de filtros y la rotación
+   de la flecha indicadora. */
 function toggleFiltros(){
   abierto = !abierto;
   document.getElementById('panel-filtros').style.display = abierto ? 'block' : 'none';
   document.getElementById('arrow').style.transform = abierto ? 'rotate(180deg)' : 'rotate(0)';
 }
 
+/* ── togglePeriodo() ─────────────────────────────────────────
+   Activa/desactiva el segundo campo de fecha (hasta).
+   Al desactivar limpia el valor del input para no enviarlo. */
 function togglePeriodo(){
   periodoActivo = !periodoActivo;
   const wrap = document.getElementById('hasta-wrap');
@@ -215,14 +286,21 @@ function togglePeriodo(){
   wrap.style.display = periodoActivo ? 'flex' : 'none';
   btn.style.color    = periodoActivo ? 'var(--info)' : 'var(--text-mid)';
   if(!periodoActivo) document.getElementById('fecha-hasta').value = '';
+  /* Actualizar texto de ayuda según el modo activo */
   document.getElementById('hint-fecha').textContent = periodoActivo
     ? 'ℹ Embarcaciones que salen entre esas dos fechas'
     : 'ℹ Fecha exacta de salida · activa ↔ para rango';
   actualizarChips();
 }
 
+/* ── fmt(d) ──────────────────────────────────────────────────
+   Convierte una fecha ISO "YYYY-MM-DD" a "DD/MM/YYYY" en
+   español mexicano para mostrar en los chips de filtros. */
 function fmt(d){ return d ? new Date(d+'T00:00').toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'}) : null; }
 
+/* ── actualizarChips() ───────────────────────────────────────
+   Recalcula y renderiza los chips de filtros activos en la
+   barra trigger. También actualiza el contador "N activos". */
 function actualizarChips(){
   const chips = [];
   const q      = document.getElementById('inp-q')?.value.trim();
@@ -238,6 +316,7 @@ function actualizarChips(){
 
   const cont  = document.getElementById('chips');
   const count = document.getElementById('filtros-count');
+  // Máximo 3 chips visibles para no desbordar la barra 
   cont.innerHTML = chips.slice(0,3).map(c=>`
     <span style="font-size:11px;padding:2px 8px;border-radius:20px;
           background:var(--info-bg);color:var(--info);border:1px solid var(--info)">${c}</span>
@@ -245,20 +324,26 @@ function actualizarChips(){
   if(chips.length){ count.textContent = chips.length+' activo'+(chips.length>1?'s':''); count.style.display='inline'; }
   else count.style.display = 'none';
 
+  // También incluir tipo en los chips si está seleccionado 
   const tipo = document.getElementById('inp-tipo');
   if(tipo && tipo.value) chips.push(tipo.options[tipo.selectedIndex].text);
 }
 
+// Escuchar cambios en todos los inputs para actualizar chips en tiempo real 
 ['inp-q','inp-muelle','inp-orden','fecha-desde','fecha-hasta'].forEach(id=>{
   const el = document.getElementById(id);
   if(el) el.addEventListener('change', actualizarChips);
   if(el && el.type === 'text') el.addEventListener('input', actualizarChips);
 });
 
+// Calcular chips con los valores ya cargados desde el servidor 
 actualizarChips();
 </script>
 
-
+{# Token CSRF requerido por modal_rechazo.html para su fetch POST #}
 {% csrf_token %}
+{% comment %}
+   Modal de rechazo de solicitud — incluido aquí para poder rechazar
+   desde la lista de asignadas también {%  endcomment %}
 {% include "components/modal_rechazo.html" %}
 {% endblock %}

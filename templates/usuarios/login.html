@@ -1,23 +1,38 @@
 {% load static %}
-
+{% comment %} 
+  =========================================================
+   usuarios/login.html — Página de inicio de sesión
+   NO extiende base.html: es una página independiente sin
+   navbar ni footer, solo el formulario de acceso.
+   La vista correspondiente maneja la autenticación con
+   Django auth (authenticate + login).
+   ========================================================= {%  endcomment %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>Login | MARE</title>
 
+  {# Estilos exclusivos del login — centrado, tarjeta, inputs #}
   <link rel="stylesheet" href="{% static 'css/usuarios/login.css' %}">
 
 </head>
 
 <body>
 
+  {# Tarjeta central de login #}
   <div class="login-box">
 
+    {# Nombre del sistema como encabezado principal #}
     <h1>MARE</h1>
 
     <p>Acceso administrativo</p>
 
+    {% comment %}
+       ── Mensajes de error ───────────────────────────────────
+       Si las credenciales son incorrectas o el usuario está
+       inactivo, la vista envía un mensaje flash que se muestra
+       aquí con clase CSS "error" (fondo rojo claro). {%  endcomment %}
     {% if messages %}
       <div class="error">
         {% for message in messages %}
@@ -26,12 +41,18 @@
       </div>
     {% endif %}
 
+    {% comment %}
+      ── Formulario de autenticación ─────────────────────────
+       POST a la misma URL. La vista recibe username + password,
+       llama a authenticate() y login() de Django. {%  endcomment %}
     <form method="post">
 
+      {# Token CSRF obligatorio para proteger el POST contra ataques #}
       {% csrf_token %}
 
       <label>Usuario</label>
 
+      {# Campo de nombre de usuario — mapeado al campo username de Django User #}
       <input
         type="text"
         name="username"
@@ -40,6 +61,7 @@
 
       <label>Contraseña</label>
 
+      {# Campo de contraseña — type="password" oculta los caracteres al escribir #}
       <input
         type="password"
         name="password"

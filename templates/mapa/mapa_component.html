@@ -1,38 +1,81 @@
 {% load static %}
+{% comment %} =========================================================
+   mapa/mapa_component.html — Componente SVG interactivo del mapa
+   Incluido en:
+     - mapa/mapa.html         → modo completo (mapa_readonly=False)
+     - inicio.html            → modo solo lectura (mapa_readonly=True)
 
-<!-- ════════════════════════════════════════════════════════
-     TOOLBAR — filtros y controles del mapa
-     ════════════════════════════════════════════════════════ -->
+   En modo completo muestra: filtros, panel izquierdo de info/
+   asignación, leyenda de colores, atajos de teclado y todas
+   las funciones de asignación.
+
+   En modo solo lectura solo muestra el canvas SVG con el
+   estado actual de los espacios, sin controles de edición.
+
+   La variable mapa_readonly se pasa desde el {% include %}:
+     {% include 'mapa/mapa_component.html' with mapa_readonly=True %}
+     {% include 'mapa/mapa_component.html' %}  → modo completo
+
+   Contexto requerido desde la vista (modo completo):
+     - muelles      → queryset de Muelle para el selector de filtro
+     - tipos_barco  → queryset de TipoBarco para el selector de filtro
+
+   Los datos del mapa (espacios, zonas, etiquetas) llegan via
+   fetch desde el endpoint /mapa/disponibilidad/ que retorna JSON.
+   ========================================================= {% endcomment %}
+
+
+{% comment %}
+   ══ TOOLBAR DE FILTROS — solo en modo completo ══════════════
+   Panel colapsable con filtros de fecha, muelle, tipo y tamaño.
+   Oculto en modo solo lectura (inicio.html). {%  endcomment %}
 {% if not mapa_readonly %}
-<!-- Barra trigger -->
+
+{% comment %}
+   ── Barra trigger de filtros ─────────────────────────────────
+   Al hacer clic llama a toggleFiltrosMapa() que expande o
+   colapsa el panel. Incluye contador de filtros activos y
+   el botón ⊙ Reset que restaura la vista inicial del mapa. {%  endcomment %}
 <div style="display:flex;align-items:center;justify-content:space-between;
      background:var(--surface);border:1px solid var(--border);
      border-radius:var(--radius-lg);padding:.6rem 1rem;cursor:pointer;
      user-select:none;margin-bottom:4px" onclick="toggleFiltrosMapa()">
   <div style="display:flex;align-items:center;gap:10px">
     <span style="font-size:13px;font-weight:500;color:var(--text)">⚙ Filtros</span>
+    {# Chips de filtros activos — llenados por actualizarChipsMapa() #}
     <div id="mapa-chips" style="display:flex;gap:5px;flex-wrap:wrap"></div>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
+    {# Contador "N activos" #}
     <span id="mapa-filtros-count" style="display:none;font-size:11px;padding:2px 8px;
           border-radius:20px;background:var(--info-bg);color:var(--info);font-weight:500"></span>
     <div style="display:flex;gap:.4rem;align-items:center">
+      {# Botón Reset: restaura vx=600, vy=260, vscale=0.32 (vista inicial) #}
       <button class="btn btn-default btn-sm" onclick="event.stopPropagation();mapaResetView()">⊙ Reset</button>
+      {# Porcentaje de zoom actual — actualizado por applyTransform() #}
       <span id="mapa-zoom-label" style="font-size:11px;color:var(--text-light);min-width:35px">27%</span>
     </div>
+    {# Flecha indicadora que rota al abrir el panel #}
     <span id="mapa-arrow" style="font-size:11px;color:var(--text-light);
           transition:transform .2s;display:inline-block">▾</span>
   </div>
 </div>
 
-<!-- Panel colapsable -->
+{% comment %}
+  ── Panel colapsable de filtros ──────────────────────────────
+   Oculto por defecto. Se muestra al hacer clic en la barra. {%  endcomment %}
 <div id="mapa-panel-filtros" style="display:none;background:var(--surface);
      border:1px solid var(--border);border-radius:var(--radius-lg);
      padding:1rem 1.25rem;margin-bottom:.75rem">
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
 
-    <!-- Izquierda -->
+    {# Columna izquierda: fecha y muelle #}
     <div style="display:flex;flex-direction:column;gap:.75rem">
+
+      {% comment %}
+         Selector de fecha — al cambiar dispara cargarMapa() para
+         recargar los estados de ocupación con la fecha seleccionada.
+         Permite ver la disponibilidad en fechas futuras. {%  endcomment %}
       <div>
         <label>Fecha</label>
         <input type="date" id="mapa-fecha"
@@ -40,6 +83,11 @@
                  border-radius:var(--radius);background:var(--surface);color:var(--text);
                  box-sizing:border-box">
       </div>
+
+      {% comment %}
+         Selector de muelle — filtra visualmente el mapa para mostrar
+         solo los espacios del muelle seleccionado.
+         muelles viene del queryset Muelle.objects.all() de la vista. {%  endcomment %}
       <div>
         <label>Muelle</label>
         <select id="mapa-filtro-muelle" style="width:100%">
@@ -49,8 +97,13 @@
       </div>
     </div>
 
-    <!-- Derecha -->
+    {# Columna derecha: tipo de embarcación y tamaño #}
     <div style="display:flex;flex-direction:column;gap:.75rem">
+
+      {% comment %}
+         Selector de tipo de embarcación — filtra los espacios mostrando
+         solo los que tienen solicitudes del tipo seleccionado.
+         tipos_barco viene del queryset TipoBarco.objects.all(). {%  endcomment %}
       <div>
         <label>Tipo de embarcación</label>
         <select id="mapa-filtro-tipo" style="width:100%">
@@ -58,6 +111,11 @@
           {% for t in tipos_barco %}<option value="{{ t.pk }}">{{ t.tipo_barco }}</option>{% endfor %}
         </select>
       </div>
+
+      {% comment %}
+         Selector de tamaño de espacio — filtra por rango de eslora.
+         Los rangos se calculan en JS comparando el alto del espacio (en px/10 = metros):
+         chico: ≤10m | mediano: 10-20m | grande: 20-35m | muy_grande: >35m {%  endcomment %}
       <div>
         <label>Tamaño de espacio</label>
         <select id="mapa-filtro-tamano" style="width:100%">
@@ -68,6 +126,10 @@
           <option value="muy_grande">Muy grande (+35m)</option>
         </select>
       </div>
+
+      {% comment %}
+         Botón limpiar filtros — oculto si no hay filtros activos.
+         Llama a limpiarFiltros() que resetea los selectores y recarga el mapa. {%  endcomment %}
       <div style="display:flex;gap:.4rem;margin-top:auto;padding-top:.5rem;
            border-top:1px solid var(--border)">
         <button id="mapa-btn-limpiar" class="btn btn-default btn-sm"
@@ -80,24 +142,42 @@
 {% endif %}
 
 
-<!-- ── LAYOUT PRINCIPAL ── -->
+{% comment %}
+   ══ LAYOUT PRINCIPAL — grid de dos columnas (completo) ══════
+   En modo readonly solo se renderiza el canvas.
+   En modo completo: panel izquierdo (190px) + canvas (resto). {%  endcomment %}
 {% if not mapa_readonly %}
 <div style="display:grid;grid-template-columns:190px 1fr;gap:.75rem;align-items:start">
 
-  <!-- ── PANEL IZQUIERDO ── -->
+  {% comment %}
+     ── PANEL IZQUIERDO ─────────────────────────────────────────
+     Cuatro paneles apilados verticalmente:
+     1. Panel de asignación (visible al seleccionar un espacio)
+     2. Info del espacio clicado
+     3. Datos de la solicitud activa
+     4. Placeholder cuando no hay solicitud activa {%  endcomment %}
   <div style="display:flex;flex-direction:column;gap:.6rem">
 
-    <!-- Panel asignar (arriba) -->
+    {% comment %}
+     Panel 1: Confirmación de asignación ─────────────────────
+       Aparece cuando el usuario selecciona un espacio disponible.
+       Muestra el nombre de la embarcación, el espacio elegido y
+       los botones "Confirmar asignación" y "Cancelar".
+       Oculto por defecto — JS lo muestra con display:block. {%  endcomment %}
     <div id="mapa-panel-asignar" class="card" style="padding:.8rem;display:none;
          border:1px solid var(--accent)">
       <div style="font-size:10px;font-weight:600;color:#c9a84c;text-transform:uppercase;
            letter-spacing:.5px;margin-bottom:.6rem">Asignar</div>
+      {# Contenido llenado dinámicamente por mostrarPanelAsignar() en JS #}
       <div id="mapa-panel-asignar-content" style="font-size:12px;color:var(--text-light)">
         Selecciona un espacio disponible
       </div>
     </div>
 
-    <!-- Info espacio clicado -->
+    {% comment %}
+     Panel 2: Información del espacio clicado ─────────────────
+       Al hacer clic en cualquier espacio del mapa, JS rellena
+       este panel con: muelle, número, tamaño y estado del espacio. {%  endcomment %}
     <div class="card" style="padding:.8rem">
       <div style="font-size:10px;font-weight:600;color:#c9a84c;text-transform:uppercase;
            letter-spacing:.5px;margin-bottom:.6rem">Espacio</div>
@@ -106,14 +186,22 @@
       </div>
     </div>
 
-    <!-- Datos solicitud activa -->
+    {% comment %}
+     Panel 3: Datos de la solicitud activa ────────────────────
+       Visible cuando hay una solicitud activa (llegó por URL ?solicitud_id=).
+       Muestra: nombre embarcación, eslora, manga, fechas y
+       conteo de espacios ideales/posibles disponibles. {%  endcomment %}
     <div id="mapa-panel-solicitud" class="card" style="padding:.8rem;display:none">
       <div style="font-size:10px;font-weight:600;color:#c9a84c;text-transform:uppercase;
            letter-spacing:.5px;margin-bottom:.6rem">Embarcación a asignar</div>
+      {# Contenido llenado por actualizarPanelSolicitud() en JS #}
       <div id="mapa-panel-solicitud-content" style="font-size:12px"></div>
     </div>
 
-    <!-- Placeholder sin solicitud -->
+    {% comment %}
+       Panel 4: Placeholder sin solicitud activa ─────────────────
+       Visible cuando no hay solicitud_id en la URL.
+       Invita al usuario a seleccionar una solicitud desde la lista. {%  endcomment %}
     <div id="mapa-panel-solicitud-empty" class="card" style="padding:.8rem">
       <div style="font-size:10px;font-weight:600;color:var(--text-mid);text-transform:uppercase;
            letter-spacing:.5px;margin-bottom:.6rem">Solicitud</div>
@@ -125,10 +213,20 @@
   </div>
 {% endif %}
 
-  <!-- ── CANVAS — el mapa SVG interactivo ── -->
+  {% comment %}
+     ══ CANVAS SVG INTERACTIVO ═══════════════════════════════
+     El mapa se dibuja en este elemento SVG.
+     Dimensiones del canvas: 5500x4000 px (unidades del sistema de coordenadas).
+     Escala inicial: 0.32 (32% de zoom) con translate(600,260).
+     La altura del contenedor cambia según el modo:
+       - Readonly (inicio.html): 420px
+       - Completo (mapa.html):   620px {%  endcomment %}
   <div class="card" style="padding:.5rem">
 
-    <!-- Indicador flotante cuando hay solicitud activa -->
+    {% comment %}
+       Indicador flotante — solo modo completo.
+       Se muestra cuando hay solicitud activa para indicar
+       que el usuario debe clicar un espacio. {%  endcomment %}
     {% if not mapa_readonly %}
     <div id="mapa-indicador" style="display:none;position:absolute;top:1rem;left:50%;
          transform:translateX(-50%);z-index:10;background:var(--navy);color:#fff;
@@ -138,20 +236,39 @@
     </div>
     {% endif %}
 
+    {% comment %}
+       Contenedor del canvas — overflow:hidden recorta el SVG al área visible.
+       El CSS position:relative permite posicionar el indicador flotante. {%  endcomment %}
     <div id="mapa-container" style="width:100%;height:{% if mapa_readonly %}420{% else %}620{% endif %}px;
          overflow:hidden;border-radius:6px;background:#a8cfe0;position:relative;cursor:default">
+
+      {% comment %}
+         El SVG tiene dimensiones grandes (5500x4000) para representar toda
+         la marina en alta resolución. La transformación CSS (translate+scale)
+         aplicada por JS permite hacer zoom y pan. {%  endcomment %}
       <svg id="mapa-svg" style="position:absolute;top:0;left:0;overflow:visible" width="5500" height="4000">
         <defs>
+          {# Grid fino (10x10px) — trama de fondo para referencias visuales #}
           <pattern id="mapa-grid-s" width="10" height="10" patternUnits="userSpaceOnUse">
             <path d="M10 0L0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.3"/>
           </pattern>
+          {# Grid grueso (100x100px) — divisiones mayores más visibles #}
           <pattern id="mapa-grid-l" width="100" height="100" patternUnits="userSpaceOnUse">
             <rect width="100" height="100" fill="url(#mapa-grid-s)"/>
             <path d="M100 0L0 0 0 100" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>
           </pattern>
         </defs>
+
+        {# Fondo azul del agua #}
         <rect width="5500" height="4000" fill="#a8cfe0"/>
+        {# Overlay del grid de referencia (pointer-events:none = no captura clics) #}
         <rect width="5500" height="4000" fill="url(#mapa-grid-l)" pointer-events="none"/>
+
+        {% comment %}
+           ── Capas del mapa (llenadas dinámicamente por JS) ──────
+           Layer tierra: polígonos de tierra/muelles (mapaRender())
+           Layer espacios: rectángulos de cada espacio (mapaRender())
+           Layer labels: etiquetas de texto de los muelles (mapaRender()) {%  endcomment %}
         <g id="mapa-layer-tierra"></g>
         <g id="mapa-layer-espacios"></g>
         <g id="mapa-layer-labels"></g>
@@ -159,18 +276,28 @@
     </div>
   </div>
 
+{# Cierre del grid de dos columnas (solo modo completo) #}
 {% if not mapa_readonly %}
 </div>
 {% endif %}
 
 
-<!-- ════════════════════════════════════════════════════════
-     PANEL INFERIOR — guía de colores + atajos + contador
-     ════════════════════════════════════════════════════════ -->
+{% comment %}
+   ══ PANEL INFERIOR — leyenda, resumen y atajos ══════════════
+   Tres tarjetas en fila debajo del canvas.
+   Solo visible en modo completo. {%  endcomment %}
 {% if not mapa_readonly %}
 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-top:.75rem">
 
-  <!-- Guía de colores -->
+  {% comment %}
+     Tarjeta 1: Leyenda de colores de estados ─────────────────
+     Explica qué significa cada color en el mapa:
+     - Verde  (ideal):    espacio libre que cumple todas las dimensiones
+     - Naranja (posible): espacio libre con dimensiones ajustadas
+     - Rojo   (ocupado):  espacio con embarcación asignada en el periodo
+     - Gris oscuro (no cabe): espacio libre pero pequeño para el barco
+     - Gris claro (libre): espacio libre sin solicitud activa
+     - Café   (pasillo):  área de circulación, no asignable {%  endcomment %}
   <div class="card" style="padding:.75rem 1rem">
     <div style="font-size:10px;font-weight:600;color:var(--text-mid);text-transform:uppercase;
          letter-spacing:.5px;margin-bottom:.6rem">Estados</div>
@@ -202,7 +329,10 @@
     </div>
   </div>
 
-  <!-- Contador rápido -->
+  {% comment %}
+     Tarjeta 2: Contador rápido de estados ─────────────────────
+     #mapa-stats se actualiza por actualizarResumen() en JS
+     mostrando: N ideales, N posibles, N ocupados, N libres. {%  endcomment %}
   <div class="card" style="padding:.75rem 1rem">
     <div style="font-size:10px;font-weight:600;color:var(--text-mid);text-transform:uppercase;
          letter-spacing:.5px;margin-bottom:.6rem">Resumen</div>
@@ -211,29 +341,31 @@
     </div>
   </div>
 
-  <!-- Atajos de teclado -->
+  {% comment %}
+     Tarjeta 3: Atajos de teclado y mouse ──────────────────────
+     Documenta los controles de navegación del mapa:
+     - Rueda del mouse: zoom in/out centrado en el cursor
+     - Space + clic izquierdo: pan (arrastrar el mapa)
+     - Clic medio (rueda): pan alternativo
+     - ⊙ Reset: vuelve a la vista inicial (zoom 32%, posición 600,260) {%  endcomment %}
   <div class="card" style="padding:.75rem 1rem">
     <div style="font-size:10px;font-weight:600;color:var(--text-mid);text-transform:uppercase;
          letter-spacing:.5px;margin-bottom:.6rem">Atajos</div>
     <div style="display:flex;flex-direction:column;gap:.3rem;font-size:11px;color:var(--text-mid)">
       <div style="display:flex;align-items:center;gap:.5rem">
-        <kbd style="background:var(--bg);border:1px solid var(--border);border-radius:3px;
-             padding:1px 5px;font-size:10px;font-family:monospace">🖱 Rueda</kbd>
+        <kbd style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:10px;font-family:monospace">🖱 Rueda</kbd>
         <span>Zoom in/out</span>
       </div>
       <div style="display:flex;align-items:center;gap:.5rem">
-        <kbd style="background:var(--bg);border:1px solid var(--border);border-radius:3px;
-             padding:1px 5px;font-size:10px;font-family:monospace">Space + 🖱</kbd>
+        <kbd style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:10px;font-family:monospace">Space + 🖱</kbd>
         <span>Mover mapa</span>
       </div>
       <div style="display:flex;align-items:center;gap:.5rem">
-        <kbd style="background:var(--bg);border:1px solid var(--border);border-radius:3px;
-             padding:1px 5px;font-size:10px;font-family:monospace">Clic medio</kbd>
+        <kbd style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:10px;font-family:monospace">Clic medio</kbd>
         <span>Mover mapa</span>
       </div>
       <div style="display:flex;align-items:center;gap:.5rem">
-        <kbd style="background:var(--bg);border:1px solid var(--border);border-radius:3px;
-             padding:1px 5px;font-size:10px;font-family:monospace">⊙ Reset</kbd>
+        <kbd style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:10px;font-family:monospace">⊙ Reset</kbd>
         <span>Vista inicial</span>
       </div>
     </div>
@@ -243,15 +375,18 @@
 {% endif %}
 
 
-<!-- ════════════════════════════════════════════════════════
-     MODALES Y NOTIFICACIONES
-     ════════════════════════════════════════════════════════ -->
+{# ══ MODALES Y NOTIFICACIONES ════════════════════════════════ #}
 
-<!-- Modal error asignación -->
+{% comment %}
+   Modal de error de asignación ────────────────────────────────
+   Aparece cuando el espacio seleccionado ya fue asignado a otra
+   embarcación en el mismo periodo. Muestra los datos del conflicto:
+   embarcación, cliente, tipo, medidas, fechas de inicio/fin. {%  endcomment %}
 <div id="modal-error-asig" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
      background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center">
   <div style="background:var(--surface);border-radius:var(--radius-lg);padding:1.5rem;
               width:440px;max-width:95%;box-shadow:var(--shadow-md);border-top:4px solid var(--danger)">
+    {# Contenido llenado por mostrarErrorAsig() en JS #}
     <div id="modal-error-asig-msg"></div>
     <div style="display:flex;justify-content:center;margin-top:1rem">
       <button onclick="cerrarErrorAsig()" class="btn btn-danger">Entendido</button>
@@ -259,53 +394,72 @@
   </div>
 </div>
 
-<!-- Toast filtro/éxito -->
+{% comment %}
+  Toast de notificación ────────────────────────────────────────
+   Aparece brevemente en la parte superior central de la pantalla.
+   Se usa para: "Filtro aplicado", "Asignación creada", "Error...".
+   La función mostrarToast(msg, tipo) lo controla desde JS. {%  endcomment %}
 <div id="mapa-toast" style="display:none;position:fixed;top:1.5rem;left:50%;
      transform:translateX(-50%);z-index:600;padding:.6rem 1.25rem;
      border-radius:var(--radius-lg);font-size:13px;font-weight:500;
      box-shadow:var(--shadow-md);transition:opacity .3s ease;white-space:nowrap">
 </div>
 
-<!-- Popup espacio ocupado -->
-<!-- Popup espacio ocupado -->
+{% comment %}
+   Popup de espacio ocupado ─────────────────────────────────────
+   Aparece al hacer clic en un espacio rojo (ocupado).
+   Se posiciona junto al cursor del mouse.
+   Muestra: nombre del espacio, muelle, embarcación actual,
+   cliente, fechas de inicio y fin de la asignación.
+   Botones: "Ver" (abre popup_solicitud) y "Reasignar" (va al mapa). {%  endcomment %}
 <div id="mapa-popup" style="display:none;position:fixed;z-index:2000;width:280px;
      background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);
      border:1px solid var(--border);overflow:hidden">
   <div style="background:var(--bg);padding:.75rem 1rem;border-bottom:1px solid var(--border);
        display:flex;justify-content:space-between;align-items:center">
     <div>
-      <div id="mapa-popup-titulo" style="font-size:13px;font-weight:600;color:var(--text)"></div>
+      {# Número del espacio — ej: "Espacio E-12" #}
+      <div id="mapa-popup-titulo"    style="font-size:13px;font-weight:600;color:var(--text)"></div>
+      {# Nombre del muelle — ej: "Muelle Norte" #}
       <div id="mapa-popup-subtitulo" style="font-size:11px;color:var(--text-light);margin-top:1px"></div>
     </div>
     <button onclick="cerrarPopupEspacio()"
       style="background:none;border:none;color:var(--text-light);cursor:pointer;font-size:16px;line-height:1">✕</button>
   </div>
+  {# Datos de la asignación activa — llenados via fetch a /mapa/disponibilidad/ #}
   <div id="mapa-popup-body" style="padding:.85rem 1rem;font-size:12px;line-height:2;color:var(--text)"></div>
   <div style="padding:.65rem 1rem;border-top:1px solid var(--border);display:flex;gap:.4rem">
+    {# "Ver" abre popup_solicitud.html con los datos de la solicitud #}
     <a id="popup-btn-detalle"   href="#" class="btn btn-default btn-sm" style="flex:1;justify-content:center">Ver</a>
+    {# "Reasignar" navega al mapa con ?solicitud_id= para cambiar el espacio #}
     <a id="popup-btn-reasignar" href="#" class="btn btn-accent btn-sm"  style="flex:1;justify-content:center">Reasignar</a>
   </div>
 </div>
+
+{# Componentes de detalle y rechazo de solicitud #}
 {% include "components/popup_solicitud.html" %}
 {% include "components/modal_rechazo.html" %}
 
 
-<!-- ════════════════════════════════════════════════════════
-     SCRIPT 1 — Zoom, pan y transformación del canvas
-     Maneja el movimiento del mapa con rueda y arrastre
-     ════════════════════════════════════════════════════════ -->
+{% comment %}
+   ══ SCRIPT 1 — Zoom, pan y transformación del canvas ════════
+   Maneja toda la navegación del mapa: zoom con rueda,
+   arrastre con Space+clic o clic medio, y reset de vista. {%  endcomment %}
 <script>
 (function(){
   const container = document.getElementById('mapa-container');
   const svg       = document.getElementById('mapa-svg');
+  // En modo readonly no actualiza el label de zoom 
   const READONLY  = {% if mapa_readonly %}true{% else %}false{% endif %};
 
-  let vx=600, vy=260, vscale=0.32;
+  // Estado de la cámara: posición (vx, vy) y escala (vscale) 
+  let vx=600, vy=260, vscale=0.32;  // Vista inicial: 32% de zoom 
   let panning=false, panStart=null, panOrigin=null, spaceDown=false;
 
-  // Exponer variables globalmente para que otros scripts puedan usarlas
+  // Exponer getters globales para que otros scripts lean la cámara 
   window._mapaVx = ()=>vx; window._mapaVy = ()=>vy; window._mapaVscale = ()=>vscale;
 
+  // Aplica la transformación CSS al SVG y actualiza el label de zoom 
   function applyTransform(){
     svg.style.transform      = `translate(${vx}px,${vy}px) scale(${vscale})`;
     svg.style.transformOrigin = '0 0';
@@ -315,28 +469,32 @@
     }
   }
 
+  // Restaura la vista inicial — llamado por el botón ⊙ Reset 
   window.mapaResetView = function(){
     vx=600; vy=260; vscale=0.32;
     applyTransform();
   };
 
-  // Zoom con rueda del mouse
+  /* Zoom centrado en el cursor con la rueda del mouse.
+     Calcula el nuevo origen de la transformación para que el
+     punto bajo el cursor se mantenga fijo al hacer zoom. */
   container.addEventListener('wheel', ev=>{
     ev.preventDefault();
     const rect  = container.getBoundingClientRect();
-    const mx    = ev.clientX - rect.left;
-    const my    = ev.clientY - rect.top;
-    const delta = ev.deltaY > 0 ? 0.9 : 1.1;
-    const ns    = Math.min(4, Math.max(0.05, vscale * delta));
+    const mx    = ev.clientX - rect.left;  // Posición X del cursor en el canvas 
+    const my    = ev.clientY - rect.top;   // Posición Y del cursor en el canvas 
+    const delta = ev.deltaY > 0 ? 0.9 : 1.1;  // Scroll abajo = zoom out, arriba = zoom in 
+    const ns    = Math.min(4, Math.max(0.05, vscale * delta));  // Limitar zoom entre 5% y 400% 
+    // Ajustar la posición para que el zoom sea respecto al cursor 
     vx = mx - (mx - vx) * (ns / vscale);
     vy = my - (my - vy) * (ns / vscale);
     vscale = ns;
     applyTransform();
   }, {passive:false});
 
-  // Pan con clic medio o Space + clic izquierdo
+  // Pan con clic medio o Space + clic izquierdo 
   container.addEventListener('mousedown', ev=>{
-    if(ev.button===1 || spaceDown){
+    if(ev.button===1 || spaceDown){  // button 1 = rueda del mouse 
       ev.preventDefault();
       panning   = true;
       panStart  = {x:ev.clientX, y:ev.clientY};
@@ -346,6 +504,7 @@
   });
   container.addEventListener('mousemove', ev=>{
     if(panning){
+      // Desplazar la vista según el delta del mouse 
       vx = panOrigin.x + (ev.clientX - panStart.x);
       vy = panOrigin.y + (ev.clientY - panStart.y);
       applyTransform();
@@ -354,6 +513,7 @@
   container.addEventListener('mouseup',   ()=>{ panning=false; container.style.cursor='default'; });
   container.addEventListener('mouseleave',()=>{ panning=false; });
 
+  // Detectar Space presionado para activar el modo pan 
   document.addEventListener('keydown', ev=>{
     if(ev.code==='Space' && ev.target.tagName!=='INPUT'){
       spaceDown=true; container.style.cursor='grab'; ev.preventDefault();
@@ -363,19 +523,19 @@
     if(ev.code==='Space'){ spaceDown=false; panning=false; container.style.cursor='default'; }
   });
 
-  // Aplicar transform inicial
-  applyTransform();
+  applyTransform();  // Aplicar vista inicial al cargar 
   window._applyTransform = applyTransform;
 })();
 </script>
 
 
-<!-- ════════════════════════════════════════════════════════
-     SCRIPT 2 — Notificaciones: toasts, modales de error
-     Maneja alertas visuales sin usar alert() nativo
-     ════════════════════════════════════════════════════════ -->
+{% comment %}
+   ══ SCRIPT 2 — Toasts y modales de error ════════════════════
+   Funciones globales para mostrar alertas sin usar alert() nativo. {%  endcomment %}
 <script>
-// Toast genérico — tipo: 'success' | 'info' | 'error'
+/* mostrarToast(msg, tipo) — notificación temporal en la parte superior.
+   tipo: 'success' (verde) | 'info' (azul) | 'error' (rojo)
+   El toast desaparece automáticamente en 2.8 segundos. */
 window.mostrarToast = function(msg, tipo='success'){
   const toast = document.getElementById('mapa-toast');
   const estilos = {
@@ -393,12 +553,15 @@ window.mostrarToast = function(msg, tipo='success'){
   }, 2800);
 };
 
-// Modal de error de asignación (espacio ocupado u otro error)
+/* mostrarErrorAsig(data) — modal de error cuando el espacio está ocupado.
+   Si data.error_tipo === 'ocupado', muestra el grid con los datos del conflicto.
+   Si es un error genérico, muestra solo el mensaje de texto. */
 window.mostrarErrorAsig = function(data){
   const modal = document.getElementById('modal-error-asig');
   const msg   = document.getElementById('modal-error-asig-msg');
 
   if(data && data.error_tipo === 'ocupado'){
+    // Grid de 6 datos: espacio, embarcación, cliente, tipo, medidas, fechas 
     msg.innerHTML = `
       <div style="text-align:center;margin-bottom:1rem">
         <div style="font-size:20px;font-weight:600;color:var(--danger)">
@@ -406,30 +569,12 @@ window.mostrarErrorAsig = function(data){
         </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem .75rem;font-size:14px">
-        <div>
-          <div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Embarcación</div>
-          <div style="font-weight:500;color:var(--text)">${data.embarcacion}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Cliente</div>
-          <div style="font-weight:500;color:var(--text)">${data.cliente}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Tipo</div>
-          <div style="font-weight:500;color:var(--text)">${data.tipo}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Medidas</div>
-          <div style="font-weight:500;color:var(--text)">${data.eslora}m × ${data.manga}m × ${data.calado}m</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Desde</div>
-          <div style="font-weight:500;color:var(--text)">${data.fecha_inicio}</div>
-        </div>
-        <div>
-          <div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Hasta</div>
-          <div style="font-weight:500;color:var(--text)">${data.fecha_fin}</div>
-        </div>
+        <div><div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Embarcación</div><div style="font-weight:500;color:var(--text)">${data.embarcacion}</div></div>
+        <div><div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Cliente</div><div style="font-weight:500;color:var(--text)">${data.cliente}</div></div>
+        <div><div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Tipo</div><div style="font-weight:500;color:var(--text)">${data.tipo}</div></div>
+        <div><div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Medidas</div><div style="font-weight:500;color:var(--text)">${data.eslora}m × ${data.manga}m × ${data.calado}m</div></div>
+        <div><div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Desde</div><div style="font-weight:500;color:var(--text)">${data.fecha_inicio}</div></div>
+        <div><div style="font-size:10px;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px">Hasta</div><div style="font-weight:500;color:var(--text)">${data.fecha_fin}</div></div>
       </div>`;
   } else {
     const mensaje = (typeof data === 'string') ? data : (data?.mensaje || data?.error || 'Error desconocido');
@@ -444,10 +589,11 @@ window.cerrarErrorAsig = function(){
 </script>
 
 
-<!-- ════════════════════════════════════════════════════════
-     SCRIPT 3 — Render del mapa SVG
-     Dibuja zonas de tierra, espacios y etiquetas en el canvas
-     ════════════════════════════════════════════════════════ -->
+{% comment %}
+   ══ SCRIPT 3 — Render del mapa SVG ═════════════════════════
+   Dibuja en el canvas todos los elementos del mapa:
+   zonas de tierra, espacios y etiquetas de muelles.
+   Se llama cada vez que cambia el estado (filtros, asignaciones). {%  endcomment %}
 <script>
 (function(){
   const layerT = document.getElementById('mapa-layer-tierra');
@@ -455,19 +601,22 @@ window.cerrarErrorAsig = function(){
   const layerL = document.getElementById('mapa-layer-labels');
   const READONLY = {% if mapa_readonly %}true{% else %}false{% endif %};
 
-  // Paleta de colores por estado
+  /* Paleta de colores por estado del espacio.
+     Cada estado tiene fill (relleno) y stroke (borde). */
   const COLORES = {
-    ideal:        {fill:'#4ade80', stroke:'#16a34a'},
-    posible:      {fill:'#fb923c', stroke:'#ea580c'},
-    ocupado:      {fill:'#f87171', stroke:'#dc2626'},
-    no_cabe:      {fill:'#9ca3af', stroke:'#6b7280'},
-    libre:        {fill:'#d1d5db', stroke:'#9ca3af'},
-    pasillo:      {fill:'#c8a87a', stroke:'#8B6914'},
-    seleccionado: {fill:'#ffe066', stroke:'#c8a000'},
-    filtrado:     {fill:'rgba(200,200,200,0.25)', stroke:'rgba(150,150,150,0.3)'},
+    ideal:        {fill:'#4ade80', stroke:'#16a34a'},   // Verde: cabe y está libre 
+    posible:      {fill:'#fb923c', stroke:'#ea580c'},   // Naranja: cabe con ajuste 
+    ocupado:      {fill:'#f87171', stroke:'#dc2626'},   // Rojo: hay embarcación 
+    no_cabe:      {fill:'#9ca3af', stroke:'#6b7280'},   // Gris oscuro: muy pequeño 
+    libre:        {fill:'#d1d5db', stroke:'#9ca3af'},   // Gris claro: disponible 
+    pasillo:      {fill:'#c8a87a', stroke:'#8B6914'},   // Café: no asignable 
+    seleccionado: {fill:'#ffe066', stroke:'#c8a000'},   // Amarillo: elegido por usuario 
+    filtrado:     {fill:'rgba(200,200,200,0.25)', stroke:'rgba(150,150,150,0.3)'}, // Semitransparente: fuera del filtro 
   };
 
-  // Filtro por tamaño — compara con el alto del espacio (eslora)
+  /* cumpleTamano(e) — verifica si el espacio pasa el filtro de tamaño.
+     El "alto" del espacio en unidades SVG dividido entre 10 = metros.
+     Por ejemplo, alto=150 → 15m → "mediano". */
   function cumpleTamano(e){
     const filtro = window._filtroTamano || '';
     if(!filtro) return true;
@@ -481,85 +630,96 @@ window.cerrarErrorAsig = function(){
     }
   }
 
-  // Función principal de render — se llama cada vez que cambia el estado
+  /* mapaRender() — función principal de dibujo. Limpia las capas y
+     vuelve a dibujar todo desde los datos en memoria:
+     window._mapaZonas, window._espaciosData, window._mapaEtiquetas */
   window.mapaRender = function(){
     layerT.innerHTML = '';
     layerE.innerHTML = '';
     layerL.innerHTML = '';
 
-    // Reconstruir mapa de grupos combinados (espacios que juntos caben el barco)
+    // Índice de grupos combinados: espacios que juntos forman un espacio suficiente 
     const mapaGrupos = window._mapaGrupos_idx || {};
 
-    // Dibujar zonas de tierra
+    /* ── Dibujar zonas de tierra ────────────────────────────────
+       Cada zona tiene un array de puntos {x,y} que forman un polígono.
+       Se usa para representar los muelles y tierra firme. */
     (window._mapaZonas||[]).forEach(z=>{
       if(!z.puntos) return;
       const pts = typeof z.puntos==='string' ? JSON.parse(z.puntos) : z.puntos;
       if(pts.length < 2) return;
       const el = document.createElementNS('http://www.w3.org/2000/svg','polygon');
       el.setAttribute('points', pts.map(p=>`${p.x},${p.y}`).join(' '));
-      el.setAttribute('fill',         z.color||'#7ab648');
+      el.setAttribute('fill',         z.color||'#7ab648');  // Verde tierra por defecto 
       el.setAttribute('stroke',       '#4a8020');
       el.setAttribute('stroke-width', '1');
       layerT.appendChild(el);
     });
 
-    // Dibujar espacios
+    /* ── Dibujar espacios ───────────────────────────────────────
+       Cada espacio es un rectángulo con posición, dimensiones,
+       rotación y estado. Se agrupa en un <g> para aplicar rotación. */
     const filtroMuelle = window._filtroMuelle || '';
     (window._espaciosData||[]).forEach(e=>{
       const sel           = (window._espaciosSeleccionados||new Set()).has(e.id);
       const pasaFiltroM   = !filtroMuelle || String(e.muelle_id)===filtroMuelle;
       const pasaFiltroT   = cumpleTamano(e);
+      // Un espacio está "filtrado fuera" si no es pasillo y no pasa algún filtro 
       const filtradoFuera = !e.es_pasillo && (!pasaFiltroM || !pasaFiltroT);
 
-      // Estado base del espacio
+      /*¨Determinar el estado visual del espacio:
+         Si está seleccionado → amarillo
+         Si es pasillo → café
+         Si no cabe pero hay un grupo contiguo → estado del grupo */
       let estadoBase = sel ? 'seleccionado' : e.es_pasillo ? 'pasillo' : (e.estado||'libre');
-
-      // Si no cabe solo pero sí en grupo → usar el estado del grupo
       if(estadoBase === 'no_cabe' && mapaGrupos[e.id]){
         estadoBase = mapaGrupos[e.id].estado;
       }
 
       const col = filtradoFuera ? COLORES.filtrado : (COLORES[estadoBase]||COLORES.libre);
       const rot = e.rotacion||0;
-      const cx  = e.pos_x + e.ancho/2;
-      const cy  = e.pos_y + e.alto/2;
+      const cx  = e.pos_x + e.ancho/2;   // Centro X para la rotación 
+      const cy  = e.pos_y + e.alto/2;   // Centro Y para la rotación 
 
-      // Grupo SVG con rotación
+      // Grupo SVG con rotación centrada en el espacio 
       const g = document.createElementNS('http://www.w3.org/2000/svg','g');
       g.setAttribute('transform', `rotate(${rot},${cx},${cy})`);
       g.style.cursor = (e.es_pasillo || filtradoFuera) ? 'default' : 'pointer';
 
-      // Rectángulo del espacio
+      // Rectángulo del espacio 
       const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
       r.setAttribute('x',      e.pos_x);
       r.setAttribute('y',      e.pos_y);
       r.setAttribute('width',  e.ancho);
       r.setAttribute('height', e.alto);
-      r.setAttribute('rx',     '2');
-      r.setAttribute('fill',         col.fill);
+      r.setAttribute('rx',     '2');  // Bordes redondeados 
+      r.setAttribute('fill',   col.fill);
+      /* Borde amarillo brillante si está resaltado (espacio de la solicitud activa),
+         borde grueso si está seleccionado, borde fino si no */
       r.setAttribute('stroke',       e.resaltado ? '#fff021' : col.stroke);
       r.setAttribute('stroke-width', e.resaltado ? '3.5' : sel ? '5.5' : '0.8');
       g.appendChild(r);
 
-      // Etiqueta del número o dimensiones
+      /* Etiqueta de texto dentro del espacio (no en pasillos) */
       if(!e.es_pasillo){
         const t = document.createElementNS('http://www.w3.org/2000/svg','text');
-        t.setAttribute('x',                  cx);
-        t.setAttribute('y',                  cy);
-        t.setAttribute('text-anchor',        'middle');
-        t.setAttribute('dominant-baseline',  'central');
-        t.setAttribute('pointer-events',     'none');
-        t.setAttribute('fill',               '#0a1a2a');
+        t.setAttribute('x',                 cx);
+        t.setAttribute('y',                 cy);
+        t.setAttribute('text-anchor',       'middle');
+        t.setAttribute('dominant-baseline', 'central');
+        t.setAttribute('pointer-events',    'none');
+        t.setAttribute('fill',              '#0a1a2a');
 
         const filtroTamano = window._filtroTamano || '';
         if(filtroTamano && pasaFiltroT && !filtradoFuera){
-          // Con filtro de tamaño: mostrar dimensiones
+          /* Con filtro de tamaño activo: mostrar las dimensiones del espacio
+             para facilitar la comparación visual */
           const largo_m = (parseFloat(e.alto)/10).toFixed(0);
           const ancho_m = (parseFloat(e.ancho)/10).toFixed(0);
           t.setAttribute('font-size', Math.min(9, parseFloat(e.alto)*0.4));
           t.textContent = `${largo_m}×${ancho_m}m`;
         } else {
-          // Sin filtro: mostrar número
+          /* Sin filtro de tamaño: mostrar el número del espacio */
           t.setAttribute('font-size', Math.min(10, parseFloat(e.alto)*0.55));
           t.textContent = e.numero||'';
         }
@@ -568,15 +728,19 @@ window.cerrarErrorAsig = function(){
 
       layerE.appendChild(g);
 
-      // Eventos de clic y hover (solo espacios interactivos)
+      // Eventos de interacción — solo para espacios no filtrados y no pasillo 
       if(!e.es_pasillo && !filtradoFuera){
+        // Clic → mapaClickEspacio() del Script 4 
         g.addEventListener('click',      ev => window.mapaClickEspacio && window.mapaClickEspacio(e, ev));
+        // Hover → reduce opacidad para feedback visual 
         g.addEventListener('mouseenter', ()=>{ if(!sel) r.setAttribute('opacity','0.8'); });
         g.addEventListener('mouseleave', ()=>{ r.setAttribute('opacity','1'); });
       }
     });
 
-    // Dibujar etiquetas de muelles
+    /* ── Dibujar etiquetas de muelles ───────────────────────────
+       Textos grandes con el nombre de cada muelle.
+       Se desvanecen si el muelle está filtrado fuera. */
     const filtroMuelleActual = window._filtroMuelle || '';
     (window._mapaEtiquetas||[]).forEach(et=>{
       const esActivo = !filtroMuelleActual || String(et.muelle_id)===filtroMuelleActual;
@@ -585,8 +749,10 @@ window.cerrarErrorAsig = function(){
       t.setAttribute('y',            et.pos_y);
       t.setAttribute('font-size',    et.tamanio||14);
       t.setAttribute('font-weight',  '600');
+      // Opacidad reducida si el muelle no es el filtrado activo 
       t.setAttribute('fill',         esActivo ? (et.color||'#ffffff') : 'rgba(255,255,255,0.2)');
       t.setAttribute('font-family',  'DM Sans, sans-serif');
+      // paint-order:stroke permite poner sombra al texto sin usar filter 
       t.setAttribute('paint-order',  'stroke');
       t.setAttribute('stroke',       'rgba(0,0,0,0.4)');
       t.setAttribute('stroke-width', '3');
@@ -596,11 +762,12 @@ window.cerrarErrorAsig = function(){
       layerL.appendChild(t);
     });
 
-    // Actualizar resumen
+    /* Actualizar el panel de resumen inferior */
     if(!READONLY) actualizarResumen();
   };
 
-  // Contador de estados en el panel inferior
+  /* actualizarResumen() — cuenta los espacios por estado y actualiza
+     el panel "Resumen" en la barra inferior del mapa. */
   function actualizarResumen(){
     const counts = {ideal:0, posible:0, ocupado:0, no_cabe:0, libre:0};
     (window._espaciosData||[])
@@ -619,24 +786,26 @@ window.cerrarErrorAsig = function(){
 </script>
 
 
-<!-- ════════════════════════════════════════════════════════
-     SCRIPT 4 — Interacción con espacios
-     Maneja clics, popup de ocupados y panel de asignación
-     ════════════════════════════════════════════════════════ -->
+{% comment %} ══ SCRIPT 4 — Interacción con espacios ════════════════════
+   Maneja el clic en un espacio: muestra info, abre popup de
+   ocupado, o inicia el flujo de asignación. {%  endcomment %}
 <script>
 (function(){
   const READONLY = {% if mapa_readonly %}true{% else %}false{% endif %};
   const API_DISP = "{% url 'mapa_disponibilidad' %}";
 
-  // Clic en un espacio del mapa
+  /* mapaClickEspacio(e, ev) — manejador principal de clic en espacio.
+     e  = datos del espacio (del JSON de la API)
+     ev = evento DOM del clic */
   window.mapaClickEspacio = function(e, ev){
-    const mapaGrupos   = window._mapaGrupos_idx || {};
+    const mapaGrupos      = window._mapaGrupos_idx || {};
     const solicitudActiva = window._solicitudActiva;
+    // Si el espacio no cabe solo pero tiene un grupo contiguo, usar el estado del grupo 
     const estadoFinal  = (e.estado==='no_cabe' && mapaGrupos[e.id])
       ? mapaGrupos[e.id].estado
       : e.estado;
 
-    // Actualizar panel izquierdo con info del espacio
+    // Actualizar panel izquierdo con info del espacio clicado 
     if(!READONLY){
       const largo_m = (e.alto/10).toFixed(1);
       const ancho_m = (e.ancho/10).toFixed(1);
@@ -660,26 +829,25 @@ window.cerrarErrorAsig = function(){
           <div><span style="color:var(--text-light);font-size:10px">ESTADO</span><br>
                ${estadoTexto}</div>
         </div>`;
-
     }
 
-    // Si está ocupado → mostrar popup con info
+    // Si el espacio está ocupado, mostrar popup con datos de la asignación 
     if(e.estado === 'ocupado'){
       mostrarPopupEspacioOcupado(e, ev);
       return;
     }
 
+    // Si hay solicitud activa y el espacio es utilizable, iniciar asignación 
     if(!READONLY && solicitudActiva && (estadoFinal==='ideal'||estadoFinal==='posible'||estadoFinal==='libre')){
-      
       window._espaciosSeleccionados = new Set();
       const sel   = window._espaciosSeleccionados;
       const grupo = (window._mapaGrupos_idx||{})[e.id];
 
       if(grupo && e.estado==='no_cabe'){
-        // espacio con grupo contiguo — selecciona ambos automáticamente
+        // El espacio necesita combinarse con otro — selecciona todos del grupo 
         grupo.ids.forEach(id => sel.add(id));
       } else {
-        // espacio simple — solo este
+        // Espacio individual suficiente 
         sel.add(e.id);
       }
 
@@ -688,26 +856,27 @@ window.cerrarErrorAsig = function(){
     }
   };
 
-  // Popup cuando se hace clic en un espacio ocupado
+  /* mostrarPopupEspacioOcupado(e, ev) — abre el popup contextual
+     posicionado junto al cursor. Hace fetch a la API para obtener
+     los datos de la asignación activa en ese espacio. */
   async function mostrarPopupEspacioOcupado(e, ev){
-
     ev.stopPropagation();
     const popup = document.getElementById('mapa-popup');
     popup.style.display = 'block';
 
+    // Posicionar el popup junto al cursor, evitando salir de pantalla 
     let px = ev.clientX+12, py = ev.clientY+12;
     if(px+290 > window.innerWidth)  px = ev.clientX-292;
     if(py+220 > window.innerHeight) py = ev.clientY-200;
     popup.style.left = px+'px';
     popup.style.top  = py+'px';
 
-      
     document.getElementById('mapa-popup-titulo').textContent    = `Espacio ${e.numero||'—'}`;
     document.getElementById('mapa-popup-subtitulo').textContent = e.muelle;
     document.getElementById('mapa-popup-body').innerHTML        = '<span style="color:var(--text-light)">Cargando...</span>';
 
-
     try{
+      // En modo readonly usa la fecha de hoy; en modo completo usa el selector de fech//
       const fecha = READONLY
         ? new Date().toISOString().split('T')[0]
         : document.getElementById('mapa-fecha').value;
@@ -716,18 +885,21 @@ window.cerrarErrorAsig = function(){
       const asig = data.asignacion_activa;
 
       if(asig){
+        // Mostrar datos de la embarcación que ocupa el espacio 
         document.getElementById('mapa-popup-body').innerHTML = `
           <div><span style="color:var(--text-mid)">Embarcación:</span> <strong>${asig.embarcacion}</strong></div>
           <div><span style="color:var(--text-mid)">Cliente:</span> ${asig.cliente}</div>
           <div><span style="color:var(--text-mid)">Llegada:</span> ${asig.fecha_inicio}</div>
           <div><span style="color:var(--text-mid)">Salida:</span> ${asig.fecha_fin}</div>`;
 
+        // Botón "Ver" abre popup_solicitud con los datos de esa solicitud 
         document.getElementById('popup-btn-detalle').onclick = (ev)=>{
           ev.preventDefault();
           cerrarPopupEspacio();
           if(typeof abrirPopupVer === 'function') abrirPopupVer(asig.solicitud_id);
         };
         document.getElementById('popup-btn-detalle').href    = '#';
+        // Botón "Reasignar" navega al mapa con la solicitud activa 
         document.getElementById('popup-btn-reasignar').href = `/mapa/?solicitud_id=${asig.solicitud_id}&from=mapa`;
       } else {
         document.getElementById('popup-body').innerHTML = '<span style="color:var(--text-light)">Sin información disponible</span>';
@@ -737,7 +909,9 @@ window.cerrarErrorAsig = function(){
     }
   }
 
-  // Panel de confirmación de asignación (panel izquierdo inferior)
+  /* mostrarPanelAsignar(e) — llena y muestra el panel de confirmación
+     en la columna izquierda, con el nombre de la embarcación,
+     el espacio elegido y los botones Confirmar/Cancelar. */
   function mostrarPanelAsignar(e){
     const panelWrap = document.getElementById('mapa-panel-asignar');
     const panel     = document.getElementById('mapa-panel-asignar-content');
@@ -746,10 +920,10 @@ window.cerrarErrorAsig = function(){
 
     panelWrap.style.display = 'block';
 
-    const selIds    = [...(window._espaciosSeleccionados||new Set())];
-    const selEsp    = (window._espaciosData||[]).filter(x=>selIds.includes(x.id));
-    const infoEsp   = selEsp.map(x=>`${x.muelle}-${x.numero}`).join(' + ');
-    const nEsp      = selIds.length;
+    const selIds  = [...(window._espaciosSeleccionados||new Set())];
+    const selEsp  = (window._espaciosData||[]).filter(x=>selIds.includes(x.id));
+    const infoEsp = selEsp.map(x=>`${x.muelle}-${x.numero}`).join(' + ');
+    const nEsp    = selIds.length;
 
     panel.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:.4rem">
@@ -766,6 +940,7 @@ window.cerrarErrorAsig = function(){
       </div>`;
   }
 
+  // Cancela la selección actual y vuelve al estado normal del mapa 
   window.cancelarAsignacion = function(){
     window._espaciosSeleccionados = new Set();
     const pw = document.getElementById('mapa-panel-asignar');
@@ -779,6 +954,7 @@ window.cerrarErrorAsig = function(){
     document.getElementById('mapa-popup').style.display = 'none';
   };
 
+  // Cierra el popup de espacio al hacer clic fuera de él 
   document.addEventListener('click', ev=>{
     const popup = document.getElementById('mapa-popup');
     if(popup && !popup.contains(ev.target)) popup.style.display='none';
@@ -787,30 +963,39 @@ window.cerrarErrorAsig = function(){
 </script>
 
 
-<!-- ════════════════════════════════════════════════════════
-     SCRIPT 5 — API y carga de datos
-     Llama al backend, procesa respuesta y actualiza el mapa
-     ════════════════════════════════════════════════════════ -->
+{% comment %}
+   ══ SCRIPT 5 — API y carga de datos ════════════════════════
+   Llama al endpoint /mapa/disponibilidad/ para obtener el
+   estado de todos los espacios y reconstruye el mapa. {%  endcomment %}
 <script>
 (function(){
   const API_DISP    = "{% url 'mapa_disponibilidad' %}";
   const API_ASIGNAR = "{% url 'mapa_asignar' %}";
   const CSRF        = "{{ csrf_token }}";
-  const MAPA_CTX    = window.MAPA_CTX || {};
+  const MAPA_CTX    = window.MAPA_CTX || {};  // Contexto inyectado por mapa.html 
   const READONLY    = {% if mapa_readonly %}true{% else %}false{% endif %};
 
-  // Estado global compartido entre scripts
-  window._espaciosData          = [];
-  window._espaciosSeleccionados = new Set();
-  window._solicitudActiva       = null;
-  window._filtroMuelle          = '';
-  window._filtroTipo            = '';
-  window._filtroTamano          = '';
-  window._mapaGrupos_idx        = {};
+  // Estado global compartido entre todos los scripts del mapa 
+  window._espaciosData          = [];   // Array de espacios del JSON de la API 
+  window._espaciosSeleccionados = new Set();  // IDs de espacios seleccionados 
+  window._solicitudActiva       = null; // Solicitud que se está asignando 
+  window._filtroMuelle          = '';   // PK del muelle filtrado 
+  window._filtroTipo            = '';   // PK del tipo de barco filtrado 
+  window._filtroTamano          = '';   // 'chico'|'mediano'|'grande'|'muy_grande' 
+  window._mapaGrupos_idx        = {};   // Índice de grupos combinados por espacio_id 
 
-  // Carga principal del mapa desde el backend
+  /* cargarMapa() — función principal que consulta la API y actualiza el mapa.
+     Construye la URL con los filtros activos y la fecha seleccionada.
+     Respuesta JSON esperada:
+     {
+       espacios: [{id, numero, muelle, muelle_id, pos_x, pos_y, ancho, alto,
+                   rotacion, es_pasillo, estado, resaltado}, ...],
+       zonas:    [{puntos: [{x,y}], color}, ...],
+       etiquetas:[{pos_x, pos_y, texto, tamanio, color, muelle_id}, ...],
+       grupos_combinados: [{ids:[id1,id2], estado:'ideal'|'posible'}, ...]
+     } */
   window.cargarMapa = async function(){
-    const fecha       = READONLY
+    const fecha = READONLY
       ? new Date().toISOString().split('T')[0]
       : (document.getElementById('mapa-fecha')?.value || new Date().toISOString().split('T')[0]);
     const solicitudId = MAPA_CTX.solicitud_id || '';
@@ -823,6 +1008,7 @@ window.cerrarErrorAsig = function(){
 
     let url = `${API_DISP}?fecha=${fecha}`;
     if(solicitudId)        url += `&solicitud_id=${solicitudId}`;
+    // tipo_barco_id filtra en el backend para calcular estados ideal/posible/no_cabe 
     if(window._filtroTipo) url += `&tipo_barco_id=${window._filtroTipo}`;
 
     try{
@@ -833,7 +1019,8 @@ window.cerrarErrorAsig = function(){
       window._mapaZonas     = data.zonas;
       window._mapaEtiquetas = data.etiquetas;
 
-      // Reconstruir índice de grupos combinados
+      /* Construir índice de grupos combinados para acceso O(1) por espacio_id.
+         Si hay múltiples grupos para el mismo espacio, prefiere el estado 'ideal'. */
       window._mapaGrupos_idx = {};
       (data.grupos_combinados||[]).forEach(g=>{
         g.ids.forEach(id=>{
@@ -844,7 +1031,7 @@ window.cerrarErrorAsig = function(){
       });
 
       if(!READONLY){
-        // Solicitud activa viene del contexto (llega por URL ?solicitud_id=)
+        // Inicializar la solicitud activa desde MAPA_CTX la primera vez que carga 
         if(solicitudId && !window._solicitudActiva){
           window._solicitudActiva = {
             id:           parseInt(MAPA_CTX.solicitud_id),
@@ -859,12 +1046,12 @@ window.cerrarErrorAsig = function(){
         actualizarPanelSolicitud(window._solicitudActiva, data);
         mostrarIndicador(!!window._solicitudActiva);
 
-        // Enfocar muelle si hay filtro
+        // Si hay filtro de muelle, enfocar la vista en ese muelle 
         if(window._filtroMuelle && data.espacios.length){
           enfocarMuelle(window._filtroMuelle, data.espacios);
         }
 
-        // Mostrar/ocultar botón limpiar
+        // Mostrar/ocultar botón "Limpiar filtros" 
         const hayFiltros = window._filtroMuelle || window._filtroTipo || window._filtroTamano;
         const btnLimpiar = document.getElementById('mapa-btn-limpiar');
         if(btnLimpiar) btnLimpiar.style.display = hayFiltros ? 'inline-flex' : 'none';
@@ -874,7 +1061,8 @@ window.cerrarErrorAsig = function(){
     } catch(err){ console.error('Error cargando mapa:', err); }
   };
 
-  // Actualiza el panel izquierdo con datos de la solicitud activa
+  /* actualizarPanelSolicitud(sol, data) — actualiza el panel izquierdo
+     con los datos de la solicitud activa y el conteo de espacios disponibles. */
   function actualizarPanelSolicitud(sol, data){
     const panel      = document.getElementById('mapa-panel-solicitud');
     const panelEmpty = document.getElementById('mapa-panel-solicitud-empty');
@@ -893,6 +1081,7 @@ window.cerrarErrorAsig = function(){
     const grupos    = data.grupos_combinados || [];
     const nIdeales  = grupos.filter(g=>g.estado==='ideal').length;
     const nPosibles = grupos.filter(g=>g.estado==='posible').length;
+    // Espacios individuales (sin necesitar grupo) que son ideal o posible 
     const nSolos    = data.espacios.filter(e=>!e.es_pasillo && (e.estado==='ideal'||e.estado==='posible')).length;
 
     content.innerHTML = `
@@ -919,10 +1108,8 @@ window.cerrarErrorAsig = function(){
         <div style="border-top:1px solid var(--border);padding-top:8px">
           <div style="font-size:10px;color:var(--text-light);margin-bottom:4px">Espacios disponibles</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <span style="background:var(--success-bg);color:var(--success);padding:2px 8px;
-                  border-radius:20px;font-size:11px;font-weight:500">${nIdeales + nSolos} ideales</span>
-            <span style="background:var(--warning-bg);color:var(--warning);padding:2px 8px;
-                  border-radius:20px;font-size:11px;font-weight:500">${nPosibles} posibles</span>
+            <span style="background:var(--success-bg);color:var(--success);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500">${nIdeales + nSolos} ideales</span>
+            <span style="background:var(--warning-bg);color:var(--warning);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500">${nPosibles} posibles</span>
           </div>
         </div>
         <div style="font-size:11px;color:var(--text-light);font-style:italic">
@@ -931,24 +1118,28 @@ window.cerrarErrorAsig = function(){
       </div>`;
   }
 
-  // Indicador flotante en el canvas
+  /* Muestra u oculta el indicador flotante del canvas */
   function mostrarIndicador(mostrar){
     const ind = document.getElementById('mapa-indicador');
     if(ind) ind.style.display = mostrar ? 'block' : 'none';
   }
 
-  // Enfocar vista en el muelle filtrado
+  /* enfocarMuelle(muelleId, espacios) — ajusta el zoom y la posición
+     para que el muelle seleccionado quede centrado en el canvas. */
   function enfocarMuelle(muelleId, espacios){
     const esp = espacios.filter(e=>String(e.muelle_id)===muelleId);
     if(!esp.length) return;
     const container = document.getElementById('mapa-container');
+    /* Calcular el bounding box del muelle */
     const minX  = Math.min(...esp.map(e=>e.pos_x));
     const minY  = Math.min(...esp.map(e=>e.pos_y));
     const maxX  = Math.max(...esp.map(e=>e.pos_x+e.ancho));
     const maxY  = Math.max(...esp.map(e=>e.pos_y+e.alto));
     const cw    = container.clientWidth;
     const ch    = container.clientHeight;
+    /* Calcular escala para que el muelle quepa en el canvas con padding de 80px */
     const scale = Math.min(cw/(maxX-minX+80), ch/(maxY-minY+80), 3);
+    /* Centrar el muelle en el canvas */
     const vx    = cw/2 - ((minX+maxX)/2)*scale;
     const vy    = ch/2 - ((minY+maxY)/2)*scale;
     const svg   = document.getElementById('mapa-svg');
@@ -958,7 +1149,11 @@ window.cerrarErrorAsig = function(){
     if(lbl) lbl.textContent = Math.round(scale*100)+'%';
   }
 
-  // Confirmar asignación
+  /* confirmarAsignacion() — envía la asignación al backend via POST.
+     Endpoint: POST /mapa/asignar/ con JSON:
+     { solicitud_id, espacio_ids: [id1, id2], fecha_inicio, fecha_fin }
+     Si hay conflicto (error_tipo='ocupado'), muestra el modal de error.
+     Si tiene éxito, recarga el mapa y llama al callback onAsignado si existe. */
   window.confirmarAsignacion = async function(){
     const sol = window._solicitudActiva;
     if(!sol){ mostrarToast('No hay solicitud activa','error'); return; }
@@ -987,6 +1182,7 @@ window.cerrarErrorAsig = function(){
         mostrarToast('Asignación creada correctamente');
         window.cancelarAsignacion();
         window.cargarMapa();
+        // Si hay callback (definido en mapa.html), ejecutarlo (ej: redirigir a lista) 
         if(MAPA_CTX.onAsignado) MAPA_CTX.onAsignado(data);
       } else {
         if(data.error_tipo==='ocupado'){
@@ -1002,7 +1198,7 @@ window.cerrarErrorAsig = function(){
     }
   };
 
-  // Limpiar todos los filtros
+  // limpiarFiltros() — resetea todos los selectores de filtro y recarga el mapa 
   window.limpiarFiltros = function(){
     ['mapa-filtro-muelle','mapa-filtro-tipo','mapa-filtro-tamano'].forEach(id=>{
       const el = document.getElementById(id);
@@ -1012,9 +1208,10 @@ window.cerrarErrorAsig = function(){
     mostrarToast('Filtros limpiados','info');
   };
 
-  // ── INIT ──────────────────────────────────────────────
+  /* ── INICIALIZACIÓN ─────────────────────────────────────────
+     Al cargar el componente, configura la solicitud activa desde
+     el contexto MAPA_CTX (si existe) y añade listeners a los filtros. */
   if(!READONLY){
-    // Solicitud activa desde contexto (llega por ?solicitud_id= en URL)
     if(MAPA_CTX.solicitud_id){
       window._solicitudActiva = {
         id:           parseInt(MAPA_CTX.solicitud_id),
@@ -1026,7 +1223,7 @@ window.cerrarErrorAsig = function(){
       };
     }
 
-    // Filtros automáticos al cambiar cualquier selector
+    /* Al cambiar cualquier selector de filtro, recargar el mapa y actualizar chips */
     ['mapa-filtro-muelle','mapa-filtro-tipo','mapa-filtro-tamano'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.addEventListener('change', ()=>{
@@ -1036,7 +1233,8 @@ window.cerrarErrorAsig = function(){
       });
     });
 
-    // Fecha recarga al cambiar
+    /* Al cambiar la fecha, recargar el mapa con la nueva fecha.
+       Si hay solicitud activa, preseleccionar la fecha de llegada. */
     const fechaEl = document.getElementById('mapa-fecha');
     if(fechaEl){
       if(MAPA_CTX.fecha_llegada){
@@ -1048,23 +1246,28 @@ window.cerrarErrorAsig = function(){
     }
   }
 
+  // Carga inicial del mapa 
   window.cargarMapa();
 })();
 </script>
 
-<!-- ════════════════════════════════════════════════════════
-     SCRIPT 6 — Toolbar colapsable del mapa
-     Maneja el panel de filtros desplegable y los chips
-     ════════════════════════════════════════════════════════ -->
+{% comment %}
+   ══ SCRIPT 6 — Toolbar colapsable del mapa ═════════════════
+   Maneja la expansión/contracción del panel de filtros
+   y los chips que muestran los filtros activos. {%  endcomment %}
 <script>
 let _mapaFiltrosAbierto = false;
 
+/* toggleFiltrosMapa() — alterna la visibilidad del panel de filtros
+   y la rotación de la flecha indicadora. */
 function toggleFiltrosMapa(){
   _mapaFiltrosAbierto = !_mapaFiltrosAbierto;
   document.getElementById('mapa-panel-filtros').style.display = _mapaFiltrosAbierto ? 'block' : 'none';
   document.getElementById('mapa-arrow').style.transform = _mapaFiltrosAbierto ? 'rotate(180deg)' : 'rotate(0)';
 }
 
+/* actualizarChipsMapa() — lee los selectores de filtro y renderiza
+   chips en la barra trigger para indicar los filtros activos. */
 function actualizarChipsMapa(){
   const chips  = [];
   const muelle = document.getElementById('mapa-filtro-muelle');
@@ -1085,12 +1288,13 @@ function actualizarChipsMapa(){
   `).join('');
 
   if(count){
-    count.textContent  = chips.length ? chips.length+' activo'+(chips.length>1?'s':'') : '';
+    count.textContent   = chips.length ? chips.length+' activo'+(chips.length>1?'s':'') : '';
     count.style.display = chips.length ? 'inline' : 'none';
   }
   if(btn) btn.style.display = chips.length ? 'inline-flex' : 'none';
 }
 
+// Actualizar chips en tiempo real cuando el usuario cambia un filtro 
 document.addEventListener('DOMContentLoaded', ()=>{
   ['mapa-filtro-muelle','mapa-filtro-tipo','mapa-filtro-tamano'].forEach(id=>{
     const el = document.getElementById(id);

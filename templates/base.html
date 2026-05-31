@@ -1,22 +1,46 @@
 {% load static %}
+{% comment %}
+   =========================================================
+   base.html — Plantilla raíz del sistema MARE
+   Todas las páginas del sistema extienden esta plantilla.
+   Define la estructura HTML común: head, navbar, mensajes y
+   bloque de contenido principal y footer.
+   ========================================================= {%  endcomment %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  {# Bloque de título: cada página hija puede sobreescribir el título de la pestaña #}
   <title>{% block title %}MARE{% endblock %}</title>
+
+  {# Precarga de conexión a Google Fonts para reducir latencia #}
   <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  {# Fuentes del sistema: DM Sans para texto general, DM Mono para datos numéricos #}
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
   {% load static %}
-  <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">  
+
+  {# Ícono de la pestaña del navegador (favicon) #}
+  <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+
+  {# Hoja de estilos global: tipografía, colores CSS vars, tarjetas, botones, tabla, badges #}
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
 
 </head>
 <body>
 
+  {# Barra de navegación superior — incluida en todas las páginas del sistema #}
   {% include 'components/navbar.html' %}
 
 <main>
+  {% comment %}
+     ── Mensajes flash de Django ──────────────────────────────
+     Se muestran cuando la vista llama a messages.success(),
+     messages.error(), etc. Desaparecen tras una sola carga.
+     message.tags genera la clase CSS (success, error, info...) {%  endcomment %}
   {% if messages %}
   <div class="messages">
     {% for message in messages %}
@@ -25,9 +49,11 @@
   </div>
   {% endif %}
 
+  {# Bloque de contenido principal: cada página hija inyecta aquí su HTML #}
   {% block content %}{% endblock %}
 </main>
 
+{# Pie de página con nombre del sistema y año actual #}
 {% include 'components/footer.html' %}
 
 </body>

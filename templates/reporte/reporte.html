@@ -1,53 +1,66 @@
 {% extends "base.html" %}
 {% load static %}
-
+{% comment %}
+   =========================================================
+   reporte/reporte.html — Lista de solicitudes resueltas
+   Muestra solicitudes con estado APROBADA, RECHAZADA o
+   COMPLETADA según el filtro aplicado. Permite descargar
+   el listado como PDF con los mismos filtros activos.
+   ========================================================= {%  endcomment %}
 {% block title %}Reportes{% endblock %}
 
 {% block content %}
 
+{# Carga la hoja de estilos específica del módulo de reportes #}
 <link rel="stylesheet" href="{% static 'css/reporte/reporte.css' %}">
 
+{# ── Encabezado con acceso rápido a estadísticas ─────────── #}
 <div class="page-header"
-     style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        gap:15px;
-     ">
-
+     style="display:flex;justify-content:space-between;align-items:center;gap:15px;">
   <h2>Reportes</h2>
-
+  {# Botón que navega a la página de estadísticas visuales (gráficas) #}
   <a href="{% url 'estadisticas_solicitudes' %}"
      class="btn btn-primary"
-     style="
-        padding:10px 18px;
-        border-radius:10px;
-        text-decoration:none;
-        font-weight:600;
-     ">
+     style="padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:600;">
     Ver estadísticas
   </a>
-
 </div>
 
+{% comment %}
+   ══ FORMULARIO DE FILTROS ══════════════════════════════════
+   GET form — los parámetros se pasan por URL para mantener
+   los filtros al paginar y al generar el PDF. {%  endcomment %}
 <div class="card">
   <form method="get" style="display:flex; gap:12px; align-items:end; flex-wrap:wrap;">
 
+    {% comment %}
+       Selector de estado — determina qué solicitudes se muestran:
+       - todos      → aprobadas + rechazadas (default)
+       - aceptado   → solo APROBADA
+       - rechazado  → solo RECHAZADA
+       - completado → solo COMPLETADA
+       La variable {{ estado }} viene desde la vista con el valor actual. {%  endcomment %}
     <div class="form-group" style="min-width:240px;">
       <label for="estado">Filtrar por estado</label>
       <select name="estado" id="estado">
-        <option value="todos" {% if estado == 'todos' %}selected{% endif %}>Aprobadas y Rechazadas</option>
-        <option value="aceptado" {% if estado == 'aceptado' %}selected{% endif %}>Aprobadas</option>
-        <option value="rechazado" {% if estado == 'rechazado' %}selected{% endif %}>Rechazadas</option>
+        <option value="todos"      {% if estado == 'todos' %}selected{% endif %}>Aprobadas y Rechazadas</option>
+        <option value="aceptado"   {% if estado == 'aceptado' %}selected{% endif %}>Aprobadas</option>
+        <option value="rechazado"  {% if estado == 'rechazado' %}selected{% endif %}>Rechazadas</option>
         <option value="completado" {% if estado == 'completado' %}selected{% endif %}>Completadas</option>
       </select>
     </div>
 
+    {% comment %}
+       Selector de mes — lista de tuplas (número, nombre) inyectada
+       desde la vista como: [(1,'Enero'), (2,'Febrero'), ...] {%  endcomment %}
     <div class="form-group" style="min-width:180px;">
       <label for="mes">Mes</label>
       <select name="mes" id="mes">
         <option value="">Todos</option>
         {% for numero, nombre in meses %}
+          {% comment %}
+             Compara el mes actual con el filtro activo.
+             |stringformat:"s" convierte el entero a string para comparar. {%  endcomment %}
           <option value="{{ numero }}" {% if mes == numero|stringformat:"s" %}selected{% endif %}>
             {{ nombre }}
           </option>
@@ -55,6 +68,9 @@
       </select>
     </div>
 
+    {% comment %}
+       Selector de año — lista de enteros con los años que tienen registros.
+       anios viene de la vista como: [2024, 2025, 2026] {%  endcomment %}
     <div class="form-group" style="min-width:140px;">
       <label for="anio">Año</label>
       <select name="anio" id="anio">
@@ -67,12 +83,17 @@
       </select>
     </div>
 
+    {# Botón de aplicar filtros #}
     <button type="submit" class="btn btn-primary">Filtrar</button>
 
+    {# Limpiar todos los filtros — regresa a la URL base sin parámetros #}
     <a href="{% url 'reporte_solicitudes' %}" class="btn btn-secondary">
       Limpiar
     </a>
 
+    {% comment %}
+       Descarga el PDF pasando los mismos filtros activos en los query params.
+       La vista reporte_solicitudes_pdf genera el HTML del PDF con WeasyPrint. {%  endcomment %}
     <a href="{% url 'reporte_solicitudes_pdf' %}?estado={{ estado }}&mes={{ mes }}&anio={{ anio }}" class="btn btn-accent">
       Descargar PDF
     </a>
@@ -80,6 +101,7 @@
   </form>
 </div>
 
+{# ══ TABLA DE RESULTADOS ════════════════════════════════════ #}
 <div class="card">
   <div class="table-wrap">
     <table>
@@ -95,14 +117,21 @@
       </thead>
 
       <tbody>
+        {# Itera sobre el queryset paginado filtrado por la vista #}
         {% for s in solicitudes %}
         <tr>
 
+          {# Nombre del bote desde el modelo Embarcacion relacionado #}
           <td>{{ s.embarcacion.nombre_bote }}</td>
 
+          {# Nombre completo del cliente desde Cliente relacionado a Embarcacion #}
           <td>{{ s.embarcacion.cliente.fullname }}</td>
 
           <td>
+            {% comment %}
+               fecha_resolucion se registra cuando la solicitud cambia a
+               estado final (APROBADA o RECHAZADA). Puede ser null si
+               aún está en proceso (PENDIENTE/EN_ESPERA). {%  endcomment %}
             {% if s.fecha_resolucion %}
               {{ s.fecha_resolucion|date:"d/m/Y H:i" }}
             {% else %}
@@ -110,6 +139,7 @@
             {% endif %}
           </td>
 
+          {# Badge de color por estado — mismo esquema visual que en otras listas #}
           <td>
             {% if s.estado == 'APROBADA' %}
               <span class="badge badge-success">Aprobada</span>
@@ -122,11 +152,15 @@
             {% elif s.estado == 'EN_ESPERA' %}
               <span class="badge badge-neutral">En espera</span>
             {% else %}
+              {# Fallback para cualquier estado no contemplado #}
               <span class="badge badge-neutral">{{ s.estado }}</span>
             {% endif %}
           </td>
 
           <td>
+            {% comment %}
+               El motivo de rechazo solo aplica para solicitudes RECHAZADAS.
+               Para los demás estados muestra "—". {%  endcomment %}
             {% if s.estado == 'RECHAZADA' %}
               {{ s.motivo_rechazo|default:"No especificado" }}
             {% else %}
@@ -135,6 +169,9 @@
           </td>
 
           <td>
+            {% comment %}
+               Botón "Ver detalle" — abre el modal de detalle de esta solicitud.
+               El ID del modal es único por solicitud: modal-<id> {%  endcomment %}
             <button type="button" class="btn btn-info btn-sm" onclick="abrirModal('modal-{{ s.id }}')">
               Ver detalle
             </button>
@@ -153,13 +190,20 @@
   </div>
 </div>
 
+{% comment %}
+   ── Total del filtro ────────────────────────────────────────
+   Muestra el total de registros que coinciden con el filtro
+   actual (incluyendo todas las páginas, no solo la actual).
+   La variable {{ total }} la inyecta la vista con count(). {%  endcomment %}
 <div class="card" style="text-align:right;">
   <h3 style="margin:0;">Total del filtro: {{ total }}</h3>
 </div>
 
+{# ── Paginación — mantiene los filtros GET en los enlaces ─── #}
 <div class="pagination">
 
   {% if page_obj.has_previous %}
+    {# Pasa todos los parámetros de filtro junto con el número de página #}
     <a href="?page={{ page_obj.previous_page_number }}&estado={{ estado }}&mes={{ mes }}&anio={{ anio }}">
       ← Anterior
     </a>
@@ -177,12 +221,19 @@
 
 </div>
 
+{% comment %}
+   ══ MODALES DE DETALLE POR SOLICITUD ═══════════════════════
+   Se genera un modal oculto por cada solicitud de la página.
+   Cada uno tiene ID único "modal-<s.id>" para abrir el correcto.
+   Contiene dos tarjetas: datos de embarcación y datos de resolución. {%  endcomment %}
 {% for s in solicitudes %}
+{# Overlay con ID dinámico — onclick cierra si se hace clic en el fondo #}
 <div id="modal-{{ s.id }}" class="mare-modal-overlay" onclick="cerrarModalFondo(event, 'modal-{{ s.id }}')">
 
   <div class="mare-modal">
 
     <div class="mare-modal-header">
+      {# forloop.counter muestra el número de fila (1, 2, 3...) en el título #}
       <h3>Detalle de la solicitud #{{ forloop.counter }}</h3>
       <button type="button" class="mare-close-btn" onclick="cerrarModal('modal-{{ s.id }}')">
         &times;
@@ -191,69 +242,31 @@
 
     <div class="mare-modal-body">
 
+      {# ── Tarjeta 1: datos técnicos de la embarcación ──────── #}
       <div class="card" style="margin-bottom:.75rem;">
-
         <div class="card-header">
           <span class="card-title">Información de la embarcación</span>
         </div>
-
         <table style="font-size:13px;">
-          <tr>
-            <td>Nombre</td>
-            <td>{{ s.embarcacion.nombre_bote }}</td>
-          </tr>
-
-          <tr>
-            <td>Cliente</td>
-            <td>{{ s.embarcacion.cliente.fullname }}</td>
-          </tr>
-
-          <tr>
-            <td>Tipo</td>
-            <td>{{ s.embarcacion.tipo_barco.tipo_barco }}</td>
-          </tr>
-
-          <tr>
-            <td>Eslora</td>
-            <td>{{ s.embarcacion.eslora }} m</td>
-          </tr>
-
-          <tr>
-            <td>Manga</td>
-            <td>{{ s.embarcacion.manga }} m</td>
-          </tr>
-
-          <tr>
-            <td>Calado</td>
-            <td>{{ s.embarcacion.calado }} m</td>
-          </tr>
+          <tr><td>Nombre</td>  <td>{{ s.embarcacion.nombre_bote }}</td></tr>
+          <tr><td>Cliente</td> <td>{{ s.embarcacion.cliente.fullname }}</td></tr>
+          <tr><td>Tipo</td>    <td>{{ s.embarcacion.tipo_barco.tipo_barco }}</td></tr>
+          {# Dimensiones en metros del modelo Embarcacion #}
+          <tr><td>Eslora</td>  <td>{{ s.embarcacion.eslora }} m</td></tr>
+          <tr><td>Manga</td>   <td>{{ s.embarcacion.manga }} m</td></tr>
+          <tr><td>Calado</td>  <td>{{ s.embarcacion.calado }} m</td></tr>
         </table>
-
       </div>
 
+      {# ── Tarjeta 2: información de la resolución ──────────── #}
       <div class="card">
-
         <div class="card-header">
           <span class="card-title">Información de la resolución</span>
         </div>
-
         <table style="font-size:13px;">
-
-          <tr>
-            <td>Fecha solicitud</td>
-            <td>{{ s.fecha_solicitud|date:"d/m/Y" }}</td>
-          </tr>
-
-          <tr>
-            <td>Fecha llegada</td>
-            <td>{{ s.fecha_llegada|date:"d/m/Y" }}</td>
-          </tr>
-
-          <tr>
-            <td>Fecha salida</td>
-            <td>{{ s.fecha_salida|date:"d/m/Y" }}</td>
-          </tr>
-
+          <tr><td>Fecha solicitud</td><td>{{ s.fecha_solicitud|date:"d/m/Y" }}</td></tr>
+          <tr><td>Fecha llegada</td>  <td>{{ s.fecha_llegada|date:"d/m/Y" }}</td></tr>
+          <tr><td>Fecha salida</td>   <td>{{ s.fecha_salida|date:"d/m/Y" }}</td></tr>
           <tr>
             <td>Estado</td>
             <td>
@@ -270,7 +283,6 @@
               {% endif %}
             </td>
           </tr>
-
           <tr>
             <td>Fecha de resolución</td>
             <td>
@@ -281,12 +293,10 @@
               {% endif %}
             </td>
           </tr>
+          {# Comentario del cliente al enviar la solicitud #}
+          <tr><td>Comentario</td><td>{{ s.comentario|default:"Sin comentario" }}</td></tr>
 
-          <tr>
-            <td>Comentario</td>
-            <td>{{ s.comentario|default:"Sin comentario" }}</td>
-          </tr>
-
+          {# Fila de motivo de rechazo — solo se muestra para RECHAZADAS #}
           {% if s.estado == 'RECHAZADA' %}
           <tr>
             <td>Motivo de rechazo</td>
@@ -295,7 +305,6 @@
           {% endif %}
 
         </table>
-
       </div>
 
     </div>
@@ -306,20 +315,29 @@
 {% endfor %}
 
 <script>
+  /* ── abrirModal(id) ──────────────────────────────────────────
+     Muestra el overlay del modal con el ID dado.
+     Usa display:flex para centrar la tarjeta. */
   function abrirModal(id) {
     document.getElementById(id).style.display = 'flex';
   }
 
+  /* ── cerrarModal(id) ─────────────────────────────────────────
+     Oculta el modal con el ID dado. */
   function cerrarModal(id) {
     document.getElementById(id).style.display = 'none';
   }
 
+  /* ── cerrarModalFondo(e, id) ─────────────────────────────────
+     Cierra el modal solo si el clic fue directamente en el
+     overlay oscuro (e.target === el overlay), no en la tarjeta. */
   function cerrarModalFondo(e, id) {
     if (e.target.id === id) {
       cerrarModal(id);
     }
   }
 
+  /* Cerrar cualquier modal abierto al presionar la tecla Escape */
   document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
       document.querySelectorAll('.mare-modal-overlay').forEach(function(modal) {
