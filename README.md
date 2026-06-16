@@ -124,4 +124,4 @@ En desarrollo.
 
 
 ## 📄 Licencia 
-Proyecto académico para la materia de Ingeniería en Software.
+Proyecto académico para la materia de Ingeniería en SoftwareG
